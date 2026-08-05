@@ -1,0 +1,723 @@
+<?php
+
+use App\Models\Category;
+use App\Models\Product;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
+use Livewire\Attributes\Layout;
+use Livewire\Attributes\Title;
+use Livewire\Component;
+
+new #[Layout('layouts::admin-panel')] class extends Component
+{
+    public ?int $productId = null;
+
+    public bool $isEdit = false;
+
+    public string $nama = '';
+
+    public string $category_id = '';
+
+    public string $deskripsi_pendek = '';
+
+    public string $deskripsi_lengkap = '';
+
+    /** Hasil crop (drag + zoom custom, sama seperti logoCropper), dikirim sebagai data URL base64 (JPEG). Null = thumbnail tidak diganti. */
+    public ?string $thumbnailCroppedBase64 = null;
+
+    public ?string $thumbnail_lama = null;
+
+    public string $harga = '';
+
+    public string $harga_diskon = '';
+
+    public string $stok = '0';
+
+    public string $status = 'aktif';
+
+    public bool $featured = false;
+
+    public string $berat = '0';
+
+    public string $panjang = '0';
+
+    public string $lebar = '0';
+
+    public string $tinggi = '0';
+
+    /**
+     * Satu komponen dipakai untuk Tambah (tanpa $product) maupun
+     * Edit (route model binding otomatis mengisi $product).
+     */
+    public function mount(?Product $product = null): void
+    {
+        if ($product && $product->exists) {
+            $this->isEdit = true;
+            $this->productId = $product->id;
+            $this->nama = $product->nama;
+            $this->category_id = $product->category_id ? (string) $product->category_id : '';
+            $this->deskripsi_pendek = $product->deskripsi_pendek;
+            $this->deskripsi_lengkap = $product->deskripsi_lengkap;
+            $this->thumbnail_lama = $product->thumbnail;
+            $this->harga = (string) $product->harga;
+            $this->harga_diskon = $product->harga_diskon !== null ? (string) $product->harga_diskon : '';
+            $this->stok = (string) $product->stok;
+            $this->status = $product->status;
+            $this->featured = $product->featured;
+            $this->berat = (string) $product->berat;
+            $this->panjang = (string) $product->panjang;
+            $this->lebar = (string) $product->lebar;
+            $this->tinggi = (string) $product->tinggi;
+        }
+    }
+
+    public function getPageTitleProperty(): string
+    {
+        return $this->isEdit ? 'Edit Produk' : 'Tambah Produk';
+    }
+
+    /** Daftar kategori untuk dropdown — data master, bukan lagi teks bebas. */
+    public function getCategoriesProperty()
+    {
+        return Category::query()->ordered()->get();
+    }
+
+    /**
+     * Prioritas: hasil crop baru (base64, siap dipakai langsung sebagai src) ->
+     * thumbnail lama yang tersimpan di storage -> null (belum ada foto).
+     */
+    public function getThumbnailPreviewUrlProperty(): ?string
+    {
+        if ($this->thumbnailCroppedBase64) {
+            return $this->thumbnailCroppedBase64;
+        }
+
+        return $this->thumbnail_lama ? Storage::disk('public')->url($this->thumbnail_lama) : null;
+    }
+
+    protected function rules(): array
+    {
+        return [
+            'nama' => ['required', 'string', 'max:255'],
+            'category_id' => ['required', 'exists:categories,id'],
+            'deskripsi_pendek' => ['required', 'string', 'max:500'],
+            'deskripsi_lengkap' => ['required', 'string'],
+            'thumbnailCroppedBase64' => [$this->isEdit ? 'nullable' : 'required', 'string'],
+            // decimal('harga', 12, 2) di database -> maksimal 10 digit di depan koma.
+            'harga' => ['required', 'numeric', 'min:0', 'max:9999999999.99'],
+            'harga_diskon' => ['nullable', 'numeric', 'min:0', 'max:9999999999.99', 'lt:harga'],
+            'stok' => ['required', 'integer', 'min:0'],
+            'status' => ['required', Rule::in(['aktif', 'nonaktif'])],
+            // decimal(8, 2) di database -> maksimal 6 digit di depan koma.
+            'berat' => ['nullable', 'numeric', 'min:0', 'max:999999.99'],
+            'panjang' => ['nullable', 'numeric', 'min:0', 'max:999999.99'],
+            'lebar' => ['nullable', 'numeric', 'min:0', 'max:999999.99'],
+            'tinggi' => ['nullable', 'numeric', 'min:0', 'max:999999.99'],
+        ];
+    }
+
+    protected function messages(): array
+    {
+        return [
+            'nama.required' => 'Nama produk wajib diisi.',
+            'category_id.required' => 'Kategori wajib dipilih.',
+            'category_id.exists' => 'Kategori yang dipilih tidak valid.',
+            'deskripsi_pendek.required' => 'Deskripsi pendek wajib diisi.',
+            'deskripsi_pendek.max' => 'Deskripsi pendek maksimal 500 karakter.',
+            'deskripsi_lengkap.required' => 'Deskripsi lengkap wajib diisi.',
+            'thumbnailCroppedBase64.required' => 'Foto produk wajib diunggah & di-crop terlebih dahulu.',
+            'harga.required' => 'Harga wajib diisi.',
+            'harga.numeric' => 'Harga harus berupa angka.',
+            'harga.max' => 'Harga maksimal Rp9.999.999.999,99.',
+            'harga_diskon.max' => 'Harga diskon maksimal Rp9.999.999.999,99.',
+            'harga_diskon.lt' => 'Harga diskon harus lebih kecil dari harga normal.',
+            'stok.required' => 'Stok wajib diisi.',
+            'berat.max' => 'Berat maksimal 999.999,99 kg.',
+            'panjang.max' => 'Panjang maksimal 999.999,99 cm.',
+            'lebar.max' => 'Lebar maksimal 999.999,99 cm.',
+            'tinggi.max' => 'Tinggi maksimal 999.999,99 cm.',
+        ];
+    }
+
+    /**
+     * Buat slug unik dari nama produk (dipakai saat create & update).
+     */
+    private function generateUniqueSlug(string $nama): string
+    {
+        $base = Str::slug($nama);
+        $slug = $base;
+        $i = 2;
+
+        while (
+            Product::query()
+                ->where('slug', $slug)
+                ->when($this->productId, fn ($q) => $q->where('id', '!=', $this->productId))
+                ->exists()
+        ) {
+            $slug = $base.'-'.$i;
+            $i++;
+        }
+
+        return $slug;
+    }
+
+    /**
+     * Decode data URL base64 hasil crop jadi binary gambar.
+     * Return null kalau formatnya tidak valid (bukan gambar / bukan data URL yang benar).
+     */
+    private function decodeBase64Image(string $dataUrl): ?string
+    {
+        if (! preg_match('/^data:image\/(jpeg|jpg|png);base64,/', $dataUrl)) {
+            return null;
+        }
+
+        $binary = base64_decode(preg_replace('/^data:image\/(jpeg|jpg|png);base64,/', '', $dataUrl));
+
+        if ($binary === false || @getimagesizefromstring($binary) === false) {
+            return null;
+        }
+
+        return $binary;
+    }
+
+    public function save(): void
+    {
+        $this->validate();
+
+        $product = $this->isEdit ? Product::findOrFail($this->productId) : new Product();
+
+        if ($this->thumbnailCroppedBase64) {
+            $binary = $this->decodeBase64Image($this->thumbnailCroppedBase64);
+
+            if ($binary !== null) {
+                if ($this->isEdit && $this->thumbnail_lama) {
+                    Storage::disk('public')->delete($this->thumbnail_lama);
+                }
+
+                $path = 'produk/'.Str::uuid().'.jpg';
+                Storage::disk('public')->put($path, $binary);
+                $product->thumbnail = $path;
+            }
+        }
+
+        $product->nama = $this->nama;
+        $product->slug = $this->generateUniqueSlug($this->nama);
+        $product->category_id = (int) $this->category_id;
+        $product->deskripsi_pendek = $this->deskripsi_pendek;
+        $product->deskripsi_lengkap = $this->deskripsi_lengkap;
+        $product->harga = $this->harga;
+        $product->harga_diskon = $this->harga_diskon !== '' ? $this->harga_diskon : null;
+        $product->stok = $this->stok;
+        $product->status = $this->status;
+        $product->featured = $this->featured;
+        $product->berat = $this->berat !== '' ? $this->berat : 0;
+        $product->panjang = $this->panjang !== '' ? $this->panjang : 0;
+        $product->lebar = $this->lebar !== '' ? $this->lebar : 0;
+        $product->tinggi = $this->tinggi !== '' ? $this->tinggi : 0;
+        $product->save();
+
+        session()->flash('status', $this->isEdit
+            ? 'Produk "'.$product->nama.'" berhasil diperbarui.'
+            : 'Produk "'.$product->nama.'" berhasil ditambahkan.');
+
+        $this->redirect(route('admin.products'), navigate: true);
+    }
+};
+?>
+
+<div class="mx-auto max-w-6xl space-y-6" x-data="thumbnailCropper(@js($this->thumbnailPreviewUrl))">
+
+    <div class="flex items-center gap-3">
+        <a
+            href="{{ route('admin.products') }}"
+            wire:navigate
+            class="flex h-9 w-9 items-center justify-center rounded-lg border border-admin-border text-admin-ink-soft transition-colors duration-200 hover:bg-admin-cream hover:text-admin-ink"
+        >
+            <x-icon-arrow direction="left" />
+        </a>
+        <div>
+            <h2 class="font-display text-xl font-semibold text-admin-ink sm:text-2xl">
+                {{ $this->pageTitle }}
+            </h2>
+            <p class="mt-1 text-sm text-admin-ink-soft">
+                {{ $isEdit ? 'Perbarui detail produk furniture ini.' : 'Lengkapi detail produk furniture baru.' }}
+            </p>
+        </div>
+    </div>
+
+    <form wire:submit="save" class="space-y-6">
+
+        {{-- ================= CARD: THUMBNAIL ================= --}}
+        <div class="rounded-2xl border border-admin-border bg-admin-surface p-5 shadow-sm sm:p-6">
+            <h3 class="mb-4 flex items-center gap-2 text-sm font-semibold text-admin-ink">
+                <i class="fa-solid fa-image text-admin-accent"></i>
+                Thumbnail Produk
+            </h3>
+
+            <div class="flex flex-col items-center gap-5 sm:flex-row">
+                <div class="relative shrink-0">
+                    <template x-if="previewUrl">
+                        <img :src="previewUrl" alt="Preview thumbnail" class="h-24 w-24 rounded-2xl object-cover ring-4 ring-admin-cream">
+                    </template>
+                    <template x-if="!previewUrl">
+                        <span class="flex h-24 w-24 items-center justify-center rounded-2xl bg-admin-cream text-admin-ink-soft ring-4 ring-admin-cream">
+                            <i class="fa-solid fa-couch text-2xl"></i>
+                        </span>
+                    </template>
+
+                    <label
+                        for="thumbnail_input"
+                        class="absolute -bottom-1 -right-1 flex h-8 w-8 cursor-pointer items-center justify-center rounded-full bg-admin-accent text-white shadow-sm ring-2 ring-admin-surface transition hover:bg-admin-accent-strong"
+                        title="Pilih foto"
+                    >
+                        <i class="fa-solid fa-camera text-xs"></i>
+                    </label>
+                    <input x-ref="fileInput" id="thumbnail_input" type="file" accept="image/*" class="hidden" x-on:change="onFileChange($event)">
+                </div>
+
+                <div class="text-center sm:text-left">
+                    <p class="text-sm font-medium text-admin-ink" x-text="previewUrl ? 'Foto siap disimpan' : 'Belum ada foto produk'"></p>
+                    <p class="mt-1 text-xs text-admin-ink-soft">
+                        Format JPG/PNG, hasil crop rasio 1:1.
+                    </p>
+                    @error('thumbnailCroppedBase64')
+                        <p class="mt-1.5 flex items-center justify-center gap-1 text-xs font-medium text-red-600 sm:justify-start">
+                            <i class="fa-solid fa-circle-exclamation"></i> {{ $message }}
+                        </p>
+                    @enderror
+                </div>
+            </div>
+        </div>
+
+        {{-- ================= CARD: INFORMASI PRODUK ================= --}}
+        <div class="rounded-2xl border border-admin-border bg-admin-surface p-5 shadow-sm sm:p-6">
+            <h3 class="mb-5 flex items-center gap-2 text-sm font-semibold text-admin-ink">
+                <i class="fa-solid fa-couch text-admin-accent"></i>
+                Informasi Produk
+            </h3>
+
+            <div class="grid gap-5 sm:grid-cols-2">
+                <div>
+                    <label for="nama" class="mb-1.5 block text-sm font-medium text-admin-ink">Nama Produk</label>
+                    <input
+                        id="nama" type="text" wire:model="nama" placeholder="Sofa Minimalis Oslo"
+                        class="w-full rounded-lg border {{ $errors->has('nama') ? 'border-red-400' : 'border-admin-border' }} bg-admin-surface px-3 py-2.5 text-sm text-admin-ink transition focus:border-admin-accent focus:outline-none focus:ring-2 focus:ring-admin-accent/20 "
+                    >
+                    @error('nama')<p class="mt-1.5 flex items-center gap-1 text-xs font-medium text-red-600"><i class="fa-solid fa-circle-exclamation"></i> {{ $message }}</p>@enderror
+                </div>
+
+                <div>
+                    <label for="category_id" class="mb-1.5 block text-sm font-medium text-admin-ink">Kategori</label>
+                    <select
+                        id="category_id" wire:model="category_id"
+                        class="w-full cursor-pointer rounded-lg border {{ $errors->has('category_id') ? 'border-red-400' : 'border-admin-border' }} bg-admin-surface px-3 py-2.5 text-sm text-admin-ink transition focus:border-admin-accent focus:outline-none focus:ring-2 focus:ring-admin-accent/20 "
+                    >
+                        <option value="">— Pilih kategori —</option>
+                        @foreach ($this->categories as $categoryOption)
+                            <option value="{{ $categoryOption->id }}">
+                                {{ $categoryOption->name }}{{ $categoryOption->is_active ? '' : ' (nonaktif)' }}
+                            </option>
+                        @endforeach
+                    </select>
+                    @error('category_id')<p class="mt-1.5 flex items-center gap-1 text-xs font-medium text-red-600"><i class="fa-solid fa-circle-exclamation"></i> {{ $message }}</p>@enderror
+                    @if ($this->categories->isEmpty())
+                        <p class="mt-1.5 text-xs text-admin-ink-soft">
+                            Belum ada kategori. <a href="{{ route('admin.categories.create') }}" wire:navigate class="font-medium text-admin-accent underline">Buat kategori dulu</a>.
+                        </p>
+                    @endif
+                </div>
+
+                <div class="sm:col-span-2">
+                    <label for="deskripsi_pendek" class="mb-1.5 block text-sm font-medium text-admin-ink">
+                        Deskripsi Pendek <span class="font-normal text-admin-ink-soft">(tampil di frontend)</span>
+                    </label>
+                    <input
+                        id="deskripsi_pendek" type="text" wire:model="deskripsi_pendek" maxlength="500" placeholder="Ringkasan singkat produk, mis. bahan & keunggulan"
+                        class="w-full rounded-lg border {{ $errors->has('deskripsi_pendek') ? 'border-red-400' : 'border-admin-border' }} bg-admin-surface px-3 py-2.5 text-sm text-admin-ink transition focus:border-admin-accent focus:outline-none focus:ring-2 focus:ring-admin-accent/20 "
+                    >
+                    @error('deskripsi_pendek')<p class="mt-1.5 flex items-center gap-1 text-xs font-medium text-red-600"><i class="fa-solid fa-circle-exclamation"></i> {{ $message }}</p>@enderror
+                </div>
+
+                <div class="sm:col-span-2">
+                    <label for="deskripsi_lengkap" class="mb-1.5 block text-sm font-medium text-admin-ink">Deskripsi Lengkap</label>
+                    <textarea
+                        id="deskripsi_lengkap" wire:model="deskripsi_lengkap" rows="4" placeholder="Detail lengkap produk, material, ukuran, perawatan, dll"
+                        class="w-full resize-none rounded-lg border {{ $errors->has('deskripsi_lengkap') ? 'border-red-400' : 'border-admin-border' }} bg-admin-surface px-3 py-2.5 text-sm text-admin-ink transition focus:border-admin-accent focus:outline-none focus:ring-2 focus:ring-admin-accent/20 "
+                    ></textarea>
+                    @error('deskripsi_lengkap')<p class="mt-1.5 flex items-center gap-1 text-xs font-medium text-red-600"><i class="fa-solid fa-circle-exclamation"></i> {{ $message }}</p>@enderror
+                </div>
+            </div>
+        </div>
+
+        {{-- ================= CARD: HARGA, STOK & STATUS ================= --}}
+        <div class="rounded-2xl border border-admin-border bg-admin-surface p-5 shadow-sm sm:p-6">
+            <h3 class="mb-5 flex items-center gap-2 text-sm font-semibold text-admin-ink">
+                <i class="fa-solid fa-tag text-admin-accent"></i>
+                Harga, Stok &amp; Status
+            </h3>
+
+            <div class="grid gap-5 sm:grid-cols-2">
+                <div>
+                    <label for="harga" class="mb-1.5 block text-sm font-medium text-admin-ink">Harga Normal (Rp)</label>
+                    <div class="relative" x-data="numberStepper()">
+                        <input
+                            id="harga" type="number" step="1" min="0" wire:model="harga" placeholder="3500000"
+                            x-ref="numInput"
+                            class="w-full rounded-lg border {{ $errors->has('harga') ? 'border-red-400' : 'border-admin-border' }} bg-admin-surface px-3 py-2.5 pr-8 text-sm text-admin-ink transition focus:border-admin-accent focus:outline-none focus:ring-2 focus:ring-admin-accent/20 "
+                        >
+                        <div class="absolute right-1.5 top-1/2 flex -translate-y-1/2 flex-col overflow-hidden rounded-md border border-admin-border">
+                            <button type="button" x-on:click="step(1)" tabindex="-1" class="flex h-4 w-6 items-center justify-center text-admin-ink-soft transition hover:bg-admin-cream hover:text-admin-accent">
+                                <x-icon-arrow direction="chevron-up" size="text-[9px]" />
+                            </button>
+                            <button type="button" x-on:click="step(-1)" tabindex="-1" class="flex h-4 w-6 items-center justify-center border-t border-admin-border text-admin-ink-soft transition hover:bg-admin-cream hover:text-admin-accent">
+                                <x-icon-arrow direction="chevron-down" size="text-[9px]" />
+                            </button>
+                        </div>
+                    </div>
+                    @error('harga')<p class="mt-1.5 flex items-center gap-1 text-xs font-medium text-red-600"><i class="fa-solid fa-circle-exclamation"></i> {{ $message }}</p>@enderror
+                </div>
+
+                <div>
+                    <label for="harga_diskon" class="mb-1.5 block text-sm font-medium text-admin-ink">
+                        Harga Diskon (Rp) <span class="font-normal text-admin-ink-soft">(opsional)</span>
+                    </label>
+                    <div class="relative" x-data="numberStepper()">
+                        <input
+                            id="harga_diskon" type="number" step="1" min="0" wire:model="harga_diskon" placeholder="Kosongkan jika tidak ada diskon"
+                            x-ref="numInput"
+                            class="w-full rounded-lg border {{ $errors->has('harga_diskon') ? 'border-red-400' : 'border-admin-border' }} bg-admin-surface px-3 py-2.5 pr-8 text-sm text-admin-ink transition focus:border-admin-accent focus:outline-none focus:ring-2 focus:ring-admin-accent/20 "
+                        >
+                        <div class="absolute right-1.5 top-1/2 flex -translate-y-1/2 flex-col overflow-hidden rounded-md border border-admin-border">
+                            <button type="button" x-on:click="step(1)" tabindex="-1" class="flex h-4 w-6 items-center justify-center text-admin-ink-soft transition hover:bg-admin-cream hover:text-admin-accent">
+                                <x-icon-arrow direction="chevron-up" size="text-[9px]" />
+                            </button>
+                            <button type="button" x-on:click="step(-1)" tabindex="-1" class="flex h-4 w-6 items-center justify-center border-t border-admin-border text-admin-ink-soft transition hover:bg-admin-cream hover:text-admin-accent">
+                                <x-icon-arrow direction="chevron-down" size="text-[9px]" />
+                            </button>
+                        </div>
+                    </div>
+                    @error('harga_diskon')<p class="mt-1.5 flex items-center gap-1 text-xs font-medium text-red-600"><i class="fa-solid fa-circle-exclamation"></i> {{ $message }}</p>@enderror
+                </div>
+
+                <div>
+                    <label for="stok" class="mb-1.5 block text-sm font-medium text-admin-ink">Stok</label>
+                    <div class="relative" x-data="numberStepper()">
+                        <input
+                            id="stok" type="number" step="1" min="0" wire:model="stok"
+                            x-ref="numInput"
+                            class="w-full rounded-lg border {{ $errors->has('stok') ? 'border-red-400' : 'border-admin-border' }} bg-admin-surface px-3 py-2.5 pr-8 text-sm text-admin-ink transition focus:border-admin-accent focus:outline-none focus:ring-2 focus:ring-admin-accent/20 "
+                        >
+                        <div class="absolute right-1.5 top-1/2 flex -translate-y-1/2 flex-col overflow-hidden rounded-md border border-admin-border">
+                            <button type="button" x-on:click="step(1)" tabindex="-1" class="flex h-4 w-6 items-center justify-center text-admin-ink-soft transition hover:bg-admin-cream hover:text-admin-accent">
+                                <x-icon-arrow direction="chevron-up" size="text-[9px]" />
+                            </button>
+                            <button type="button" x-on:click="step(-1)" tabindex="-1" class="flex h-4 w-6 items-center justify-center border-t border-admin-border text-admin-ink-soft transition hover:bg-admin-cream hover:text-admin-accent">
+                                <x-icon-arrow direction="chevron-down" size="text-[9px]" />
+                            </button>
+                        </div>
+                    </div>
+                    @error('stok')<p class="mt-1.5 flex items-center gap-1 text-xs font-medium text-red-600"><i class="fa-solid fa-circle-exclamation"></i> {{ $message }}</p>@enderror
+                </div>
+
+                <div>
+                    <label for="status" class="mb-1.5 block text-sm font-medium text-admin-ink">Status</label>
+                    <select
+                        id="status" wire:model="status"
+                        class="w-full cursor-pointer rounded-lg border border-admin-border bg-admin-surface px-3 py-2.5 text-sm text-admin-ink transition focus:border-admin-accent focus:outline-none focus:ring-2 focus:ring-admin-accent/20"
+                    >
+                        <option value="aktif">Aktif (tampil di frontend)</option>
+                        <option value="nonaktif">Nonaktif (disembunyikan)</option>
+                    </select>
+                </div>
+
+                <label class="flex w-fit cursor-pointer items-center gap-2 sm:col-span-2">
+                    <input
+                        type="checkbox" wire:model="featured"
+                        class="h-4 w-4 rounded border-admin-border text-admin-accent focus:ring-2 focus:ring-admin-accent/30"
+                    >
+                    <span class="text-sm text-admin-ink-soft">Tandai sebagai produk <span class="font-medium text-admin-ink">Featured</span></span>
+                </label>
+            </div>
+        </div>
+
+        {{-- ================= CARD: DIMENSI & BERAT (opsional) ================= --}}
+        <div class="rounded-2xl border border-admin-border bg-admin-surface p-5 shadow-sm sm:p-6">
+            <h3 class="mb-1 flex items-center gap-2 text-sm font-semibold text-admin-ink">
+                <i class="fa-solid fa-ruler-combined text-admin-accent"></i>
+                Dimensi &amp; Berat
+            </h3>
+            <p class="mb-5 text-xs text-admin-ink-soft">Opsional — berguna untuk estimasi pengiriman.</p>
+
+            <div class="grid gap-5 sm:grid-cols-4">
+                <div>
+                    <label for="berat" class="mb-1.5 block text-sm font-medium text-admin-ink">Berat (kg)</label>
+                    <div class="relative" x-data="numberStepper()">
+                        <input id="berat" type="number" step="0.01" min="0" wire:model="berat" x-ref="numInput" class="w-full rounded-lg border border-admin-border bg-admin-surface px-3 py-2.5 pr-8 text-sm text-admin-ink transition focus:border-admin-accent focus:outline-none focus:ring-2 focus:ring-admin-accent/20">
+                        <div class="absolute right-1.5 top-1/2 flex -translate-y-1/2 flex-col overflow-hidden rounded-md border border-admin-border">
+                            <button type="button" x-on:click="step(1)" tabindex="-1" class="flex h-4 w-6 items-center justify-center text-admin-ink-soft transition hover:bg-admin-cream hover:text-admin-accent">
+                                <x-icon-arrow direction="chevron-up" size="text-[9px]" />
+                            </button>
+                            <button type="button" x-on:click="step(-1)" tabindex="-1" class="flex h-4 w-6 items-center justify-center border-t border-admin-border text-admin-ink-soft transition hover:bg-admin-cream hover:text-admin-accent">
+                                <x-icon-arrow direction="chevron-down" size="text-[9px]" />
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <div>
+                    <label for="panjang" class="mb-1.5 block text-sm font-medium text-admin-ink">Panjang (cm)</label>
+                    <div class="relative" x-data="numberStepper()">
+                        <input id="panjang" type="number" step="0.01" min="0" wire:model="panjang" x-ref="numInput" class="w-full rounded-lg border border-admin-border bg-admin-surface px-3 py-2.5 pr-8 text-sm text-admin-ink transition focus:border-admin-accent focus:outline-none focus:ring-2 focus:ring-admin-accent/20">
+                        <div class="absolute right-1.5 top-1/2 flex -translate-y-1/2 flex-col overflow-hidden rounded-md border border-admin-border">
+                            <button type="button" x-on:click="step(1)" tabindex="-1" class="flex h-4 w-6 items-center justify-center text-admin-ink-soft transition hover:bg-admin-cream hover:text-admin-accent">
+                                <x-icon-arrow direction="chevron-up" size="text-[9px]" />
+                            </button>
+                            <button type="button" x-on:click="step(-1)" tabindex="-1" class="flex h-4 w-6 items-center justify-center border-t border-admin-border text-admin-ink-soft transition hover:bg-admin-cream hover:text-admin-accent">
+                                <x-icon-arrow direction="chevron-down" size="text-[9px]" />
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <div>
+                    <label for="lebar" class="mb-1.5 block text-sm font-medium text-admin-ink">Lebar (cm)</label>
+                    <div class="relative" x-data="numberStepper()">
+                        <input id="lebar" type="number" step="0.01" min="0" wire:model="lebar" x-ref="numInput" class="w-full rounded-lg border border-admin-border bg-admin-surface px-3 py-2.5 pr-8 text-sm text-admin-ink transition focus:border-admin-accent focus:outline-none focus:ring-2 focus:ring-admin-accent/20">
+                        <div class="absolute right-1.5 top-1/2 flex -translate-y-1/2 flex-col overflow-hidden rounded-md border border-admin-border">
+                            <button type="button" x-on:click="step(1)" tabindex="-1" class="flex h-4 w-6 items-center justify-center text-admin-ink-soft transition hover:bg-admin-cream hover:text-admin-accent">
+                                <x-icon-arrow direction="chevron-up" size="text-[9px]" />
+                            </button>
+                            <button type="button" x-on:click="step(-1)" tabindex="-1" class="flex h-4 w-6 items-center justify-center border-t border-admin-border text-admin-ink-soft transition hover:bg-admin-cream hover:text-admin-accent">
+                                <x-icon-arrow direction="chevron-down" size="text-[9px]" />
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <div>
+                    <label for="tinggi" class="mb-1.5 block text-sm font-medium text-admin-ink">Tinggi (cm)</label>
+                    <div class="relative" x-data="numberStepper()">
+                        <input id="tinggi" type="number" step="0.01" min="0" wire:model="tinggi" x-ref="numInput" class="w-full rounded-lg border border-admin-border bg-admin-surface px-3 py-2.5 pr-8 text-sm text-admin-ink transition focus:border-admin-accent focus:outline-none focus:ring-2 focus:ring-admin-accent/20">
+                        <div class="absolute right-1.5 top-1/2 flex -translate-y-1/2 flex-col overflow-hidden rounded-md border border-admin-border">
+                            <button type="button" x-on:click="step(1)" tabindex="-1" class="flex h-4 w-6 items-center justify-center text-admin-ink-soft transition hover:bg-admin-cream hover:text-admin-accent">
+                                <x-icon-arrow direction="chevron-up" size="text-[9px]" />
+                            </button>
+                            <button type="button" x-on:click="step(-1)" tabindex="-1" class="flex h-4 w-6 items-center justify-center border-t border-admin-border text-admin-ink-soft transition hover:bg-admin-cream hover:text-admin-accent">
+                                <x-icon-arrow direction="chevron-down" size="text-[9px]" />
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {{-- ================= TOMBOL AKSI ================= --}}
+        <div class="flex justify-end gap-3">
+            <a
+                href="{{ route('admin.products') }}"
+                wire:navigate
+                class="flex items-center gap-2 rounded-full border border-admin-border px-6 py-3 text-sm font-medium text-admin-ink-soft transition hover:bg-admin-cream hover:text-admin-ink"
+            >
+                Batal
+            </a>
+            <button
+                type="submit"
+                wire:loading.attr="disabled"
+                wire:target="save"
+                class="flex items-center gap-2 rounded-full bg-admin-panel px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-(--color-admin-panel)/20 transition-all duration-200 hover:bg-admin-accent-strong active:scale-[0.99] disabled:opacity-60"
+            >
+                <span wire:loading.remove wire:target="save" class="flex items-center gap-2">
+                    <i class="fa-solid fa-floppy-disk text-xs"></i>
+                    {{ $isEdit ? 'Simpan Perubahan' : 'Simpan Produk' }}
+                </span>
+                <span wire:loading wire:target="save" class="flex items-center gap-2">
+                    <i class="fa-solid fa-circle-notch animate-spin"></i> Menyimpan...
+                </span>
+            </button>
+        </div>
+    </form>
+
+    {{-- ================= MODAL CROP THUMBNAIL ================= --}}
+    {{--
+        x-teleport memindahkan modal ini jadi anak langsung <body> saat dirender.
+        Ini WAJIB supaya "fixed inset-0" benar-benar relatif ke viewport, bukan
+        relatif ke elemen leluhur mana pun (mis. <main> pada layout admin yang
+        punya animasi "transform" saat page load, yang tanpa disadari membuat
+        containing-block baru dan bikin modal jadi ketarik/tidak center).
+        Logic crop/zoom/preview di bawah TIDAK diubah sama sekali.
+    --}}
+    <template x-teleport="body">
+        <div
+            x-show="open"
+            x-cloak
+            x-transition.opacity
+            class="fixed inset-0 z-999 flex items-center justify-center bg-black/60 p-4"
+            style="display: none;"
+        >
+            <div
+                x-show="open"
+                x-transition.scale.origin.center
+                @click.outside="cancelCrop()"
+                class="w-full max-w-md rounded-2xl bg-admin-surface p-6 shadow-2xl"
+            >
+                <h4 class="mb-1 text-sm font-semibold text-admin-ink">Sesuaikan Thumbnail</h4>
+                <p class="mb-4 text-xs text-admin-ink-soft">Geser gambar untuk memindah, gunakan slider untuk zoom. Hasil crop selalu rasio 1:1.</p>
+
+                <div
+                    x-ref="viewport"
+                    class="relative mx-auto h-80 w-80 cursor-move touch-none overflow-hidden rounded-2xl border-2 border-admin-accent bg-admin-cream select-none"
+                    x-on:pointerdown="startDrag($event)"
+                    x-on:pointermove="onDrag($event)"
+                    x-on:pointerup="endDrag()"
+                    x-on:pointerleave="endDrag()"
+                >
+                    <img
+                        x-ref="cropImg"
+                        :src="rawImage"
+                        x-on:load="onImgLoad($event)"
+                        draggable="false"
+                        class="absolute left-0 top-0 max-w-none origin-top-left select-none"
+                        :style="`width:${natW * scale}px; height:${natH * scale}px; transform: translate(${posX}px, ${posY}px);`"
+                    >
+                </div>
+
+                <div class="mt-4 flex items-center gap-3">
+                    <i class="fa-solid fa-magnifying-glass-minus text-xs text-admin-ink-soft"></i>
+                    <input
+                        type="range" min="0" max="100" x-model.number="zoomPercent"
+                        x-on:input="applyZoom()"
+                        class="h-1.5 w-full cursor-pointer appearance-none rounded-full bg-admin-border accent-admin-accent"
+                    >
+                    <i class="fa-solid fa-magnifying-glass-plus text-xs text-admin-ink-soft"></i>
+                </div>
+
+                <div class="mt-5 flex justify-end gap-2">
+                    <button type="button" x-on:click="cancelCrop()" class="rounded-full border border-admin-border px-4 py-2 text-xs font-semibold text-admin-ink-soft transition hover:bg-admin-cream">
+                        Batal
+                    </button>
+                    <button type="button" x-on:click="confirmCrop()" class="rounded-full bg-admin-accent px-4 py-2 text-xs font-semibold text-white transition hover:bg-admin-accent-strong">
+                        Gunakan Foto Ini
+                    </button>
+                </div>
+
+                <canvas x-ref="cropCanvas" class="hidden"></canvas>
+            </div>
+        </div>
+    </template>
+</div>
+
+@script
+<script>
+    Alpine.data('thumbnailCropper', (existingPreviewUrl) => ({
+        open: false,
+        rawImage: null,
+        previewUrl: existingPreviewUrl || null,
+        natW: 0,
+        natH: 0,
+        scale: 1,
+        minScale: 1,
+        maxScale: 1,
+        zoomPercent: 0,
+        posX: 0,
+        posY: 0,
+        dragging: false,
+        dragStartX: 0,
+        dragStartY: 0,
+        startPosX: 0,
+        startPosY: 0,
+        VIEW: 320,
+        OUT: 800,
+
+        init() {
+            // Kunci scroll halaman belakang selama modal crop terbuka.
+            this.$watch('open', (isOpen) => {
+                document.body.style.overflow = isOpen ? 'hidden' : '';
+            });
+        },
+
+        onFileChange(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = () => {
+                this.rawImage = reader.result;
+                this.open = true;
+            };
+            reader.readAsDataURL(file);
+        },
+
+        onImgLoad(e) {
+            this.natW = e.target.naturalWidth;
+            this.natH = e.target.naturalHeight;
+
+            this.minScale = this.VIEW / Math.min(this.natW, this.natH);
+            this.maxScale = this.minScale * 3;
+            this.scale = this.minScale;
+            this.zoomPercent = 0;
+
+            // pusatkan gambar di tengah viewport
+            this.posX = (this.VIEW - this.natW * this.scale) / 2;
+            this.posY = (this.VIEW - this.natH * this.scale) / 2;
+        },
+
+        clampPos() {
+            const w = this.natW * this.scale;
+            const h = this.natH * this.scale;
+            this.posX = Math.min(0, Math.max(this.VIEW - w, this.posX));
+            this.posY = Math.min(0, Math.max(this.VIEW - h, this.posY));
+        },
+
+        applyZoom() {
+            this.scale = this.minScale + (this.maxScale - this.minScale) * (this.zoomPercent / 100);
+            this.clampPos();
+        },
+
+        startDrag(e) {
+            this.dragging = true;
+            this.dragStartX = e.clientX;
+            this.dragStartY = e.clientY;
+            this.startPosX = this.posX;
+            this.startPosY = this.posY;
+        },
+
+        onDrag(e) {
+            if (!this.dragging) return;
+            this.posX = this.startPosX + (e.clientX - this.dragStartX);
+            this.posY = this.startPosY + (e.clientY - this.dragStartY);
+            this.clampPos();
+        },
+
+        endDrag() {
+            this.dragging = false;
+        },
+
+        confirmCrop() {
+            const canvas = this.$refs.cropCanvas;
+            canvas.width = this.OUT;
+            canvas.height = this.OUT;
+            const ctx = canvas.getContext('2d');
+
+            const sx = -this.posX / this.scale;
+            const sy = -this.posY / this.scale;
+            const sSize = this.VIEW / this.scale;
+
+            ctx.clearRect(0, 0, this.OUT, this.OUT);
+            ctx.drawImage(this.$refs.cropImg, sx, sy, sSize, sSize, 0, 0, this.OUT, this.OUT);
+
+            const dataUrl = canvas.toDataURL('image/jpeg', 0.9);
+            this.previewUrl = dataUrl;
+            this.$wire.set('thumbnailCroppedBase64', dataUrl);
+            this.closeModal();
+        },
+
+        cancelCrop() {
+            this.closeModal();
+        },
+
+        closeModal() {
+            this.open = false;
+            this.rawImage = null;
+            if (this.$refs.fileInput) this.$refs.fileInput.value = '';
+        },
+    }));
+</script>
+@endscript

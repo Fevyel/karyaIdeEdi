@@ -1,0 +1,438 @@
+<?php
+
+use App\Models\Product;
+use App\Models\Testimonial;
+use App\Models\Transaction;
+use Illuminate\Support\Carbon;
+use Livewire\Attributes\Layout;
+use Livewire\Attributes\Title;
+use Livewire\Component;
+
+new #[Layout('layouts::admin-panel')] #[Title('Dashboard')] class extends Component
+{
+    /**
+     * Target pendapatan bulanan (sementara statis).
+     * Bisa dipindah ke halaman Pengaturan / kolom database kalau nanti dibutuhkan dinamis.
+     */
+    private const MONTHLY_TARGET = 35_000_000;
+
+    /** Begitu Dashboard dibuka, notifikasi kategori "dashboard" langsung dianggap dibaca. */
+    public function mount(): void
+    {
+        auth()->user()?->update(['dashboard_read_at' => now()]);
+        $this->dispatch('admin-notifications-updated');
+    }
+
+    /**
+     * Format angka rupiah ringkas ala dashboard (1.250.000 -> "Rp1,25jt").
+     */
+    private function formatCompact(float $value): string
+    {
+        if ($value >= 1_000_000) {
+            return 'Rp'.number_format($value / 1_000_000, 2, ',', '.').'jt';
+        }
+
+        if ($value >= 1_000) {
+            return 'Rp'.number_format($value / 1_000, 0, ',', '.').'rb';
+        }
+
+        return 'Rp'.number_format($value, 0, ',', '.');
+    }
+
+    private function formatRupiah(float $value): string
+    {
+        return 'Rp'.number_format($value, 0, ',', '.');
+    }
+
+    public function with(): array
+    {
+        $now = Carbon::now();
+        $startOfMonth = $now->copy()->startOfMonth();
+        $startOfLastMonth = $now->copy()->subMonthNoOverflow()->startOfMonth();
+        $endOfLastMonth = $now->copy()->subMonthNoOverflow()->endOfMonth();
+
+        $completed = Transaction::query()->where('status', 'completed');
+
+        $revenueThisMonth = (clone $completed)->where('created_at', '>=', $startOfMonth)->sum('total');
+        $revenueLastMonth = (clone $completed)->whereBetween('created_at', [$startOfLastMonth, $endOfLastMonth])->sum('total');
+
+        $growthPercent = $revenueLastMonth > 0
+            ? round((($revenueThisMonth - $revenueLastMonth) / $revenueLastMonth) * 100, 1)
+            : ($revenueThisMonth > 0 ? 100.0 : 0.0);
+
+        $unitsSoldThisMonth = (clone $completed)->where('created_at', '>=', $startOfMonth)->sum('quantity');
+
+        $pendingInteraksi = Testimonial::query()->pending()->count();
+
+        $targetAchievedPercent = self::MONTHLY_TARGET > 0
+            ? min(100, round(($revenueThisMonth / self::MONTHLY_TARGET) * 100))
+            : 0;
+
+        // ---- Grafik penjualan 7 hari terakhir ----
+        $weeklySales = collect(range(6, 0))->map(function (int $daysAgo) use ($completed) {
+            $day = Carbon::now()->subDays($daysAgo);
+
+            $total = (clone $completed)
+                ->whereDate('created_at', $day->toDateString())
+                ->sum('total');
+
+            return [
+                'label' => $day->translatedFormat('D d'),
+                'total' => (float) $total,
+            ];
+        });
+
+        $maxWeekly = max(1, $weeklySales->max('total'));
+        $axisMax = max(100_000, ceil(($maxWeekly * 1.2) / 50_000) * 50_000);
+
+        $weeklySales = $weeklySales->map(function (array $day) use ($axisMax) {
+            $day['heightPercent'] = round(($day['total'] / $axisMax) * 100, 1);
+
+            return $day;
+        });
+
+        $axisSteps = collect([1, 0.75, 0.5, 0.25, 0])
+            ->map(fn ($fraction) => $this->formatCompact($axisMax * $fraction));
+
+        // ---- Komposisi pendapatan per kategori produk (bulan ini) ----
+        $categoryTotals = Transaction::query()
+            ->where('transactions.status', 'completed')
+            ->where('transactions.created_at', '>=', $startOfMonth)
+            ->join('products', 'products.id', '=', 'transactions.product_id')
+            ->leftJoin('categories', 'categories.id', '=', 'products.category_id')
+            ->selectRaw('categories.name as category, SUM(transactions.total) as total')
+            ->groupBy('categories.name')
+            ->orderByDesc('total')
+            ->get();
+
+        $categoryPalette = ['var(--color-admin-accent)', 'var(--color-admin-gold)', 'var(--color-admin-panel)', '#B7AFA3'];
+        $categorySum = max(1, $categoryTotals->sum('total'));
+
+        $donutSegments = $categoryTotals->take(4)->values()->map(function ($row, int $index) use ($categorySum, $categoryPalette) {
+            return [
+                'label' => $row->category ?? 'Lainnya',
+                'percent' => round(($row->total / $categorySum) * 100),
+                'color' => $categoryPalette[$index] ?? '#B7AFA3',
+            ];
+        });
+
+        // Bangun gradasi conic-gradient dari segmen di atas.
+        $cursor = 0;
+        $gradientParts = $donutSegments->map(function (array $segment) use (&$cursor) {
+            $start = $cursor;
+            $cursor += $segment['percent'];
+
+            return "{$segment['color']} {$start}% {$cursor}%";
+        });
+        $donutGradient = $gradientParts->implode(', ');
+
+        return [
+            'cards' => [
+                [
+                    'label' => 'Pendapatan Bulan Ini',
+                    'value' => $this->formatRupiah($revenueThisMonth),
+                    'icon' => 'fa-sack-dollar',
+                    'highlight' => true,
+                ],
+                [
+                    'label' => 'Produk Terjual',
+                    'value' => number_format($unitsSoldThisMonth, 0, ',', '.').' unit',
+                    'icon' => 'fa-box-open',
+                    'highlight' => false,
+                ],
+                [
+                    'label' => 'Menunggu Persetujuan',
+                    'value' => $pendingInteraksi.' interaksi',
+                    'icon' => 'fa-comments',
+                    'highlight' => false,
+                ],
+                [
+                    'label' => 'Produk Aktif',
+                    'value' => number_format(Product::query()->count(), 0, ',', '.').' produk',
+                    'icon' => 'fa-couch',
+                    'highlight' => false,
+                ],
+            ],
+            'revenueThisMonth' => $this->formatRupiah($revenueThisMonth),
+            'growthPercent' => $growthPercent,
+            'targetAchievedPercent' => $targetAchievedPercent,
+            'weeklySales' => $weeklySales,
+            'axisSteps' => $axisSteps,
+            'donutSegments' => $donutSegments,
+            'donutGradient' => $donutGradient ?: 'var(--color-admin-border) 0% 100%',
+            'latestTransactions' => Transaction::query()->with('product')->latest()->take(5)->get(),
+            'recentInteraksi' => Testimonial::query()->latest()->take(5)->get(),
+        ];
+    }
+};
+?>
+
+<div class="space-y-7">
+
+    {{-- ================= HEADER ================= --}}
+    <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+            <h2 class="font-display text-xl font-semibold tracking-tight text-admin-ink sm:text-2xl">
+                Hi, {{ auth()->user()->name ?? 'Admin' }}
+                <i class="fa-solid fa-hand text-lg text-admin-accent"></i>
+            </h2>
+            <p class="mt-1.5 text-sm leading-relaxed text-admin-ink-soft">
+                Selamat datang kembali di Dashboard Karya Ide Edi.
+            </p>
+        </div>
+        <a
+            href="{{ route('admin.interaksi') }}"
+            wire:navigate
+            class="inline-flex items-center justify-center gap-2 rounded-full bg-admin-panel px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-(--color-admin-panel)/20 transition-all duration-300 hover:-translate-y-0.5 hover:bg-admin-accent-strong"
+        >
+            <i class="fa-solid fa-comments text-xs"></i>
+            Lihat Interaksi
+        </a>
+    </div>
+
+    {{-- ================= STAT CARDS ================= --}}
+    <div class="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-4">
+        @foreach ($cards as $card)
+            <div class="group relative overflow-hidden rounded-[1.25rem] border p-5 transition-all duration-300 ease-out hover:-translate-y-1
+                {{ $card['highlight']
+                    ? 'border-admin-accent-strong/40 bg-linear-to-br from-admin-accent via-admin-accent to-admin-accent-strong text-white shadow-lg shadow-(--color-admin-accent)/25 hover:shadow-xl hover:shadow-(--color-admin-accent)/35'
+                    : 'border-admin-border bg-admin-surface text-admin-ink shadow-sm hover:border-admin-accent/40 hover:shadow-lg hover:shadow-(--color-admin-accent)/10' }}">
+
+                {{-- garis aksen emas di tepi atas --}}
+                <div class="absolute inset-x-0 top-0 h-0.75 bg-linear-to-r from-admin-gold via-admin-accent-strong to-admin-gold
+                    {{ $card['highlight'] ? 'opacity-90' : 'opacity-0 transition-opacity duration-300 group-hover:opacity-100' }}"></div>
+
+                {{-- ornamen lingkaran dekoratif ala kayu/perabot --}}
+                <div class="pointer-events-none absolute -right-6 -top-6 h-24 w-24 rounded-full opacity-0 blur-2xl transition-opacity duration-500 group-hover:opacity-100
+                    {{ $card['highlight'] ? 'bg-white/20' : 'bg-admin-gold/20' }}"></div>
+
+                <div class="relative flex items-center justify-between">
+                    <span class="text-[11px] font-semibold uppercase tracking-wide {{ $card['highlight'] ? 'text-white/75' : 'text-admin-ink-soft' }}">
+                        {{ $card['label'] }}
+                    </span>
+                    <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl transition-transform duration-300 group-hover:scale-105 group-hover:-rotate-3
+                        {{ $card['highlight'] ? 'bg-white/15 ring-1 ring-white/25' : 'bg-admin-cream ring-1 ring-admin-border' }}">
+                        <i class="fa-solid {{ $card['icon'] }} text-sm {{ $card['highlight'] ? 'text-white' : 'text-admin-accent' }}"></i>
+                    </span>
+                </div>
+
+                <p class="relative mt-5 font-display text-2xl font-bold tracking-tight sm:text-[1.7rem] {{ $card['highlight'] ? 'text-white' : 'text-admin-ink' }}">
+                    {{ $card['value'] }}
+                </p>
+
+                @if ($card['highlight'])
+                    <p class="relative mt-1 text-[11px] font-medium text-white/70">Total pendapatan tervalidasi</p>
+                @else
+                    <p class="relative mt-1 text-[11px] font-medium text-admin-ink-soft/0 group-hover:text-admin-ink-soft/70 transition-colors duration-300">Bulan berjalan</p>
+                @endif
+            </div>
+        @endforeach
+    </div>
+
+    {{-- ================= GRAFIK & DONUT ================= --}}
+    <div class="grid grid-cols-1 gap-5 xl:grid-cols-3">
+
+        {{-- grafik penjualan mingguan --}}
+        <div class="rounded-2xl border border-admin-border bg-admin-surface p-5 shadow-sm transition-shadow duration-300 hover:shadow-md xl:col-span-2">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm font-semibold text-admin-ink">Penjualan 7 Hari Terakhir</p>
+                    <p class="mt-1 text-xl font-bold text-admin-ink">{{ $revenueThisMonth }}</p>
+                </div>
+                <span class="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold
+                    {{ $growthPercent >= 0 ? 'bg-green-50 text-green-600' : 'bg-red-50 text-red-600' }}">
+                    <i class="fa-solid {{ $growthPercent >= 0 ? 'fa-arrow-trend-up' : 'fa-arrow-trend-down' }}"></i>
+                    {{ $growthPercent >= 0 ? '+' : '' }}{{ $growthPercent }}%
+                </span>
+            </div>
+
+            <div class="mt-6 flex items-end gap-3 sm:gap-4">
+                <div class="flex h-40 flex-col justify-between pb-6 text-right text-[10px] text-admin-ink-soft">
+                    @foreach ($axisSteps as $step)
+                        <span>{{ $step }}</span>
+                    @endforeach
+                </div>
+                <div class="grid flex-1 grid-cols-7 items-end gap-2 sm:gap-4">
+                    @foreach ($weeklySales as $day)
+                        <div class="flex flex-col items-center gap-2">
+                            <div class="group relative flex h-40 w-full items-end">
+                                <div
+                                    style="height: {{ max(3, $day['heightPercent']) }}%"
+                                    class="w-full rounded-t-lg bg-admin-border transition-all duration-500 group-hover:bg-admin-accent"
+                                ></div>
+                                <div class="pointer-events-none absolute -top-9 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-lg bg-admin-panel px-2 py-1 text-[10px] font-semibold text-white opacity-0 transition-opacity duration-300 group-hover:opacity-100">
+                                    {{ $this->formatCompact($day['total']) }}
+                                </div>
+                            </div>
+                            <span class="text-[10px] text-admin-ink-soft">{{ $day['label'] }}</span>
+                        </div>
+                    @endforeach
+                </div>
+            </div>
+        </div>
+
+        {{-- donut komposisi kategori --}}
+        <div class="rounded-2xl border border-admin-border bg-admin-surface p-5 shadow-sm transition-shadow duration-300 hover:shadow-md">
+            <p class="text-sm font-semibold text-admin-ink">Komposisi Kategori</p>
+            <p class="text-xs text-admin-ink-soft">Pendapatan bulan ini</p>
+
+            <div class="mt-6 flex items-center justify-center">
+                <div
+                    class="relative flex h-40 w-40 items-center justify-center rounded-full"
+                    style="background: conic-gradient({{ $donutGradient }})"
+                >
+                    <div class="flex h-28 w-28 flex-col items-center justify-center rounded-full bg-admin-surface text-center">
+                        <span class="text-lg font-bold text-admin-ink">{{ $targetAchievedPercent }}%</span>
+                        <span class="text-[10px] text-admin-ink-soft">dari target</span>
+                    </div>
+                </div>
+            </div>
+
+            <ul class="mt-6 space-y-2.5">
+                @forelse ($donutSegments as $segment)
+                    <li class="flex items-center justify-between text-xs">
+                        <span class="flex items-center gap-2 text-admin-ink-soft">
+                            <span class="h-2.5 w-2.5 rounded-full" style="background: {{ $segment['color'] }}"></span>
+                            {{ $segment['label'] }}
+                        </span>
+                        <span class="font-semibold text-admin-ink">{{ $segment['percent'] }}%</span>
+                    </li>
+                @empty
+                    <li class="text-center text-xs text-admin-ink-soft">Belum ada transaksi bulan ini.</li>
+                @endforelse
+            </ul>
+        </div>
+    </div>
+
+    {{-- ================= STATISTIK BOOKING & PRODUK TERLARIS (dummy) ================= --}}
+    <div class="grid grid-cols-1 gap-5 xl:grid-cols-3">
+
+        {{-- statistik booking — dummy, belum terhubung ke fitur booking --}}
+        <div class="rounded-2xl border border-admin-border bg-admin-surface p-5 shadow-sm transition-shadow duration-300 hover:shadow-md">
+            <p class="text-sm font-semibold text-admin-ink">Statistik Booking</p>
+            <p class="text-xs text-admin-ink-soft">Contoh tampilan, menunggu fitur booking dibangun</p>
+
+            <div class="mt-5 space-y-4">
+                @foreach ([
+                    ['label' => 'Booking Baru', 'value' => 6, 'total' => 12, 'color' => 'var(--color-admin-accent)'],
+                    ['label' => 'Diproses', 'value' => 4, 'total' => 12, 'color' => 'var(--color-admin-gold)'],
+                    ['label' => 'Selesai', 'value' => 2, 'total' => 12, 'color' => 'var(--color-admin-panel)'],
+                ] as $row)
+                    <div>
+                        <div class="flex items-center justify-between text-xs">
+                            <span class="font-medium text-admin-ink">{{ $row['label'] }}</span>
+                            <span class="text-admin-ink-soft">{{ $row['value'] }}</span>
+                        </div>
+                        <div class="mt-1.5 h-2 w-full overflow-hidden rounded-full bg-admin-cream">
+                            <div
+                                class="h-full rounded-full"
+                                style="width: {{ round(($row['value'] / $row['total']) * 100) }}%; background: {{ $row['color'] }}"
+                            ></div>
+                        </div>
+                    </div>
+                @endforeach
+            </div>
+        </div>
+
+        {{-- produk terlaris — dummy, belum terhubung ke penjualan riil --}}
+        <div class="rounded-2xl border border-admin-border bg-admin-surface p-5 shadow-sm transition-shadow duration-300 hover:shadow-md xl:col-span-2">
+            <p class="text-sm font-semibold text-admin-ink">Produk Terlaris</p>
+            <p class="text-xs text-admin-ink-soft">Contoh tampilan, menunggu data penjualan riil</p>
+
+            <ul class="mt-5 divide-y divide-admin-border">
+                @foreach ([
+                    ['name' => 'Sofa Minimalis Oslo', 'category' => 'Ruang Tamu', 'terjual' => 24],
+                    ['name' => 'Meja Makan Jati Klasik', 'category' => 'Ruang Makan', 'terjual' => 18],
+                    ['name' => 'Lemari Pakaian 3 Pintu', 'category' => 'Kamar Tidur', 'terjual' => 15],
+                    ['name' => 'Kursi Kerja Ergonomis', 'category' => 'Kantor', 'terjual' => 11],
+                ] as $index => $product)
+                    <li class="flex items-center gap-3 py-3 first:pt-0 last:pb-0">
+                        <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-admin-cream text-xs font-semibold text-admin-accent">
+                            {{ $index + 1 }}
+                        </span>
+                        <div class="min-w-0 flex-1">
+                            <p class="truncate text-sm font-medium text-admin-ink">{{ $product['name'] }}</p>
+                            <p class="text-xs text-admin-ink-soft">{{ $product['category'] }}</p>
+                        </div>
+                        <span class="shrink-0 rounded-full bg-admin-cream px-2.5 py-1 text-[11px] font-semibold text-admin-accent">
+                            {{ $product['terjual'] }} terjual
+                        </span>
+                    </li>
+                @endforeach
+            </ul>
+        </div>
+    </div>
+
+    {{-- ================= TABEL & AKTIVITAS ================= --}}
+    <div class="grid grid-cols-1 gap-5 xl:grid-cols-3">
+
+        {{-- pesanan terbaru --}}
+        <div class="rounded-2xl border border-admin-border bg-admin-surface p-5 shadow-sm transition-shadow duration-300 hover:shadow-md xl:col-span-2">
+            <div class="flex items-center justify-between">
+                <p class="text-sm font-semibold text-admin-ink">Pesanan Terbaru</p>
+                <a href="{{ Route::has('admin.transactions') ? route('admin.transactions') : '#' }}" class="text-xs font-medium text-admin-accent hover:underline">
+                    Lihat semua
+                </a>
+            </div>
+
+            <div class="admin-scroll mt-4 overflow-x-auto">
+                <table class="w-full min-w-120 text-left text-sm">
+                    <thead>
+                        <tr class="border-b border-admin-border bg-admin-canvas text-[11px] font-semibold uppercase tracking-wide text-admin-ink-soft">
+                            <th class="rounded-l-lg px-3 py-2 font-semibold first:pl-3">Kode Pesanan</th>
+                            <th class="px-3 py-2 font-semibold">Produk</th>
+                            <th class="px-3 py-2 font-semibold">Tanggal</th>
+                            <th class="rounded-r-lg px-3 py-2 text-right font-semibold">Total</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-admin-border">
+                        @forelse ($latestTransactions as $trx)
+                            <tr class="transition-colors duration-200 hover:bg-admin-canvas">
+                                <td class="px-3 py-3 font-medium text-admin-ink">{{ $trx->order_code }}</td>
+                                <td class="px-3 py-3 text-admin-ink-soft">{{ $trx->product?->name ?? '—' }}</td>
+                                <td class="px-3 py-3 text-admin-ink-soft">{{ $trx->created_at->translatedFormat('d M Y') }}</td>
+                                <td class="px-3 py-3 text-right font-semibold text-admin-ink">{{ $this->formatRupiah($trx->total) }}</td>
+                            </tr>
+                        @empty
+                            <tr>
+                                <td colspan="4" class="py-6 text-center text-xs text-admin-ink-soft">Belum ada pesanan.</td>
+                            </tr>
+                        @endforelse
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        {{-- aktivitas interaksi terbaru --}}
+        <div class="rounded-2xl border border-admin-border bg-admin-surface p-5 shadow-sm transition-shadow duration-300 hover:shadow-md">
+            <div class="flex items-center justify-between">
+                <p class="text-sm font-semibold text-admin-ink">Interaksi Terbaru</p>
+                <a href="{{ route('admin.interaksi') }}" wire:navigate class="text-xs font-medium text-admin-accent hover:underline">
+                    Kelola
+                </a>
+            </div>
+
+            <ul class="mt-4 space-y-4">
+                @forelse ($recentInteraksi as $item)
+                    <li class="flex items-start gap-3">
+                        <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-admin-cream text-xs font-semibold text-admin-accent">
+                            {{ strtoupper(substr($item->customer_name, 0, 1)) }}
+                        </span>
+                        <div class="min-w-0 flex-1">
+                            <div class="flex items-center justify-between gap-2">
+                                <p class="truncate text-sm font-medium text-admin-ink">{{ $item->customer_name }}</p>
+                                <span class="shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold
+                                    {{ $item->approval_status === 'approved' ? 'bg-green-50 text-green-600' : ($item->approval_status === 'rejected' ? 'bg-red-50 text-red-500' : 'bg-amber-50 text-amber-600') }}">
+                                    {{ match ($item->approval_status) { 'approved' => 'Disetujui', 'rejected' => 'Ditolak', default => 'Menunggu' } }}
+                                </span>
+                            </div>
+                            <p class="mt-0.5 line-clamp-1 text-xs text-admin-ink-soft">{{ $item->comment }}</p>
+                        </div>
+                    </li>
+                @empty
+                    <li class="text-center text-xs text-admin-ink-soft">Belum ada interaksi masuk.</li>
+                @endforelse
+            </ul>
+        </div>
+    </div>
+</div>

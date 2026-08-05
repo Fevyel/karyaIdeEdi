@@ -1,0 +1,28 @@
+<?php
+
+use Livewire\Attributes\Layout;
+use Livewire\Attributes\Title;
+use Livewire\Component;
+
+new #[Layout('layouts::admin-panel')] #[Title('Pesanan')] class extends Component
+{
+    /** Begitu Pesanan dibuka, notifikasi pesanan baru langsung dianggap dibaca. */
+    public function mount(): void
+    {
+        auth()->user()?->update(['pesanan_read_at' => now()]);
+        $this->dispatch('admin-notifications-updated');
+    }
+};
+?>
+
+@include('partials.admin.placeholder', [
+    'icon' => 'fa-receipt',
+    'heading' => 'Manajemen Pesanan',
+    'description' => 'Pantau dan kelola pesanan/booking yang masuk dari pelanggan.',
+    'features' => [
+        'Daftar pesanan real-time',
+        'Ubah status pesanan',
+        'Detail booking custom',
+        'Riwayat per pelanggan',
+    ],
+])

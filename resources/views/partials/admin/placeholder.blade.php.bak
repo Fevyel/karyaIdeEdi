@@ -1,0 +1,41 @@
+{{--
+    Partial placeholder untuk halaman admin yang route & komponennya
+    sudah aktif, tapi fiturnya (CRUD dll) belum dikerjakan.
+
+    Dipakai lewat:
+        @include('partials.admin.placeholder', [
+            'icon' => 'fa-couch',
+            'heading' => 'Manajemen Produk',
+            'description' => 'Kelola katalog produk furniture di sini.',
+        ])
+--}}
+<div class="space-y-6">
+    <div>
+        <h2 class="font-display text-xl font-semibold text-[var(--color-admin-ink)] sm:text-2xl">
+            {{ $heading }}
+        </h2>
+        <p class="mt-1 text-sm text-[var(--color-admin-ink-soft)]">
+            {{ $description }}
+        </p>
+    </div>
+
+    <div class="relative overflow-hidden rounded-2xl border border-[var(--color-admin-border)] bg-white px-6 py-20 text-center shadow-sm">
+        <div class="pointer-events-none absolute inset-0 opacity-[0.4]" style="background-image: radial-gradient(circle at 1px 1px, var(--color-admin-border) 1px, transparent 0); background-size: 24px 24px;"></div>
+
+        <div class="relative">
+            <span class="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-[var(--color-admin-gold)] to-[var(--color-admin-accent)] shadow-lg shadow-[var(--color-admin-accent)]/20">
+                <i class="fa-solid {{ $icon }} text-xl text-white"></i>
+            </span>
+            <p class="mt-5 font-display text-base font-semibold text-[var(--color-admin-ink)]">
+                Fitur ini akan segera hadir
+            </p>
+            <p class="mx-auto mt-1.5 max-w-sm text-xs leading-relaxed text-[var(--color-admin-ink-soft)]">
+                Halaman "{{ $heading }}" sudah bisa diakses, isinya akan dikembangkan pada tahap berikutnya.
+            </p>
+            <span class="mt-5 inline-flex items-center gap-1.5 rounded-full border border-[var(--color-admin-border)] bg-[var(--color-admin-cream)]/60 px-3 py-1 text-[11px] font-medium text-[var(--color-admin-ink-soft)]">
+                <i class="fa-solid fa-hammer text-[var(--color-admin-accent)]"></i>
+                Dalam pengembangan
+            </span>
+        </div>
+    </div>
+</div>

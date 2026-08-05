@@ -1,0 +1,17 @@
+<?php
+
+use Livewire\Attributes\Layout;
+use Livewire\Attributes\Title;
+use Livewire\Component;
+
+new #[Layout('layouts::admin-panel')] #[Title('Pelanggan')] class extends Component
+{
+    //
+};
+?>
+
+@include('partials.admin.placeholder', [
+    'icon' => 'fa-users',
+    'heading' => 'Manajemen Pelanggan',
+    'description' => 'Lihat daftar pelanggan yang pernah membeli atau melakukan booking.',
+])

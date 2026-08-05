@@ -1,0 +1,523 @@
+<?php
+
+use App\Models\Testimonial;
+use Illuminate\Support\Facades\Storage;
+use Livewire\Attributes\Layout;
+use Livewire\Attributes\Title;
+use Livewire\Component;
+use Livewire\WithPagination;
+
+new #[Layout('layouts::admin-panel')] #[Title('Interaksi')] class extends Component
+{
+    use WithPagination;
+
+    /** Maksimal komentar yang boleh tampil di section beranda sekaligus. */
+    private const MAX_FEATURED_HOME = 3;
+
+    public string $search = '';
+
+    /** Filter tab: 'pending' | 'approved' | 'rejected'. */
+    public string $statusFilter = 'pending';
+
+    public bool $showDetail = false;
+
+    public ?int $detailId = null;
+
+    // ---- Slot Beranda (maks 3) ----
+    public ?int $swapCandidateId = null;
+
+    public bool $showSwapModal = false;
+
+    /** Begitu Interaksi dibuka, semua komentar yang belum dibaca langsung ditandai sudah dibaca. */
+    public function mount(): void
+    {
+        auth()->user()?->markInteraksiRead();
+
+        // Beri tahu komponen badge sidebar & ikon notifikasi supaya
+        // langsung hitung ulang saat ini juga — tanpa perlu refresh kedua.
+        $this->dispatch('admin-notifications-updated');
+    }
+
+    public function updatingSearch(): void
+    {
+        $this->resetPage();
+    }
+
+    public function setFilter(string $status): void
+    {
+        $this->statusFilter = in_array($status, ['pending', 'approved', 'rejected'], true) ? $status : 'pending';
+        $this->resetPage();
+    }
+
+    public function openDetail(int $testimonialId): void
+    {
+        $this->detailId = $testimonialId;
+        $this->showDetail = true;
+    }
+
+    public function closeDetail(): void
+    {
+        $this->showDetail = false;
+        $this->detailId = null;
+    }
+
+    /** Setujui komentar -> tampil sebagai testimoni publik di frontend. */
+    public function approve(int $testimonialId): void
+    {
+        $testimonial = Testimonial::query()->findOrFail($testimonialId);
+        $testimonial->update(['approval_status' => 'approved', 'is_active' => true]);
+
+        session()->flash('status', 'Komentar dari '.$testimonial->customer_name.' disetujui & tampil sebagai testimoni.');
+    }
+
+    /**
+     * Tolak komentar -> TIDAK dihapus, cuma disembunyikan dari frontend
+     * dan dipindah ke tab "Ditolak" supaya masih bisa ditinjau ulang.
+     * Otomatis lepas dari slot beranda juga kalau sebelumnya terpilih.
+     */
+    public function reject(int $testimonialId): void
+    {
+        $testimonial = Testimonial::query()->findOrFail($testimonialId);
+        $testimonial->update(['approval_status' => 'rejected', 'is_active' => false, 'is_featured_home' => false]);
+
+        session()->flash('status', 'Komentar dari '.$testimonial->customer_name.' ditolak & tidak ditampilkan di frontend.');
+    }
+
+    /** Hapus permanen (beda dari Tolak — ini benar-benar menghapus data). */
+    public function delete(int $testimonialId): void
+    {
+        $testimonial = Testimonial::query()->findOrFail($testimonialId);
+
+        if ($testimonial->foto) {
+            Storage::disk('public')->delete($testimonial->foto);
+        }
+
+        $name = $testimonial->customer_name;
+        $testimonial->delete();
+
+        session()->flash('status', 'Komentar dari '.$name.' berhasil dihapus permanen.');
+
+        if ($this->detailId === $testimonialId) {
+            $this->closeDetail();
+        }
+    }
+
+    // ==================================================================
+    // SLOT BERANDA — admin pilih sendiri maksimal 3 komentar yang tampil
+    // di section "Ulasan Pelanggan Kami" pada beranda.
+    // ==================================================================
+
+    public function toggleFeaturedHome(int $testimonialId): void
+    {
+        $testimonial = Testimonial::query()->findOrFail($testimonialId);
+
+        if ($testimonial->is_featured_home) {
+            $testimonial->update(['is_featured_home' => false]);
+            session()->flash('status', 'Komentar dari '.$testimonial->customer_name.' ditarik dari beranda.');
+
+            return;
+        }
+
+        if ($testimonial->approval_status !== 'approved' || ! $testimonial->is_active) {
+            session()->flash('error', 'Hanya komentar yang sudah disetujui & aktif yang bisa ditampilkan di beranda.');
+
+            return;
+        }
+
+        if (Testimonial::query()->featuredHome()->count() >= self::MAX_FEATURED_HOME) {
+            $this->swapCandidateId = $testimonialId;
+            $this->showSwapModal = true;
+
+            return;
+        }
+
+        $testimonial->update(['is_featured_home' => true]);
+        session()->flash('status', 'Komentar dari '.$testimonial->customer_name.' ditampilkan di beranda.');
+    }
+
+    /** Gantikan salah satu dari 3 slot beranda dengan calon baru. */
+    public function swapFeaturedHome(int $replaceId): void
+    {
+        if (! $this->swapCandidateId) {
+            return;
+        }
+
+        $old = Testimonial::query()->find($replaceId);
+        $new = Testimonial::query()->find($this->swapCandidateId);
+
+        if ($old) {
+            $old->update(['is_featured_home' => false]);
+        }
+
+        if ($new) {
+            $new->update(['is_featured_home' => true]);
+        }
+
+        session()->flash('status', $old && $new
+            ? 'Slot beranda "'.$old->customer_name.'" diganti dengan "'.$new->customer_name.'".'
+            : 'Slot beranda berhasil diperbarui.');
+
+        $this->cancelSwap();
+    }
+
+    public function cancelSwap(): void
+    {
+        $this->swapCandidateId = null;
+        $this->showSwapModal = false;
+    }
+
+    public function with(): array
+    {
+        $query = Testimonial::query()
+            ->when($this->search !== '', fn ($q) => $q
+                ->where('customer_name', 'like', '%'.$this->search.'%')
+                ->orWhere('comment', 'like', '%'.$this->search.'%'))
+            ->where('approval_status', $this->statusFilter)
+            ->latest();
+
+        return [
+            'items' => $query->paginate(8),
+            'pendingCount' => Testimonial::query()->pending()->count(),
+            'approvedCount' => Testimonial::query()->approved()->count(),
+            'rejectedCount' => Testimonial::query()->rejected()->count(),
+            'featuredCount' => Testimonial::query()->featuredHome()->count(),
+            'detailItem' => $this->showDetail && $this->detailId
+                ? Testimonial::query()->find($this->detailId)
+                : null,
+            'swapCandidate' => $this->swapCandidateId ? Testimonial::query()->find($this->swapCandidateId) : null,
+            'currentlyFeatured' => $this->showSwapModal
+                ? Testimonial::query()->featuredHome()->orderBy('urutan')->get()
+                : collect(),
+        ];
+    }
+};
+?>
+
+<div class="space-y-6">
+
+    {{-- ================= HEADER ================= --}}
+    <div class="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+            <h2 class="font-display text-xl font-semibold text-admin-ink sm:text-2xl">
+                Interaksi Pembeli
+            </h2>
+            <p class="mt-1 text-sm text-admin-ink-soft">
+                Kelola semua komentar dari sini: setujui, tolak, hapus, atau pilih tampil di beranda.
+            </p>
+        </div>
+        <p class="text-xs font-medium {{ $featuredCount >= 3 ? 'text-admin-accent' : 'text-admin-ink-soft' }}">
+            <i class="fa-solid fa-star mr-1"></i>{{ $featuredCount }}/3 slot beranda terisi
+        </p>
+    </div>
+
+    @if (session('status'))
+        <div class="flex items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-700">
+            <i class="fa-solid fa-circle-check"></i>
+            {{ session('status') }}
+        </div>
+    @endif
+
+    @if (session('error'))
+        <div class="flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-600">
+            <i class="fa-solid fa-triangle-exclamation"></i>
+            {{ session('error') }}
+        </div>
+    @endif
+
+    {{-- ================= SEARCH ================= --}}
+    <div class="rounded-2xl border border-admin-border bg-admin-surface p-4 shadow-sm">
+        <div class="relative">
+            <i class="fa-solid fa-magnifying-glass absolute left-4 top-1/2 -translate-y-1/2 text-xs text-admin-ink-soft"></i>
+            <input
+                type="text"
+                wire:model.live.debounce.400ms="search"
+                placeholder="Cari nama pelanggan atau isi komentar..."
+                class="w-full rounded-xl border border-admin-border bg-admin-canvas py-2.5 pl-10 pr-4 text-sm text-admin-ink placeholder:text-admin-ink-soft focus:border-admin-accent focus:outline-none focus:ring-2 focus:ring-admin-accent/15"
+            >
+        </div>
+    </div>
+
+    {{-- ================= FILTER TABS ================= --}}
+    <div class="flex flex-wrap gap-2 border-b border-admin-border">
+        @foreach ([
+            ['key' => 'pending', 'label' => 'Pending', 'count' => $pendingCount],
+            ['key' => 'approved', 'label' => 'Disetujui', 'count' => $approvedCount],
+            ['key' => 'rejected', 'label' => 'Ditolak', 'count' => $rejectedCount],
+        ] as $tabItem)
+            <button
+                type="button"
+                wire:click="setFilter('{{ $tabItem['key'] }}')"
+                class="flex items-center gap-2 border-b-2 px-4 py-3 text-sm font-semibold transition-colors duration-200
+                    {{ $statusFilter === $tabItem['key'] ? 'border-admin-accent text-admin-accent' : 'border-transparent text-admin-ink-soft hover:text-admin-ink' }}"
+            >
+                {{ $tabItem['label'] }}
+                <span class="flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-[11px]
+                    {{ $statusFilter === $tabItem['key'] ? 'bg-admin-accent text-white' : 'bg-admin-cream text-admin-ink-soft' }}">
+                    {{ $tabItem['count'] }}
+                </span>
+            </button>
+        @endforeach
+    </div>
+
+    {{-- ================= LIST ================= --}}
+    <div class="space-y-3">
+        @forelse ($items as $item)
+            <div wire:key="interaksi-{{ $item->id }}" class="flex flex-col gap-4 rounded-2xl border border-admin-border bg-admin-surface p-5 shadow-sm transition-shadow duration-300 hover:shadow-md sm:flex-row sm:items-start sm:justify-between">
+                <div class="flex flex-1 items-start gap-3">
+                    @if ($item->foto && Storage::disk('public')->exists($item->foto))
+                        <img src="{{ Storage::disk('public')->url($item->foto) }}" alt="{{ $item->customer_name }}" class="h-10 w-10 shrink-0 rounded-full object-cover">
+                    @else
+                        <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-admin-cream text-sm font-semibold text-admin-accent">
+                            {{ strtoupper(substr($item->customer_name, 0, 1)) }}
+                        </span>
+                    @endif
+                    <div class="min-w-0 flex-1">
+                        <div class="flex flex-wrap items-center gap-x-2 gap-y-1">
+                            <p class="text-sm font-semibold text-admin-ink">{{ $item->customer_name }}</p>
+                            @if ($item->jabatan)
+                                <span class="text-xs text-admin-ink-soft">{{ $item->jabatan }}</span>
+                            @endif
+
+                            @php
+                                $badgeClass = match ($item->approval_status) {
+                                    'approved' => 'bg-admin-success/10 text-admin-success',
+                                    'rejected' => 'bg-admin-danger/10 text-admin-danger',
+                                    default => 'bg-amber-50 text-amber-600',
+                                };
+                                $badgeLabel = match ($item->approval_status) {
+                                    'approved' => 'Disetujui',
+                                    'rejected' => 'Ditolak',
+                                    default => 'Pending',
+                                };
+                            @endphp
+                            <span class="rounded-full px-2 py-0.5 text-[10px] font-semibold {{ $badgeClass }}">
+                                {{ $badgeLabel }}
+                            </span>
+
+                            @if ($item->is_featured_home)
+                                <span class="inline-flex items-center gap-1 rounded-full bg-admin-gold/15 px-2 py-0.5 text-[10px] font-semibold text-admin-gold">
+                                    <i class="fa-solid fa-star text-[9px]"></i> Tampil di Beranda
+                                </span>
+                            @endif
+                        </div>
+
+                        @if ($item->rating)
+                            <div class="mt-1 flex items-center gap-0.5">
+                                @for ($i = 1; $i <= 5; $i++)
+                                    <i class="fa-solid fa-star text-[11px] {{ $i <= $item->rating ? 'text-admin-gold' : 'text-admin-border' }}"></i>
+                                @endfor
+                            </div>
+                        @endif
+
+                        <p class="mt-2 line-clamp-2 text-sm leading-relaxed text-admin-ink-soft">
+                            {{ $item->comment }}
+                        </p>
+
+                        <p class="mt-2 text-[11px] text-admin-ink-soft">
+                            {{ $item->created_at->translatedFormat('d M Y, H:i') }}
+                        </p>
+                    </div>
+                </div>
+
+                <div class="flex shrink-0 flex-wrap items-center gap-2 sm:flex-col sm:items-stretch">
+                    <div class="flex items-center gap-1.5">
+                        <button
+                            type="button"
+                            wire:click="openDetail({{ $item->id }})"
+                            title="Detail"
+                            class="flex h-8 w-8 items-center justify-center rounded-lg border border-admin-border text-admin-ink-soft transition-all duration-300 hover:bg-admin-cream"
+                        >
+                            <i class="fa-solid fa-eye text-xs"></i>
+                        </button>
+                        <button
+                            type="button"
+                            wire:click="toggleFeaturedHome({{ $item->id }})"
+                            title="{{ $item->is_featured_home ? 'Tarik dari beranda' : 'Tampilkan di beranda' }}"
+                            @class([
+                                'flex h-8 w-8 items-center justify-center rounded-lg border transition-all duration-300',
+                                'border-admin-gold bg-admin-gold/10 text-admin-gold' => $item->is_featured_home,
+                                'border-admin-border text-admin-ink-soft hover:bg-admin-cream' => ! $item->is_featured_home,
+                            ])
+                        >
+                            <i class="fa-{{ $item->is_featured_home ? 'solid' : 'regular' }} fa-star text-xs"></i>
+                        </button>
+                        <button
+                            type="button"
+                            wire:click="delete({{ $item->id }})"
+                            wire:confirm="Hapus komentar ini secara PERMANEN? Tindakan ini tidak dapat dibatalkan."
+                            title="Hapus"
+                            class="flex h-8 w-8 items-center justify-center rounded-lg border border-admin-border text-admin-ink-soft transition-all duration-300 hover:bg-red-50 hover:text-red-500"
+                        >
+                            <i class="fa-solid fa-trash text-xs"></i>
+                        </button>
+                    </div>
+
+                    <div class="flex items-center gap-2 sm:flex-col sm:items-stretch">
+                        @if ($item->approval_status !== 'approved')
+                            <button
+                                type="button"
+                                wire:click="approve({{ $item->id }})"
+                                wire:confirm="Setujui komentar ini sebagai testimoni publik?"
+                                class="inline-flex items-center justify-center gap-1.5 rounded-full bg-admin-accent px-4 py-2 text-xs font-semibold text-white transition-all duration-300 hover:bg-admin-accent-strong"
+                            >
+                                <i class="fa-solid fa-check"></i>
+                                Setujui
+                            </button>
+                        @endif
+
+                        @if ($item->approval_status !== 'rejected')
+                            <button
+                                type="button"
+                                wire:click="reject({{ $item->id }})"
+                                wire:confirm="Tolak komentar ini? Komentar tidak akan tampil di frontend."
+                                class="inline-flex items-center justify-center gap-1.5 rounded-full border border-red-200 px-4 py-2 text-xs font-semibold text-red-600 transition-all duration-300 hover:bg-red-50"
+                            >
+                                <i class="fa-solid fa-xmark"></i>
+                                Tolak
+                            </button>
+                        @endif
+                    </div>
+                </div>
+            </div>
+        @empty
+            <div class="rounded-2xl border border-dashed border-admin-border bg-admin-surface px-5 py-12 text-center">
+                <i class="fa-solid fa-comment-slash mb-3 text-2xl text-admin-ink-soft"></i>
+                <p class="text-sm font-medium text-admin-ink">
+                    {{ $search !== ''
+                        ? 'Tidak ada komentar yang cocok dengan pencarian.'
+                        : match ($statusFilter) {
+                            'pending' => 'Tidak ada komentar yang menunggu persetujuan.',
+                            'approved' => 'Belum ada komentar yang disetujui.',
+                            'rejected' => 'Belum ada komentar yang ditolak.',
+                            default => 'Belum ada interaksi masuk.',
+                        } }}
+                </p>
+            </div>
+        @endforelse
+    </div>
+
+    @if ($items->hasPages())
+        <div>
+            {{ $items->onEachSide(1)->links() }}
+        </div>
+    @endif
+
+    {{-- ================= MODAL DETAIL ================= --}}
+    @if ($showDetail && $detailItem)
+        <div class="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <div wire:click="closeDetail" class="absolute inset-0 bg-black/50 backdrop-blur-sm"></div>
+
+            <div class="admin-scroll relative max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-2xl bg-admin-surface shadow-2xl">
+                <div class="sticky top-0 z-10 flex items-center justify-between border-b border-admin-border bg-admin-surface px-6 py-4">
+                    <h3 class="font-display text-lg font-semibold text-admin-ink">Detail Komentar</h3>
+                    <button type="button" wire:click="closeDetail" class="flex h-8 w-8 items-center justify-center rounded-lg text-admin-ink-soft transition-colors duration-200 hover:bg-admin-cream">
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+                </div>
+
+                <div class="space-y-5 px-6 py-5">
+                    <div class="flex items-center gap-3">
+                        @if ($detailItem->foto && Storage::disk('public')->exists($detailItem->foto))
+                            <img src="{{ Storage::disk('public')->url($detailItem->foto) }}" alt="{{ $detailItem->customer_name }}" class="h-14 w-14 rounded-full object-cover">
+                        @else
+                            <span class="flex h-14 w-14 items-center justify-center rounded-full bg-admin-cream text-lg font-semibold text-admin-accent">
+                                {{ strtoupper(substr($detailItem->customer_name, 0, 1)) }}
+                            </span>
+                        @endif
+                        <div>
+                            <p class="text-sm font-semibold text-admin-ink">{{ $detailItem->customer_name }}</p>
+                            <p class="text-xs text-admin-ink-soft">{{ $detailItem->jabatan ?: '—' }}</p>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-4 rounded-xl border border-admin-border bg-admin-canvas p-4">
+                        <div>
+                            <p class="text-[11px] uppercase tracking-wide text-admin-ink-soft">Rating</p>
+                            <div class="mt-1 flex items-center gap-0.5">
+                                @for ($i = 1; $i <= 5; $i++)
+                                    <i class="fa-solid fa-star text-xs {{ $i <= ($detailItem->rating ?? 0) ? 'text-admin-gold' : 'text-admin-border' }}"></i>
+                                @endfor
+                            </div>
+                        </div>
+                        <div>
+                            <p class="text-[11px] uppercase tracking-wide text-admin-ink-soft">Tanggal Komentar</p>
+                            <p class="mt-1 text-sm font-semibold text-admin-ink">{{ $detailItem->created_at->translatedFormat('d M Y, H:i') }}</p>
+                        </div>
+                        <div>
+                            <p class="text-[11px] uppercase tracking-wide text-admin-ink-soft">Status Approval</p>
+                            <p class="mt-1 text-sm font-semibold text-admin-ink">
+                                {{ match ($detailItem->approval_status) { 'approved' => 'Disetujui', 'rejected' => 'Ditolak', default => 'Pending' } }}
+                            </p>
+                        </div>
+                        <div>
+                            <p class="text-[11px] uppercase tracking-wide text-admin-ink-soft">Tampil di Beranda</p>
+                            <p class="mt-1 text-sm font-semibold text-admin-ink">{{ $detailItem->is_featured_home ? 'Ya' : 'Tidak' }}</p>
+                        </div>
+                    </div>
+
+                    <div>
+                        <p class="text-[11px] font-semibold uppercase tracking-wide text-admin-ink-soft">Isi Komentar</p>
+                        <p class="mt-1 text-sm leading-relaxed text-admin-ink">{{ $detailItem->comment }}</p>
+                    </div>
+                </div>
+
+                <div class="flex items-center justify-end gap-3 border-t border-admin-border px-6 py-4">
+                    @if ($detailItem->approval_status !== 'approved')
+                        <button type="button" wire:click="approve({{ $detailItem->id }})" wire:confirm="Setujui komentar ini sebagai testimoni publik?" class="rounded-full bg-admin-accent px-5 py-2.5 text-sm font-semibold text-white transition-colors duration-200 hover:bg-admin-accent-strong">
+                            Setujui
+                        </button>
+                    @endif
+                    @if ($detailItem->approval_status !== 'rejected')
+                        <button type="button" wire:click="reject({{ $detailItem->id }})" wire:confirm="Tolak komentar ini?" class="rounded-full border border-red-200 px-5 py-2.5 text-sm font-semibold text-red-600 transition-colors duration-200 hover:bg-red-50">
+                            Tolak
+                        </button>
+                    @endif
+                    <button type="button" wire:click="closeDetail" class="rounded-full border border-admin-border px-5 py-2.5 text-sm font-semibold text-admin-ink-soft transition-colors duration-200 hover:bg-admin-cream">
+                        Tutup
+                    </button>
+                </div>
+            </div>
+        </div>
+    @endif
+
+    {{-- ================= MODAL: GANTI SLOT BERANDA (3 slot penuh) ================= --}}
+    @if ($showSwapModal && $swapCandidate)
+        <div class="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <div wire:click="cancelSwap" class="absolute inset-0 bg-black/50 backdrop-blur-sm"></div>
+
+            <div class="relative w-full max-w-md rounded-2xl bg-admin-surface shadow-2xl">
+                <div class="border-b border-admin-border px-6 py-4">
+                    <h3 class="font-display text-lg font-semibold text-admin-ink">Slot Beranda Sudah Penuh</h3>
+                    <p class="mt-1 text-sm text-admin-ink-soft">
+                        Maksimal 3 komentar tampil di beranda. Pilih salah satu di bawah ini untuk digantikan dengan
+                        <span class="font-medium text-admin-ink">"{{ $swapCandidate->customer_name }}"</span>.
+                    </p>
+                </div>
+
+                <div class="space-y-2 px-6 py-5">
+                    @foreach ($currentlyFeatured as $featured)
+                        <div wire:key="swap-{{ $featured->id }}" class="flex items-center justify-between gap-3 rounded-xl border border-admin-border bg-admin-canvas px-4 py-3">
+                            <div class="min-w-0 flex-1">
+                                <p class="truncate text-sm font-semibold text-admin-ink">{{ $featured->customer_name }}</p>
+                                <p class="truncate text-xs text-admin-ink-soft">{{ $featured->comment }}</p>
+                            </div>
+                            <button
+                                type="button"
+                                wire:click="swapFeaturedHome({{ $featured->id }})"
+                                class="shrink-0 rounded-full bg-admin-accent px-3.5 py-1.5 text-xs font-semibold text-white transition-colors duration-200 hover:bg-admin-accent-strong"
+                            >
+                                Ganti Ini
+                            </button>
+                        </div>
+                    @endforeach
+                </div>
+
+                <div class="flex justify-end border-t border-admin-border px-6 py-4">
+                    <button type="button" wire:click="cancelSwap" class="rounded-full border border-admin-border px-5 py-2.5 text-sm font-semibold text-admin-ink-soft transition-colors duration-200 hover:bg-admin-cream">
+                        Batal
+                    </button>
+                </div>
+            </div>
+        </div>
+    @endif
+</div>

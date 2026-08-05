@@ -1,0 +1,17 @@
+<?php
+
+use Livewire\Attributes\Layout;
+use Livewire\Attributes\Title;
+use Livewire\Component;
+
+new #[Layout('layouts::admin-panel')] #[Title('Laporan')] class extends Component
+{
+    //
+};
+?>
+
+@include('partials.admin.placeholder', [
+    'icon' => 'fa-chart-column',
+    'heading' => 'Laporan',
+    'description' => 'Ringkasan penjualan, produk terlaris, dan performa toko dari waktu ke waktu.',
+])

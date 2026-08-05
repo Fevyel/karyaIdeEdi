@@ -1,0 +1,27 @@
+﻿$ZipPath     = "$env:USERPROFILE\Downloads\karyaIdeEdi-login-admin.zip"
+$ProjectPath = "C:\xampp\htdocs\karyaIdeEdi"
+
+$ErrorActionPreference = "Stop"
+
+if (-not (Test-Path $ZipPath)) {
+    Write-Host "Zip tidak ditemukan di: $ZipPath" -ForegroundColor Red
+    exit 1
+}
+
+$TempExtract = Join-Path $env:TEMP "karyaIdeEdi-fix-extract"
+if (Test-Path $TempExtract) { Remove-Item $TempExtract -Recurse -Force }
+
+Write-Host "Mengekstrak zip..." -ForegroundColor Cyan
+Expand-Archive -Path $ZipPath -DestinationPath $TempExtract -Force
+
+$SourceRoot = Join-Path $TempExtract "karyaIdeEdi"
+
+Write-Host "Menyalin & menimpa file ke project..." -ForegroundColor Cyan
+robocopy $SourceRoot $ProjectPath /E /NFL /NDL /NJH /NJS /NC /NS | Out-Null
+
+Remove-Item $TempExtract -Recurse -Force
+
+Write-Host ""
+Write-Host "Selesai! Lanjut jalankan:" -ForegroundColor Green
+Write-Host "  php artisan migrate:fresh --seed"
+Write-Host "  npm run dev"
