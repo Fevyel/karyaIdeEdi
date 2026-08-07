@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 
 use App\Models\Product;
 use App\Models\Testimonial;
@@ -19,6 +19,17 @@ use Livewire\Component;
 new class extends Component
 {
     public bool $open = false;
+
+    public function mount(): void
+    {
+        // DIAGNOSTIK SEMENTARA — lihat storage/logs/laravel.log setelah reload
+        // halaman, lalu hapus baris ini setelah root cause ketemu.
+        logger()->info('NotificationBell mount', [
+            'open' => $this->open,
+            'url' => request()->fullUrl(),
+            'user_id' => auth()->id(),
+        ]);
+    }
 
     #[On('admin-notifications-updated')]
     public function refresh(): void

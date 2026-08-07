@@ -20,6 +20,19 @@
         x-data="{ sidebarOpen: false }"
         class="bg-admin-canvas font-sans text-admin-ink antialiased"
     >
+        {{--
+            Garis aksen emas: SENGAJA ditaruh di sini, sebagai anak langsung
+            <body>, BUKAN di dalam <header>. <header> memakai backdrop-blur-xl,
+            dan backdrop-filter membuat browser menganggap header sebagai
+            containing block baru — akibatnya `fixed inset-x-0` jadi relatif
+            terhadap header (tidak full-width, terpotong di sisi sidebar),
+            bukan relatif terhadap viewport. Ditaruh di luar semua ancestor
+            ber-filter/transform supaya `fixed` benar-benar relatif ke
+            viewport dan membentang penuh dari ujung kiri ke ujung kanan
+            browser, termasuk melewati area sidebar.
+        --}}
+        <div class="fixed inset-x-0 top-0 z-50 h-0.75 bg-linear-to-r from-admin-gold via-admin-accent to-admin-gold"></div>
+
         <div class="flex min-h-screen">
 
             {{-- ================= SIDEBAR ================= --}}
@@ -212,7 +225,6 @@
 
                 {{-- topbar --}}
                 <header class="sticky top-0 z-20 border-b border-admin-border bg-admin-surface/90 shadow-sm shadow-black/3 backdrop-blur-xl">
-                    <div class="fixed inset-x-0 top-0 z-50 h-0.75 bg-linear-to-r from-admin-gold via-admin-accent to-admin-gold"></div>
                     <div class="flex h-18 shrink-0 items-center justify-between px-5 sm:px-8">
                         <div class="flex items-center gap-3.5">
                             <button

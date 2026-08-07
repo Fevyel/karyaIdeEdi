@@ -103,9 +103,18 @@ new #[Layout('layouts::admin-panel')] #[Title('Kategori')] class extends Compone
 };
 ?>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.2/Sortable.min.js"></script>
-
 <div class="space-y-6">
+    {{--
+        SENGAJA ditaruh DI DALAM root komponen ini (bukan sebagai sibling
+        sebelum root seperti sebelumnya). Livewire hanya mengenali SATU
+        root element per komponen — tag <script> yang berada SEBELUM
+        root akan dianggap bukan bagian dari komponen dan dihapus saat
+        Livewire memproses DOM, sehingga SortableJS tidak pernah ter-load
+        dan drag & drop gagal (cuma menyeleksi teks). Menaruhnya di
+        dalam elemen root memastikan script ini ikut ter-render dan
+        tidak dibuang.
+    --}}
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.2/Sortable.min.js"></script>
 
     @if (session('status'))
         <div class="flex items-center gap-2.5 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-700">
