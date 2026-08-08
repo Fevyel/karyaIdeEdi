@@ -1,5 +1,29 @@
 /**
  * ==========================================================
+ * SortableJS (drag & drop kategori — Prioritas 2)
+ * ==========================================================
+ * Sebelumnya di-load lewat tag <script src="...cdnjs..."> yang
+ * ditaruh langsung di kategori.blade.php. Tag <script> di dalam
+ * root komponen Livewire memicu bug root-element-detection
+ * (server 500 / MultipleRootElementsDetectedException), jadi
+ * tag itu sudah dihapus (lihat komentar "PRIORITAS 1 FIX" di
+ * kategori.blade.php).
+ *
+ * Ini "Prioritas 2": Sortable di-bundle lewat Vite (npm import)
+ * di sini, bukan tag <script> runtime — jadi tidak menyentuh DOM
+ * root Livewire sama sekali dan tidak memicu bug yang sama.
+ *
+ * Diekspos sebagai `window.Sortable` supaya kode Alpine di dalam
+ * blok @script pada kategori.blade.php (yang memanggil
+ * `new Sortable(el, {...})` sebagai variabel global, bukan lewat
+ * import) tetap bisa memakainya tanpa perlu diubah strukturnya.
+ */
+import Sortable from 'sortablejs';
+
+window.Sortable = Sortable;
+
+/**
+ * ==========================================================
  * UX FIX: input angka dengan nilai default "0" di panel admin
  * ==========================================================
  * Masalah: setiap field angka (harga, stok, berat, urutan

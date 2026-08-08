@@ -122,7 +122,7 @@
                 </button>
 
                 {{-- Tombol Admin: HANYA tampil untuk pemilik yang sudah login. Pengunjung umum tidak melihat ikon ini sama sekali.
-                     Sekaligus jadi pusat notifikasi admin (badge + panel, mirip inbox TikTok) — lihat resources/views/components/⚡notification-bell.blade.php --}}
+                     Sekaligus jadi indikator notifikasi admin (badge + floating toast, mirip TikTok) — lihat resources/views/components/⚡notification-bell.blade.php --}}
                 @auth
                     <livewire:notification-bell />
                 @endauth

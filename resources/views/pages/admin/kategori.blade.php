@@ -105,21 +105,20 @@ new #[Layout('layouts::admin-panel')] #[Title('Kategori')] class extends Compone
 
 <div class="space-y-6">
     {{--
-        PRIORITAS 1 FIX (sementara): tag <script src="...Sortable.min.js">
-        yang sebelumnya ada di sini SUDAH DIHAPUS DULU.
+        SortableJS TIDAK di-load lewat tag <script src="..."> di sini
+        lagi (versi lama sempat begitu, lalu memicu 500 /
+        MultipleRootElementsDetectedException karena tag <script> ikut
+        dianggap bagian dari root komponen Livewire — makanya sempat
+        dihapus total sebagai fix darurat "Prioritas 1", dan drag & drop
+        sempat nonaktif sementara).
 
-        Alasan: ini satu-satunya perubahan baru dibanding versi sebelum
-        error 500 muncul, dan persis berada di titik yang paling rawan
-        terhadap bug root-element-detection Livewire (lihat laporan).
-        Menghapusnya adalah cara paling minimal & aman untuk memastikan
-        halaman ini bisa dibuka lagi tanpa 500, TANPA menyentuh logic
-        drag & drop lain (yang memang belum diperbaiki di tahap ini).
-
-        AKIBAT SEMENTARA: drag & drop kategori TIDAK akan berfungsi
-        (SortableJS tidak ter-load) sampai Prioritas 2 dikerjakan dengan
-        pendekatan yang tidak menaruh <script src="..."> di dalam root
-        komponen Livewire sama sekali (mis. bundle lewat resources/js/app.js
-        via Vite, bukan tag <script> runtime di dalam template).
+        Sekarang ("Prioritas 2"): Sortable di-bundle lewat Vite —
+        di-import di resources/js/app.js dan diekspos sebagai
+        `window.Sortable` — bukan tag <script> runtime di dalam
+        template ini. Jadi tidak menyentuh DOM root Livewire sama
+        sekali, dan blok @script di bagian bawah file ini (yang
+        memanggil `new Sortable(...)`) tinggal memakai variabel
+        global itu seperti biasa.
     --}}
 
     @if (session('status'))

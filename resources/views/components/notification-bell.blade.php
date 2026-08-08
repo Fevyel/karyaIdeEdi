@@ -1,40 +1,40 @@
 ﻿<?php
 
-use App\Models\Product;
-use App\Models\Testimonial;
-use App\Models\Transaction;
 use Livewire\Attributes\On;
 use Livewire\Component;
 
 /**
- * Pusat notifikasi admin (ikon di navbar frontend, mirip inbox TikTok).
+ * DUA FUNGSI TERPISAH dalam satu komponen (dibungkus 1 <div> root supaya
+ * tidak memicu MultipleRootElementsDetectedException), TAPI TIDAK SALING
+ * MENGGANTIKAN:
  *
- * Tidak ada tabel notifikasi terpisah — daftar & badge dihitung langsung
- * dari data asli (Transaction, Testimonial, Product) dibanding dengan
- * kapan admin terakhir membaca tiap kategori (lihat App\Models\User).
+ * A. Admin Access — ikon profil (fa-user-shield) di navbar frontend.
+ *    Klik -> langsung buka Dashboard Admin (atau halaman Login kalau
+ *    somehow belum ter-auth). Ini FUNGSI UTAMA ikon tersebut, sudah ada
+ *    sejak awal, TIDAK BOLEH diganti jadi ikon lonceng atau kehilangan
+ *    href-nya.
  *
- * Beda dari badge sidebar: badge ikon ini SELALU angka asli, TIDAK
- * pernah dibulatkan jadi "99+".
+ * B. Notification Toast — floating kecil ala TikTok, elemen TERPISAH
+ *    yang muncul otomatis di dekat ikon admin saat ada notifikasi baru,
+ *    ~10 detik lalu slide-down + fade-out sendiri. TIDAK ada Notification
+ *    Panel/dropdown. Toast tidak membuka Dashboard maupun apa pun -- ia
+ *    cuma tampil lalu hilang.
+ *
+ * Badge merah kecil di pojok ikon admin = indikator jumlah unread (opsional,
+ * murni visual), TIDAK mengubah href/fungsi klik ikon.
+ *
+ * Tidak ada tabel notifikasi terpisah -- badge & toast dihitung langsung
+ * dari data asli (lihat App\Models\User::unread*Count()).
  */
 new class extends Component
 {
-    public bool $open = false;
-
-    public function mount(): void
-    {
-        // DIAGNOSTIK SEMENTARA — lihat storage/logs/laravel.log setelah reload
-        // halaman, lalu hapus baris ini setelah root cause ketemu.
-        logger()->info('NotificationBell mount', [
-            'open' => $this->open,
-            'url' => request()->fullUrl(),
-            'user_id' => auth()->id(),
-        ]);
-    }
-
     #[On('admin-notifications-updated')]
     public function refresh(): void
     {
-        // Kosong secara sengaja — lihat catatan yang sama di admin/⚡nav-badge.blade.php.
+        // Kosong secara sengaja -- kehadiran listener ini memaksa Livewire
+        // me-render ulang komponen (dan getUnreadCountProperty() di bawah
+        // selalu dihitung ulang, tidak di-cache), jadi badge langsung dapat
+        // angka terbaru begitu event ini diterima dari halaman admin lain.
     }
 
     public function getUnreadCountProperty(): int
@@ -44,147 +44,85 @@ new class extends Component
         return $user ? $user->unreadNotificationsCount() : 0;
     }
 
-    /** Daftar notifikasi 30 hari terakhir, dikelompokkan per hari (Hari ini/Kemarin/Minggu ini/Lebih lama). */
-    public function getGroupedItemsProperty()
+    /** Ringkasan per kategori untuk toast -- hanya kategori dengan count > 0. */
+    public function getUnreadBreakdownProperty(): array
     {
-        $since = now()->subDays(30);
+        $user = auth()->user();
 
-        $pesanan = Transaction::query()
-            ->where('created_at', '>=', $since)
-            ->latest()
-            ->take(15)
-            ->get()
-            ->map(fn (Transaction $t) => [
-                'icon' => 'fa-cart-shopping',
-                'iconClass' => 'bg-emerald-100 text-emerald-600',
-                'title' => 'Pesanan Baru',
-                'description' => 'Pesanan #'.$t->order_code.' masuk',
-                'time' => $t->created_at,
-            ]);
-
-        $interaksi = Testimonial::query()
-            ->where('created_at', '>=', $since)
-            ->latest()
-            ->take(15)
-            ->get()
-            ->map(fn (Testimonial $t) => [
-                'icon' => 'fa-comment-dots',
-                'iconClass' => 'bg-admin-cream text-admin-accent',
-                'title' => 'Interaksi Baru',
-                'description' => $t->customer_name.' mengirim komentar',
-                'time' => $t->created_at,
-            ]);
-
-        $dashboard = Product::query()
-            ->where('stok', '<=', 5)
-            ->where('updated_at', '>=', $since)
-            ->latest('updated_at')
-            ->take(10)
-            ->get()
-            ->map(fn (Product $p) => [
-                'icon' => 'fa-triangle-exclamation',
-                'iconClass' => 'bg-red-100 text-red-600',
-                'title' => 'Stok Menipis',
-                'description' => 'Produk "'.$p->nama.'" tersisa '.$p->stok,
-                'time' => $p->updated_at,
-            ]);
-
-        return $pesanan->concat($interaksi)->concat($dashboard)
-            ->sortByDesc('time')
-            ->values()
-            ->take(30)
-            ->groupBy(function (array $item) {
-                $time = $item['time'];
-
-                return match (true) {
-                    $time->isToday() => 'Hari ini',
-                    $time->isYesterday() => 'Kemarin',
-                    $time->greaterThanOrEqualTo(now()->startOfWeek()) => 'Minggu ini',
-                    default => 'Lebih lama',
-                };
-            });
-    }
-
-    public function togglePanel(): void
-    {
-        $this->open = ! $this->open;
-
-        if ($this->open) {
-            auth()->user()?->markAllNotificationsRead();
+        if (! $user) {
+            return [];
         }
-    }
 
-    public function closePanel(): void
-    {
-        $this->open = false;
+        $groups = [
+            ['icon' => 'fa-comment-dots', 'label' => 'Interaksi Baru', 'count' => $user->unreadInteraksiCount()],
+            ['icon' => 'fa-cart-shopping', 'label' => 'Pesanan Baru', 'count' => $user->unreadPesananCount()],
+            ['icon' => 'fa-triangle-exclamation', 'label' => 'Stok Menipis', 'count' => $user->unreadDashboardCount()],
+        ];
+
+        return array_values(array_filter($groups, fn (array $g) => $g['count'] > 0));
     }
 };
 ?>
 
-<div class="group relative shrink-0" x-data @click.outside="$wire.closePanel()">
+<div
+    class="relative shrink-0"
+    x-data="{
+        toastVisible: false,
+        toastGroups: @js($this->unreadBreakdown),
+        toastTotal: 0,
+        initToast() {
+            this.toastTotal = this.toastGroups.reduce((sum, g) => sum + g.count, 0);
+
+            // Bandingkan dengan total terakhir kali toast ditampilkan (per tab
+            // browser). Toast HANYA muncul kalau totalnya berubah/bertambah
+            // dibanding sebelumnya -- supaya tidak muncul ulang terus-menerus
+            // hanya karena reload/F5 pada notifikasi yang sama.
+            const lastSeenTotal = parseInt(sessionStorage.getItem('notif-toast-last-total') || '0', 10);
+
+            if (this.toastTotal > 0 && this.toastTotal !== lastSeenTotal) {
+                this.toastVisible = true;
+                sessionStorage.setItem('notif-toast-last-total', String(this.toastTotal));
+                setTimeout(() => { this.toastVisible = false }, 10000);
+            }
+        },
+    }"
+    x-init="initToast()"
+>
     @if (auth()->check())
-        <button
-            type="button"
-            wire:click="togglePanel"
+        {{-- ================= A. ADMIN ACCESS (fungsi utama -- klik = buka Dashboard) ================= --}}
+        <a
+            href="{{ auth()->check() ? route('admin.dashboard') : route('admin.login') }}"
+            wire:navigate
             wire:poll.20s
-            aria-label="Notifikasi Admin"
+            aria-label="Admin Access — buka Dashboard"
             class="relative flex h-9 w-9 items-center justify-center rounded-full border border-admin-border text-admin-ink-soft transition-all duration-300 hover:border-admin-accent hover:text-admin-accent hover:shadow-md"
         >
             <i class="fa-solid fa-user-shield text-sm"></i>
 
             @if ($this->unreadCount > 0)
-                <span class="absolute -right-1 -top-1 flex h-4.5 min-w-4.5 items-center justify-center rounded-full border-2 border-admin-surface bg-admin-danger px-1 text-[9px] font-bold leading-none text-white">
+                <span class="pointer-events-none absolute -right-1 -top-1 flex h-4.5 min-w-4.5 items-center justify-center rounded-full border-2 border-admin-surface bg-admin-danger px-1 text-[9px] font-bold leading-none text-white">
                     {{ $this->unreadCount }}
                 </span>
             @endif
-        </button>
+        </a>
 
-        @if (! $open)
-            <span class="pointer-events-none absolute right-0 top-full mt-2 whitespace-nowrap rounded-md bg-admin-panel px-2.5 py-1.5 text-xs font-medium text-white opacity-0 shadow-lg transition-opacity duration-200 group-hover:opacity-100">
-                Notifikasi Admin
-            </span>
-        @endif
-
-        {{-- ================= PANEL NOTIFIKASI (mirip inbox TikTok) ================= --}}
-        @if ($open)
-            <div
-                x-transition.origin.top.right
-                class="absolute right-0 top-full z-50 mt-2 w-80 overflow-hidden rounded-2xl border border-admin-border bg-admin-surface shadow-2xl sm:w-96"
-            >
-                <div class="flex items-center justify-between border-b border-admin-border px-4 py-3">
-                    <p class="text-sm font-semibold text-admin-ink">Notifikasi</p>
-                    <a href="{{ route('admin.dashboard') }}" wire:navigate class="text-xs font-medium text-admin-accent hover:underline">
-                        Buka Dashboard
-                    </a>
-                </div>
-
-                <div class="admin-scroll max-h-96 overflow-y-auto">
-                    @forelse ($this->groupedItems as $groupLabel => $groupItems)
-                        <div>
-                            <p class="sticky top-0 bg-admin-cream/70 px-4 py-1.5 text-[11px] font-semibold uppercase tracking-wide text-admin-ink-soft backdrop-blur-sm">
-                                {{ $groupLabel }}
-                            </p>
-                            @foreach ($groupItems as $notif)
-                                <div class="flex items-start gap-3 border-b border-admin-border/60 px-4 py-3 last:border-b-0">
-                                    <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full {{ $notif['iconClass'] }}">
-                                        <i class="fa-solid {{ $notif['icon'] }} text-xs"></i>
-                                    </span>
-                                    <div class="min-w-0 flex-1">
-                                        <p class="text-sm font-semibold text-admin-ink">{{ $notif['title'] }}</p>
-                                        <p class="truncate text-xs text-admin-ink-soft">{{ $notif['description'] }}</p>
-                                        <p class="mt-0.5 text-[11px] text-admin-ink-soft/70">{{ $notif['time']->diffForHumans() }}</p>
-                                    </div>
-                                </div>
-                            @endforeach
-                        </div>
-                    @empty
-                        <div class="px-4 py-10 text-center">
-                            <i class="fa-regular fa-bell-slash mb-2 text-xl text-admin-ink-soft"></i>
-                            <p class="text-xs text-admin-ink-soft">Belum ada notifikasi.</p>
-                        </div>
-                    @endforelse
-                </div>
-            </div>
-        @endif
+        {{-- ================= B. FLOATING TOAST (ala TikTok) -- elemen TERPISAH, tidak menggantikan ikon di atas ================= --}}
+        <div
+            x-show="toastVisible"
+            x-cloak
+            x-transition:enter="transition ease-out duration-300"
+            x-transition:enter-start="opacity-0 -translate-y-4"
+            x-transition:enter-end="opacity-100 translate-y-0"
+            x-transition:leave="transition ease-in duration-300"
+            x-transition:leave-start="opacity-100 translate-y-0"
+            x-transition:leave-end="opacity-0 -translate-y-4"
+            style="display: none;"
+            @click="toastVisible = false"
+            class="absolute right-0 top-full z-50 mt-2.5 flex w-max max-w-64 cursor-pointer items-center gap-2 rounded-full px-3.5 py-2 shadow-lg shadow-black/25"
+            :style="{ backgroundColor: '#FE2C55' }"
+        >
+            <i class="fa-solid fa-bell shrink-0 text-xs text-white"></i>
+            <span class="whitespace-nowrap text-[12px] font-semibold text-white" x-text="toastTotal + ' notifikasi baru'"></span>
+        </div>
     @endif
 </div>
