@@ -35,6 +35,10 @@ new #[Layout('layouts::admin-panel')] #[Title('Produk')] class extends Component
             Storage::disk('public')->delete($product->thumbnail);
         }
 
+        foreach ($product->images as $image) {
+            Storage::disk('public')->delete($image->image_path);
+        }
+
         $product->delete();
 
         session()->flash('status', 'Produk "'.$product->nama.'" berhasil dihapus.');

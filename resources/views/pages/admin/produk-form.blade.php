@@ -2,15 +2,19 @@
 
 use App\Models\Category;
 use App\Models\Product;
+use App\Models\ProductImage;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
 use Livewire\Component;
+use Livewire\WithFileUploads;
 
 new #[Layout('layouts::admin-panel')] class extends Component
 {
+    use WithFileUploads;
+
     public ?int $productId = null;
 
     public bool $isEdit = false;
@@ -27,6 +31,21 @@ new #[Layout('layouts::admin-panel')] class extends Component
     public ?string $thumbnailCroppedBase64 = null;
 
     public ?string $thumbnail_lama = null;
+
+    /**
+     * Foto tambahan produk — maksimal 3 slot (total 4 foto bersama thumbnail
+     * utama), sesuai jumlah slot thumbnail yang sudah ada di desain frontend.
+     */
+    public const MAX_ADDITIONAL_PHOTOS = 3;
+
+    /** Foto tambahan yang sudah tersimpan di DB, per slot. Null = slot kosong. */
+    public array $existingAdditionalImages = [null, null, null];
+
+    /** File baru yang di-upload admin tapi belum disimpan, per slot (Livewire TemporaryUploadedFile). */
+    public array $newAdditionalPhotos = [null, null, null];
+
+    /** ID product_images yang ditandai untuk dihapus saat save(). */
+    public array $removedAdditionalImageIds = [];
 
     public string $harga = '';
 
@@ -69,12 +88,28 @@ new #[Layout('layouts::admin-panel')] class extends Component
             $this->panjang = (string) $product->panjang;
             $this->lebar = (string) $product->lebar;
             $this->tinggi = (string) $product->tinggi;
+
+            foreach ($product->images as $image) {
+                $slot = ((int) $image->sort_order) - 1;
+
+                if ($slot >= 0 && $slot < self::MAX_ADDITIONAL_PHOTOS) {
+                    $this->existingAdditionalImages[$slot] = [
+                        'id' => $image->id,
+                        'path' => $image->image_path,
+                    ];
+                }
+            }
         }
     }
 
     public function getPageTitleProperty(): string
     {
         return $this->isEdit ? 'Edit Produk' : 'Tambah Produk';
+    }
+
+    public function getMaxAdditionalPhotosProperty(): int
+    {
+        return self::MAX_ADDITIONAL_PHOTOS;
     }
 
     /** Daftar kategori untuk dropdown — data master, bukan lagi teks bebas. */
@@ -104,6 +139,7 @@ new #[Layout('layouts::admin-panel')] class extends Component
             'deskripsi_pendek' => ['required', 'string', 'max:500'],
             'deskripsi_lengkap' => ['required', 'string'],
             'thumbnailCroppedBase64' => [$this->isEdit ? 'nullable' : 'required', 'string'],
+            'newAdditionalPhotos.*' => ['nullable', 'image', 'mimes:jpeg,jpg,png,webp', 'max:5120'],
             // decimal('harga', 12, 2) di database -> maksimal 10 digit di depan koma.
             'harga' => ['required', 'numeric', 'min:0', 'max:9999999999.99'],
             'harga_diskon' => ['nullable', 'numeric', 'min:0', 'max:9999999999.99', 'lt:harga'],
@@ -127,6 +163,9 @@ new #[Layout('layouts::admin-panel')] class extends Component
             'deskripsi_pendek.max' => 'Deskripsi pendek maksimal 500 karakter.',
             'deskripsi_lengkap.required' => 'Deskripsi lengkap wajib diisi.',
             'thumbnailCroppedBase64.required' => 'Foto produk wajib diunggah & di-crop terlebih dahulu.',
+            'newAdditionalPhotos.*.image' => 'Foto tambahan harus berupa gambar.',
+            'newAdditionalPhotos.*.mimes' => 'Foto tambahan harus berformat JPG, PNG, atau WEBP.',
+            'newAdditionalPhotos.*.max' => 'Ukuran foto tambahan maksimal 5MB.',
             'harga.required' => 'Harga wajib diisi.',
             'harga.numeric' => 'Harga harus berupa angka.',
             'harga.max' => 'Harga maksimal Rp9.999.999.999,99.',
@@ -181,6 +220,42 @@ new #[Layout('layouts::admin-panel')] class extends Component
         return $binary;
     }
 
+    /**
+     * Kalau admin upload file baru ke slot yang sudah punya foto tersimpan
+     * (aksi "Ganti"), tandai foto lama itu untuk dihapus saat save().
+     */
+    public function updated($name, $value): void
+    {
+        if (! str_starts_with($name, 'newAdditionalPhotos.')) {
+            return;
+        }
+
+        $slot = (int) substr($name, strlen('newAdditionalPhotos.'));
+        $existing = $this->existingAdditionalImages[$slot] ?? null;
+
+        if ($value && $existing) {
+            $this->removedAdditionalImageIds[] = $existing['id'];
+            $this->existingAdditionalImages[$slot] = null;
+        }
+    }
+
+    /** Hapus foto tambahan di slot tertentu (foto baru yang belum disimpan, atau foto lama yang sudah tersimpan). */
+    public function removeAdditionalPhoto(int $slot): void
+    {
+        if ($this->newAdditionalPhotos[$slot] ?? null) {
+            $this->newAdditionalPhotos[$slot] = null;
+
+            return;
+        }
+
+        $existing = $this->existingAdditionalImages[$slot] ?? null;
+
+        if ($existing) {
+            $this->removedAdditionalImageIds[] = $existing['id'];
+            $this->existingAdditionalImages[$slot] = null;
+        }
+    }
+
     public function save(): void
     {
         $this->validate();
@@ -216,6 +291,33 @@ new #[Layout('layouts::admin-panel')] class extends Component
         $product->lebar = $this->lebar !== '' ? $this->lebar : 0;
         $product->tinggi = $this->tinggi !== '' ? $this->tinggi : 0;
         $product->save();
+
+        // Hapus dulu foto tambahan yang ditandai untuk dihapus/diganti,
+        // supaya tidak ada file storage yang jadi sampah (orphan).
+        if ($this->removedAdditionalImageIds) {
+            $imagesToRemove = ProductImage::query()
+                ->whereIn('id', $this->removedAdditionalImageIds)
+                ->get();
+
+            foreach ($imagesToRemove as $image) {
+                Storage::disk('public')->delete($image->image_path);
+                $image->delete();
+            }
+        }
+
+        // Simpan foto tambahan baru per slot (upload baru atau hasil "Ganti").
+        foreach ($this->newAdditionalPhotos as $slot => $file) {
+            if (! $file) {
+                continue;
+            }
+
+            $path = $file->store('produk', 'public');
+
+            ProductImage::query()->updateOrCreate(
+                ['product_id' => $product->id, 'sort_order' => $slot + 1],
+                ['image_path' => $path],
+            );
+        }
 
         session()->flash('status', $this->isEdit
             ? 'Produk "'.$product->nama.'" berhasil diperbarui.'
@@ -290,6 +392,63 @@ new #[Layout('layouts::admin-panel')] class extends Component
             </div>
         </div>
 
+        {{-- ================= CARD: FOTO TAMBAHAN PRODUK ================= --}}
+        <div class="rounded-2xl border border-admin-border bg-admin-surface p-5 shadow-sm sm:p-6">
+            <h3 class="mb-1 flex items-center gap-2 text-sm font-semibold text-admin-ink">
+                <i class="fa-solid fa-images text-admin-accent"></i>
+                Foto Tambahan Produk
+            </h3>
+            <p class="mb-5 text-xs text-admin-ink-soft">
+                Opsional &mdash; maksimal {{ $this->maxAdditionalPhotos }} foto tambahan (total 4 foto bersama thumbnail utama).
+            </p>
+
+            <div class="grid grid-cols-3 gap-3 sm:gap-4">
+                @for ($slot = 0; $slot < $this->maxAdditionalPhotos; $slot++)
+                    @php
+                        $newPhoto = $newAdditionalPhotos[$slot] ?? null;
+                        $existingPhoto = $existingAdditionalImages[$slot] ?? null;
+                        $hasPhoto = $newPhoto || $existingPhoto;
+                    @endphp
+
+                    <div wire:key="additional-slot-{{ $slot }}" class="group relative aspect-square overflow-hidden rounded-xl border border-admin-border bg-admin-cream">
+                        @if ($newPhoto)
+                            <img src="{{ $newPhoto->temporaryUrl() }}" alt="Foto tambahan {{ $slot + 1 }}" class="h-full w-full object-cover">
+                        @elseif ($existingPhoto)
+                            <img src="{{ Storage::disk('public')->url($existingPhoto['path']) }}" alt="Foto tambahan {{ $slot + 1 }}" class="h-full w-full object-cover">
+                        @else
+                            <label class="flex h-full w-full cursor-pointer flex-col items-center justify-center gap-1.5 text-admin-ink-soft transition hover:bg-admin-cream/70" title="Tambah foto">
+                                <i class="fa-solid fa-plus text-base"></i>
+                                <span class="px-1 text-center text-[10px] font-medium leading-tight">Foto {{ $slot + 1 }}</span>
+                                <input type="file" accept="image/jpeg,image/jpg,image/png,image/webp" class="hidden" wire:model="newAdditionalPhotos.{{ $slot }}">
+                            </label>
+                        @endif
+
+                        @if ($hasPhoto)
+                            <div class="absolute inset-x-0 bottom-0 flex items-center justify-center gap-1.5 bg-black/55 p-1.5 opacity-0 transition group-hover:opacity-100">
+                                <label class="flex h-7 w-7 cursor-pointer items-center justify-center rounded-full bg-white/90 text-admin-ink transition hover:bg-white" title="Ganti foto">
+                                    <i class="fa-solid fa-camera-rotate text-xs"></i>
+                                    <input type="file" accept="image/jpeg,image/jpg,image/png,image/webp" class="hidden" wire:model="newAdditionalPhotos.{{ $slot }}">
+                                </label>
+                                <button type="button" wire:click="removeAdditionalPhoto({{ $slot }})" class="flex h-7 w-7 items-center justify-center rounded-full bg-white/90 text-red-600 transition hover:bg-white" title="Hapus foto">
+                                    <i class="fa-solid fa-trash text-xs"></i>
+                                </button>
+                            </div>
+                        @endif
+
+                        <div wire:loading wire:target="newAdditionalPhotos.{{ $slot }}" class="absolute inset-0 flex items-center justify-center bg-black/40">
+                            <i class="fa-solid fa-circle-notch animate-spin text-white"></i>
+                        </div>
+                    </div>
+                @endfor
+            </div>
+
+            @error('newAdditionalPhotos.*')
+                <p class="mt-3 flex items-center gap-1 text-xs font-medium text-red-600">
+                    <i class="fa-solid fa-circle-exclamation"></i> {{ $message }}
+                </p>
+            @enderror
+        </div>
+
         {{-- ================= CARD: INFORMASI PRODUK ================= --}}
         <div class="rounded-2xl border border-admin-border bg-admin-surface p-5 shadow-sm sm:p-6">
             <h3 class="mb-5 flex items-center gap-2 text-sm font-semibold text-admin-ink">
@@ -362,7 +521,7 @@ new #[Layout('layouts::admin-panel')] class extends Component
                     <label for="harga" class="mb-1.5 block text-sm font-medium text-admin-ink">Harga Normal (Rp)</label>
                     <div class="relative" x-data="numberStepper()">
                         <input
-                            id="harga" type="number" step="1" min="0" wire:model="harga" placeholder="3500000"
+                            id="harga" type="number" step="1" min="0" wire:model="harga" data-zero-replace="{{ $isEdit ? 'false' : 'true' }}" placeholder="3500000"
                             x-ref="numInput"
                             class="w-full rounded-lg border {{ $errors->has('harga') ? 'border-red-400' : 'border-admin-border' }} bg-admin-surface px-3 py-2.5 pr-8 text-sm text-admin-ink transition focus:border-admin-accent focus:outline-none focus:ring-2 focus:ring-admin-accent/20 "
                         >
@@ -384,7 +543,7 @@ new #[Layout('layouts::admin-panel')] class extends Component
                     </label>
                     <div class="relative" x-data="numberStepper()">
                         <input
-                            id="harga_diskon" type="number" step="1" min="0" wire:model="harga_diskon" placeholder="Kosongkan jika tidak ada diskon"
+                            id="harga_diskon" type="number" step="1" min="0" wire:model="harga_diskon" data-zero-replace="{{ $isEdit ? 'false' : 'true' }}" placeholder="Kosongkan jika tidak ada diskon"
                             x-ref="numInput"
                             class="w-full rounded-lg border {{ $errors->has('harga_diskon') ? 'border-red-400' : 'border-admin-border' }} bg-admin-surface px-3 py-2.5 pr-8 text-sm text-admin-ink transition focus:border-admin-accent focus:outline-none focus:ring-2 focus:ring-admin-accent/20 "
                         >
@@ -404,7 +563,7 @@ new #[Layout('layouts::admin-panel')] class extends Component
                     <label for="stok" class="mb-1.5 block text-sm font-medium text-admin-ink">Stok</label>
                     <div class="relative" x-data="numberStepper()">
                         <input
-                            id="stok" type="number" step="1" min="0" wire:model="stok"
+                            id="stok" type="number" step="1" min="0" wire:model="stok" data-zero-replace="{{ $isEdit ? 'false' : 'true' }}"
                             x-ref="numInput"
                             class="w-full rounded-lg border {{ $errors->has('stok') ? 'border-red-400' : 'border-admin-border' }} bg-admin-surface px-3 py-2.5 pr-8 text-sm text-admin-ink transition focus:border-admin-accent focus:outline-none focus:ring-2 focus:ring-admin-accent/20 "
                         >
@@ -453,7 +612,7 @@ new #[Layout('layouts::admin-panel')] class extends Component
                 <div>
                     <label for="berat" class="mb-1.5 block text-sm font-medium text-admin-ink">Berat (kg)</label>
                     <div class="relative" x-data="numberStepper()">
-                        <input id="berat" type="number" step="0.01" min="0" wire:model="berat" x-ref="numInput" class="w-full rounded-lg border border-admin-border bg-admin-surface px-3 py-2.5 pr-8 text-sm text-admin-ink transition focus:border-admin-accent focus:outline-none focus:ring-2 focus:ring-admin-accent/20">
+                        <input id="berat" type="number" step="0.01" min="0" wire:model="berat" data-zero-replace="{{ $isEdit ? 'false' : 'true' }}" x-ref="numInput" class="w-full rounded-lg border border-admin-border bg-admin-surface px-3 py-2.5 pr-8 text-sm text-admin-ink transition focus:border-admin-accent focus:outline-none focus:ring-2 focus:ring-admin-accent/20">
                         <div class="absolute right-1.5 top-1/2 flex -translate-y-1/2 flex-col overflow-hidden rounded-md border border-admin-border">
                             <button type="button" x-on:click="step(1)" tabindex="-1" class="flex h-4 w-6 items-center justify-center text-admin-ink-soft transition hover:bg-admin-cream hover:text-admin-accent">
                                 <x-icon-arrow direction="chevron-up" size="text-[9px]" />
@@ -467,7 +626,7 @@ new #[Layout('layouts::admin-panel')] class extends Component
                 <div>
                     <label for="panjang" class="mb-1.5 block text-sm font-medium text-admin-ink">Panjang (cm)</label>
                     <div class="relative" x-data="numberStepper()">
-                        <input id="panjang" type="number" step="0.01" min="0" wire:model="panjang" x-ref="numInput" class="w-full rounded-lg border border-admin-border bg-admin-surface px-3 py-2.5 pr-8 text-sm text-admin-ink transition focus:border-admin-accent focus:outline-none focus:ring-2 focus:ring-admin-accent/20">
+                        <input id="panjang" type="number" step="0.01" min="0" wire:model="panjang" data-zero-replace="{{ $isEdit ? 'false' : 'true' }}" x-ref="numInput" class="w-full rounded-lg border border-admin-border bg-admin-surface px-3 py-2.5 pr-8 text-sm text-admin-ink transition focus:border-admin-accent focus:outline-none focus:ring-2 focus:ring-admin-accent/20">
                         <div class="absolute right-1.5 top-1/2 flex -translate-y-1/2 flex-col overflow-hidden rounded-md border border-admin-border">
                             <button type="button" x-on:click="step(1)" tabindex="-1" class="flex h-4 w-6 items-center justify-center text-admin-ink-soft transition hover:bg-admin-cream hover:text-admin-accent">
                                 <x-icon-arrow direction="chevron-up" size="text-[9px]" />
@@ -481,7 +640,7 @@ new #[Layout('layouts::admin-panel')] class extends Component
                 <div>
                     <label for="lebar" class="mb-1.5 block text-sm font-medium text-admin-ink">Lebar (cm)</label>
                     <div class="relative" x-data="numberStepper()">
-                        <input id="lebar" type="number" step="0.01" min="0" wire:model="lebar" x-ref="numInput" class="w-full rounded-lg border border-admin-border bg-admin-surface px-3 py-2.5 pr-8 text-sm text-admin-ink transition focus:border-admin-accent focus:outline-none focus:ring-2 focus:ring-admin-accent/20">
+                        <input id="lebar" type="number" step="0.01" min="0" wire:model="lebar" data-zero-replace="{{ $isEdit ? 'false' : 'true' }}" x-ref="numInput" class="w-full rounded-lg border border-admin-border bg-admin-surface px-3 py-2.5 pr-8 text-sm text-admin-ink transition focus:border-admin-accent focus:outline-none focus:ring-2 focus:ring-admin-accent/20">
                         <div class="absolute right-1.5 top-1/2 flex -translate-y-1/2 flex-col overflow-hidden rounded-md border border-admin-border">
                             <button type="button" x-on:click="step(1)" tabindex="-1" class="flex h-4 w-6 items-center justify-center text-admin-ink-soft transition hover:bg-admin-cream hover:text-admin-accent">
                                 <x-icon-arrow direction="chevron-up" size="text-[9px]" />
@@ -495,7 +654,7 @@ new #[Layout('layouts::admin-panel')] class extends Component
                 <div>
                     <label for="tinggi" class="mb-1.5 block text-sm font-medium text-admin-ink">Tinggi (cm)</label>
                     <div class="relative" x-data="numberStepper()">
-                        <input id="tinggi" type="number" step="0.01" min="0" wire:model="tinggi" x-ref="numInput" class="w-full rounded-lg border border-admin-border bg-admin-surface px-3 py-2.5 pr-8 text-sm text-admin-ink transition focus:border-admin-accent focus:outline-none focus:ring-2 focus:ring-admin-accent/20">
+                        <input id="tinggi" type="number" step="0.01" min="0" wire:model="tinggi" data-zero-replace="{{ $isEdit ? 'false' : 'true' }}" x-ref="numInput" class="w-full rounded-lg border border-admin-border bg-admin-surface px-3 py-2.5 pr-8 text-sm text-admin-ink transition focus:border-admin-accent focus:outline-none focus:ring-2 focus:ring-admin-accent/20">
                         <div class="absolute right-1.5 top-1/2 flex -translate-y-1/2 flex-col overflow-hidden rounded-md border border-admin-border">
                             <button type="button" x-on:click="step(1)" tabindex="-1" class="flex h-4 w-6 items-center justify-center text-admin-ink-soft transition hover:bg-admin-cream hover:text-admin-accent">
                                 <x-icon-arrow direction="chevron-up" size="text-[9px]" />

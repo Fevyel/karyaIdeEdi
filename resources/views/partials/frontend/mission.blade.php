@@ -89,7 +89,7 @@
 
             <div class="mt-8 flex justify-end">
                 <a
-                    href="#"
+                    href="{{ route('profile.index') }}"
                     class="group inline-flex items-center gap-2 border-b border-admin-ink/30 pb-0.5 text-sm font-medium text-[#4B3A26] transition-colors duration-300 hover:border-admin-accent hover:text-admin-accent"
                 >
                     Lihat Profil Kami

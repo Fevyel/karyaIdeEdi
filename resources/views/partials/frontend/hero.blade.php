@@ -54,14 +54,14 @@
             {{-- CTA --}}
             <div class="mt-6 flex flex-wrap items-center gap-3">
                 <a
-                    href="#"
+                    href="{{ route('products.index') }}"
                     class="group inline-flex items-center gap-2 rounded-lg bg-[#1A1A1A] px-5 py-2.5 text-sm font-medium text-white shadow-sm transition-all duration-300 hover:bg-black hover:shadow-md"
                 >
                     Lihat Katalog
                     <x-icon-arrow direction="right" class="transition-transform duration-300 group-hover:translate-x-1" />
                 </a>
                 <a
-                    href="#"
+                    href="{{ route('profile.index') }}"
                     class="inline-flex items-center gap-2 rounded-lg border border-[#DCDDD7] px-5 py-2.5 text-sm font-medium text-[#3D2B1F] transition-all duration-300 hover:border-admin-accent hover:text-admin-accent"
                 >
                     Jelajahi Profil

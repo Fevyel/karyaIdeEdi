@@ -30,5 +30,11 @@
 
         {{-- ================= ULASAN PELANGGAN KAMI ================= --}}
         @include('partials.frontend.testimonials')
+
+        {{-- ================= KEUNGGULAN KAMI ================= --}}
+        @include('partials.frontend.expertise')
+
+        {{-- ================= FOOTER ================= --}}
+        @include('partials.frontend.footer')
     </body>
 </html>

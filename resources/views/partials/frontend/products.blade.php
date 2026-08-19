@@ -2,8 +2,8 @@
     ==========================================================
     SEMUA PRODUK — Homepage Karya Ide Edi
     ==========================================================
-    Heading + filter kategori (pill) di kiri, link "Lihat Semua
-    Produk" di kanan, grid 3 kolom kartu produk.
+    Heading + link "Lihat Semua Produk" di kanan, grid 3 kolom
+    kartu produk.
 
     - Data produk (thumbnail, nama, deskripsi, harga, harga
       diskon, kategori) diambil LANGSUNG dari tabel `products`
@@ -16,14 +16,16 @@
       partials/frontend/product-card.blade.php, supaya thumbnail
       selalu object-cover penuh & rating selalu dihitung dari
       testimonial approved di database (tidak ada hardcode).
-    - Filter pill kategori sekarang FUNGSIONAL lewat query string
-      ?kategori=<slug> (dipakai juga oleh section "Produk Berdasarkan
-      Kategori" saat kartu kategori diklik). Kategori diambil dari
-      tabel `categories` (data master), bukan lagi teks bebas hasil
-      distinct kolom produk. Saat sedang difilter, batas 3 produk
-      preview otomatis dilepas supaya semua produk di kategori itu
-      tampil. Link "Lihat Semua Produk" MASIH belum berfungsi
-      (href="#"), menunggu halaman katalog penuh.
+    - Filter pill kategori di bagian atas section SUDAH DIHAPUS
+      dari tampilan (permintaan pemilik toko). Logic PHP untuk
+      memfilter berdasarkan query string ?kategori=<slug> TETAP
+      dipertahankan apa adanya — masih dipakai oleh kartu kategori
+      di section "Produk Berdasarkan Kategori" (kategori.blade.php)
+      yang link-nya mengarah ke sini. Kalau logic ini ikut dihapus,
+      klik kartu kategori akan berhenti memfilter. Saat sedang
+      difilter, batas 3 produk preview otomatis dilepas supaya
+      semua produk di kategori itu tampil. Link "Lihat Semua Produk"
+      MASIH belum berfungsi (href="#"), menunggu halaman katalog penuh.
 
     Pemakaian:
         @include('partials.frontend.products')
@@ -55,40 +57,14 @@
 <section id="produk" class="bg-white scroll-mt-24">
     <div class="mx-auto max-w-7xl px-6 py-14 sm:px-8 lg:px-10 lg:py-20">
 
-        {{-- ============ Header: judul + filter (kiri), link (kanan) ============ --}}
+        {{-- ============ Header: judul (kiri), link (kanan) ============ --}}
         <div class="flex flex-wrap items-end justify-between gap-6">
             <div>
                 <h2 class="font-display text-2xl text-[#4B3A26] sm:text-3xl">Semua Produk</h2>
-
-                <div class="mt-4 flex flex-wrap gap-2.5">
-                    <a
-                        href="{{ route('home') }}#produk"
-                        @class([
-                            'rounded-full px-4 py-1.5 text-xs font-medium transition-colors duration-300 sm:text-sm',
-                            'bg-[#1A1A1A] text-white' => ! $activeCategory,
-                            'bg-admin-cream text-[#4B3A26] hover:bg-[#1A1A1A] hover:text-white' => (bool) $activeCategory,
-                        ])
-                    >
-                        Semua
-                    </a>
-                    @foreach ($productCategories as $category)
-                        @php $isActive = $activeCategory && $activeCategory->id === $category->id; @endphp
-                        <a
-                            href="{{ route('home', ['kategori' => $category->slug]) }}#produk"
-                            @class([
-                                'rounded-full px-4 py-1.5 text-xs font-medium transition-colors duration-300 sm:text-sm',
-                                'bg-[#1A1A1A] text-white' => $isActive,
-                                'bg-admin-cream text-[#4B3A26] hover:bg-[#1A1A1A] hover:text-white' => ! $isActive,
-                            ])
-                        >
-                            {{ $category->name }}
-                        </a>
-                    @endforeach
-                </div>
             </div>
 
             <a
-                href="#"
+                href="{{ route('products.index') }}"
                 class="group inline-flex items-center gap-2 border-b border-admin-ink/30 pb-0.5 text-sm font-medium text-[#4B3A26] transition-colors duration-300 hover:border-admin-accent hover:text-admin-accent"
             >
                 Lihat Semua Produk

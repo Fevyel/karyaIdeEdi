@@ -64,6 +64,15 @@ class Product extends Model
     }
 
     /**
+     * Foto tambahan produk (di luar thumbnail utama), maksimal 3,
+     * diurutkan berdasarkan sort_order untuk dipakai di gallery frontend.
+     */
+    public function images(): HasMany
+    {
+        return $this->hasMany(ProductImage::class)->orderBy('sort_order');
+    }
+
+    /**
      * Alias baca-saja ke kolom `nama`, supaya kode yang sudah ada
      * (mis. resources/views/pages/admin/dashboard.blade.php dan
      * interaksi.blade.php yang memanggil `$product->name`) tetap

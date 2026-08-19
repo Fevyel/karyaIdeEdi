@@ -1,5 +1,12 @@
 @import 'tailwindcss';
 
+/* Alpine.js: sembunyikan elemen [x-cloak] sebelum Alpine selesai inisialisasi,
+   mencegah flash konten (dipakai mis. di tab Description/Specification/Reviews
+   pada halaman detail produk). */
+[x-cloak] {
+    display: none !important;
+}
+
 @source '../views';
 @source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
 
@@ -65,6 +72,7 @@ input[type="number"]::-webkit-outer-spin-button {
 }
 input[type="number"] {
     -moz-appearance: textfield;
+    appearance: textfield;
 }
 
 @keyframes fade-in-up {

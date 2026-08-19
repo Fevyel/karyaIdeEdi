@@ -38,7 +38,7 @@
     $averageRating = $reviewCount > 0 ? round((float) $averageRating, 1) : null;
 @endphp
 
-<div class="group">
+<a href="{{ route('products.show', $product) }}" class="group block">
     {{-- Kotak foto — mengikuti referensi terbaru: foto produk studio (bg putih)
          ditampilkan utuh (object-contain) di atas card berwarna admin-cream,
          dengan padding rapat (bukan p-8 lama) supaya tidak ada ruang kosong berlebih. --}}
@@ -104,4 +104,4 @@
             @endif
         </div>
     </div>
-</div>
+</a>

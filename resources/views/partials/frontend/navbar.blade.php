@@ -5,14 +5,16 @@
     Komponen UI murni (belum ada logika bisnis apapun).
     - Logo & nama situs: WAJIB dari Pengaturan Website (App\Models\Setting),
       lewat partial terpusat `partials.logo` — bukan file statis.
-    - Menu tengah: Beranda, Produk, Kategori, Testimoni, Booking.
+    - Menu tengah: Beranda, Profil, Produk, Testimoni, Booking.
       Indikator aktif memakai request()->routeIs() / url()->current(),
-      jadi begitu route Produk/Kategori/Testimoni/Booking sudah dibuat,
+      jadi begitu route Profil/Testimoni/Booking sudah dibuat,
       navbar ini otomatis mendeteksi tanpa perlu diedit lagi.
     - Search bar, dropdown kategori, wishlist, dan keranjang SENGAJA
       belum difungsikan (murni tampilan) — sesuai instruksi.
     - Tombol admin memakai sistem auth yang sudah ada:
       belum login -> route('admin.login'), sudah login -> route('admin.dashboard').
+    - Menu "Produk" sekarang mengarah route('products.index') —
+      halaman katalog penuh yang sudah dibuat, bukan lagi '#'.
 
     Pemakaian:
         @include('partials.frontend.navbar')
@@ -27,9 +29,9 @@
     // supaya link mengarah ke '#' tanpa memicu RouteNotFoundException.
     $navMenu = [
         ['label' => 'Beranda',   'route' => 'home', 'icon' => 'fa-house'],
-        ['label' => 'Produk',    'route' => null,   'icon' => 'fa-couch'],
-        ['label' => 'Kategori',  'route' => null,   'icon' => 'fa-layer-group'],
-        ['label' => 'Testimoni', 'route' => null,   'icon' => 'fa-star'],
+        ['label' => 'Profil',    'route' => 'profile.index', 'icon' => 'fa-couch'],
+        ['label' => 'Produk',    'route' => 'products.index', 'icon' => 'fa-layer-group'],
+        ['label' => 'Testimoni', 'route' => 'testimonials.index', 'icon' => 'fa-star'],
         ['label' => 'Booking',   'route' => null,   'icon' => 'fa-calendar-check'],
     ];
 @endphp
@@ -122,7 +124,7 @@
                 </button>
 
                 {{-- Tombol Admin: HANYA tampil untuk pemilik yang sudah login. Pengunjung umum tidak melihat ikon ini sama sekali.
-                     Sekaligus jadi indikator notifikasi admin (badge + floating toast, mirip TikTok) — lihat resources/views/components/⚡notification-bell.blade.php --}}
+                     Sekaligus jadi indikator notifikasi admin (badge + floating toast, mirip TikTok) — lihat resources/views/components/notification-bell.blade.php --}}
                 @auth
                     <livewire:notification-bell />
                 @endauth

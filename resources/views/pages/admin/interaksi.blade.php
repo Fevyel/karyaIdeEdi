@@ -319,8 +319,8 @@ new #[Layout('layouts::admin-panel')] #[Title('Interaksi')] class extends Compon
                     </div>
                 </div>
 
-                <div class="flex shrink-0 flex-wrap items-center gap-2 sm:flex-col sm:items-stretch">
-                    <div class="flex items-center gap-1.5">
+                <div class="flex shrink-0 flex-row flex-wrap items-center justify-end gap-2 pr-2 sm:flex-col sm:items-end sm:pr-4">
+                    <div class="flex items-center gap-2">
                         <button
                             type="button"
                             wire:click="openDetail({{ $item->id }})"
@@ -329,18 +329,20 @@ new #[Layout('layouts::admin-panel')] #[Title('Interaksi')] class extends Compon
                         >
                             <i class="fa-solid fa-eye text-xs"></i>
                         </button>
-                        <button
-                            type="button"
-                            wire:click="toggleFeaturedHome({{ $item->id }})"
-                            title="{{ $item->is_featured_home ? 'Tarik dari beranda' : 'Tampilkan di beranda' }}"
-                            @class([
-                                'flex h-8 w-8 items-center justify-center rounded-lg border transition-all duration-300',
-                                'border-admin-gold bg-admin-gold/10 text-admin-gold' => $item->is_featured_home,
-                                'border-admin-border text-admin-ink-soft hover:bg-admin-cream' => ! $item->is_featured_home,
-                            ])
-                        >
-                            <i class="fa-{{ $item->is_featured_home ? 'solid' : 'regular' }} fa-star text-xs"></i>
-                        </button>
+                        @if ($item->approval_status === 'approved')
+                            <button
+                                type="button"
+                                wire:click="toggleFeaturedHome({{ $item->id }})"
+                                title="{{ $item->is_featured_home ? 'Tarik dari beranda' : 'Tampilkan di beranda' }}"
+                                @class([
+                                    'flex h-8 w-8 items-center justify-center rounded-lg border transition-all duration-300',
+                                    'border-admin-gold bg-admin-gold/10 text-admin-gold' => $item->is_featured_home,
+                                    'border-admin-border text-admin-ink-soft hover:bg-admin-cream' => ! $item->is_featured_home,
+                                ])
+                            >
+                                <i class="fa-{{ $item->is_featured_home ? 'solid' : 'regular' }} fa-star text-xs"></i>
+                            </button>
+                        @endif
                         <button
                             type="button"
                             wire:click="delete({{ $item->id }})"
@@ -352,31 +354,29 @@ new #[Layout('layouts::admin-panel')] #[Title('Interaksi')] class extends Compon
                         </button>
                     </div>
 
-                    <div class="flex items-center gap-2 sm:flex-col sm:items-stretch">
-                        @if ($item->approval_status !== 'approved')
-                            <button
-                                type="button"
-                                wire:click="approve({{ $item->id }})"
-                                wire:confirm="Setujui komentar ini sebagai testimoni publik?"
-                                class="inline-flex items-center justify-center gap-1.5 rounded-full bg-admin-accent px-4 py-2 text-xs font-semibold text-white transition-all duration-300 hover:bg-admin-accent-strong"
-                            >
-                                <i class="fa-solid fa-check"></i>
-                                Setujui
-                            </button>
-                        @endif
+                    @if ($item->approval_status !== 'approved')
+                        <button
+                            type="button"
+                            wire:click="approve({{ $item->id }})"
+                            wire:confirm="Setujui komentar ini sebagai testimoni publik?"
+                            class="inline-flex items-center justify-center gap-1.5 rounded-full bg-admin-accent px-4 py-2 text-xs font-semibold text-white transition-all duration-300 hover:bg-admin-accent-strong"
+                        >
+                            <i class="fa-solid fa-check"></i>
+                            Setujui
+                        </button>
+                    @endif
 
-                        @if ($item->approval_status !== 'rejected')
-                            <button
-                                type="button"
-                                wire:click="reject({{ $item->id }})"
-                                wire:confirm="Tolak komentar ini? Komentar tidak akan tampil di frontend."
-                                class="inline-flex items-center justify-center gap-1.5 rounded-full border border-red-200 px-4 py-2 text-xs font-semibold text-red-600 transition-all duration-300 hover:bg-red-50"
-                            >
-                                <i class="fa-solid fa-xmark"></i>
-                                Tolak
-                            </button>
-                        @endif
-                    </div>
+                    @if ($item->approval_status !== 'rejected')
+                        <button
+                            type="button"
+                            wire:click="reject({{ $item->id }})"
+                            wire:confirm="Tolak komentar ini? Komentar tidak akan tampil di frontend."
+                            class="inline-flex items-center justify-center gap-1.5 rounded-full border border-red-200 px-4 py-2 text-xs font-semibold text-red-600 transition-all duration-300 hover:bg-red-50"
+                        >
+                            <i class="fa-solid fa-xmark"></i>
+                            Tolak
+                        </button>
+                    @endif
                 </div>
             </div>
         @empty

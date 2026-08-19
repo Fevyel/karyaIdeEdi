@@ -43,17 +43,9 @@
     <section class="bg-[#FEEDD8]">
         <div class="mx-auto max-w-7xl px-6 py-14 sm:px-8 lg:px-10 lg:py-20">
 
-            {{-- ============ Header: judul (kiri), link (kanan) ============ --}}
+            {{-- ============ Header: judul ============ --}}
             <div class="flex flex-wrap items-end justify-between gap-6">
                 <h2 class="font-display text-2xl text-[#4B3A26] sm:text-3xl">Produk Berdasarkan Kategori</h2>
-
-                <a
-                    href="{{ route('home') }}#produk"
-                    class="group inline-flex items-center gap-2 border-b border-admin-ink/30 pb-0.5 text-sm font-medium text-[#4B3A26] transition-colors duration-300 hover:border-admin-accent hover:text-admin-accent"
-                >
-                    Lihat Semua Produk
-                    <x-icon-arrow direction="right" class="transition-transform duration-300 group-hover:translate-x-1" />
-                </a>
             </div>
 
             {{-- ============ Grid kategori ============ --}}

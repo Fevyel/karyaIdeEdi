@@ -361,29 +361,11 @@
         @livewireScripts
 
         {{--
-            UX FIX: input angka bernilai default "0" (harga, stok, berat,
-            urutan kategori, dll) — nol di depan otomatis "hilang" begitu
-            admin mulai mengetik, sehingga:
-                "0" + ketik "9764"   -> "9764"   (bukan "09764")
-                "0" + ketik "5"      -> "5"
-                "0" + paste "350000" -> "350000"
-            Field yang sudah berisi data asli (mis. "125000") TIDAK
-            tersentuh sama sekali — aturan cuma berlaku kalau ada nol di
-            paling depan yang diikuti angka lain. Klik, pilih sebagian,
-            Ctrl+A, edit manual semuanya tetap normal. Field kosong
-            dibiarkan kosong, tidak dipaksa jadi "0". Angka desimal
-            seperti "0.5" tidak diganggu (setelah "0" ada "." bukan
-            digit, jadi tidak match).
-
-            SENGAJA inline di sini (bukan resources/js/app.js) supaya
-            aktif tanpa bergantung pada `npm run build`. Dipasang di
-            document dengan { capture: true } supaya perbaikan nilai ini
-            terjadi SEBELUM listener wire:model milik Livewire membaca
-            value-nya — jadi wire:model / .live / .lazy / .defer semua
-            selalu menerima angka yang sudah bersih, apa pun mode-nya.
-            Berlaku otomatis untuk SEMUA <input type="number"> di seluruh
-            panel admin, termasuk yang dirender ulang oleh Livewire dan
-            halaman admin yang dibuat setelah ini.
+            Numeric-input UX is implemented globally in resources/js/app.js.
+            Number fields that are allowed to replace a create-form default
+            zero are explicitly marked with data-zero-replace="true".
+            Existing database values on edit forms are not marked, so they
+            keep normal editing behavior.
         --}}
         {{--
             BUG FIX: sidebar admin (menu Dashboard/Produk/Kategori/.../Interaksi)
@@ -419,33 +401,6 @@
             })();
         </script>
 
-        <script>
-            document.addEventListener('input', function (event) {
-                var input = event.target;
-
-                if (input.tagName !== 'INPUT' || input.type !== 'number') {
-                    return;
-                }
-
-                if (/^0+\d/.test(input.value)) {
-                    input.value = input.value.replace(/^0+(?=\d)/, '');
-                }
-            }, true);
-
-            // Bonus UX: begitu field yang masih persis "0" difokus,
-            // teksnya diseleksi supaya kelihatan siap diganti.
-            document.addEventListener('focusin', function (event) {
-                var input = event.target;
-
-                if (
-                    input.tagName === 'INPUT'
-                    && input.type === 'number'
-                    && input.value === '0'
-                ) {
-                    input.select();
-                }
-            });
-
             {{--
                 Helper Alpine dipakai bareng <x-icon-arrow> untuk tombol
                 naik/turun kustom di setiap <input type="number"> (gantinya
@@ -454,6 +409,7 @@
                 lihat resources/views/pages/admin/produk-form.blade.php dan
                 kategori-form.blade.php untuk contoh pemakaian.
             --}}
+        <script>
             document.addEventListener('alpine:init', function () {
                 Alpine.data('numberStepper', function () {
                     return {
