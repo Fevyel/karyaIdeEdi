@@ -96,9 +96,9 @@
                 <a href="#" aria-label="Facebook" class="flex h-11 w-11 items-center justify-center border-r border-[#1A1A1A]/15 text-[#1A1A1A] transition-colors duration-300 hover:bg-[#F1F1F1]">
                     <i class="fa-brands fa-facebook-f text-sm"></i>
                 </a>
-                @php $expertiseWhatsapp = \App\Models\Setting::current()->whatsapp; @endphp
+                @php $expertiseWhatsapp = \App\Models\Setting::current()->whatsappDigits(); @endphp
                 <a
-                    href="{{ $expertiseWhatsapp ? 'https://wa.me/'.preg_replace('/\D/', '', $expertiseWhatsapp) : '#' }}"
+                    href="{{ $expertiseWhatsapp ? 'https://wa.me/'.$expertiseWhatsapp : '#' }}"
                     target="{{ $expertiseWhatsapp ? '_blank' : '_self' }}"
                     rel="noopener"
                     aria-label="WhatsApp"

@@ -2,14 +2,14 @@
     $shopFooterSetting = \App\Models\Setting::current();
     $shopFooterCategories = \App\Models\Category::active()->ordered()->take(5)->get(['slug', 'name']);
 
-    $shopFooterWa = $shopFooterSetting->whatsapp
-        ? 'https://wa.me/'.preg_replace('/[^0-9]/', '', $shopFooterSetting->whatsapp)
+    $shopFooterWa = $shopFooterSetting->whatsappDigits()
+        ? 'https://wa.me/'.$shopFooterSetting->whatsappDigits()
         : '#';
 @endphp
 
 {{-- Feature strip --}}
 <section class="bg-[#FEEDD8]">
-    <div class="mx-auto grid max-w-[1180px] grid-cols-1 gap-8 px-5 py-16 sm:grid-cols-3 sm:gap-10 sm:px-7 lg:px-8 lg:py-20">
+    <div class="mx-auto grid max-w-295 grid-cols-1 gap-8 px-5 py-16 sm:grid-cols-3 sm:gap-10 sm:px-7 lg:px-8 lg:py-20">
         <div class="flex items-center gap-4">
             <span class="flex h-12 w-12 shrink-0 items-center justify-center bg-[#FFF3E4] text-[#8C6A45]">
                 <i class="fa-solid fa-truck-fast text-base"></i>
@@ -41,7 +41,7 @@
 </section>
 
 <footer class="bg-[#1A1A1A] text-white">
-    <div class="mx-auto max-w-[1180px] px-5 py-14 sm:px-7 lg:px-8 lg:py-16">
+    <div class="mx-auto max-w-295 px-5 py-14 sm:px-7 lg:px-8 lg:py-16">
         <div class="grid grid-cols-1 gap-12 sm:grid-cols-2 lg:grid-cols-4 lg:gap-16">
 
             <div>
@@ -83,7 +83,7 @@
             <div>
                 <p class="text-[11px] font-semibold uppercase tracking-[0.14em] text-white">Newsletter</p>
                 <p class="mt-5 text-xs leading-5 text-white/45">Dapatkan kabar terbaru tentang produk dan koleksi kami.</p>
-                <form class="mt-5 flex overflow-hidden border border-white/10 bg-white/[0.06]" onsubmit="return false;">
+                <form class="mt-5 flex overflow-hidden border border-white/10 bg-white/6" onsubmit="return false;">
                     <input type="email" placeholder="Enter email" class="min-w-0 flex-1 bg-transparent px-3 py-3 text-xs text-white placeholder:text-white/30 outline-none">
                     <button type="submit" aria-label="Subscribe" class="w-11 shrink-0 bg-white/10 text-white/70 transition hover:bg-white/20 hover:text-white">
                         <i class="fa-solid fa-arrow-right text-xs"></i>

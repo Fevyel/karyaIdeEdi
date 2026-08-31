@@ -1,4 +1,28 @@
-@import 'tailwindcss';
+﻿@import 'tailwindcss';
+
+/* Matikan efek "overscroll bounce" (rubber-band) saat scroll melewati batas
+   atas/bawah halaman. Tanpa ini, sticky header bisa terlihat "lepas" sesaat
+   dari posisi top-0 dan menampilkan warna latar body di baliknya. */
+html, body {
+    overscroll-behavior-y: none;
+}
+
+/* Chrome Windows (efek "overscroll glow" pakai trackpad/mouse presisi) ikut
+   warna tema OS (color-scheme) kalau situs tidak menyatakan preferensinya
+   sendiri — kalau Windows-nya dark mode, glow itu jadi hitam dan sekilas
+   "menutup" bagian atas navbar sticky saat discroll. Dua baris di bawah
+   memaksa <html> selalu punya warna latar solid milik situs sendiri dan
+   memberi tahu browser situs ini terang (kecuali admin panel yang memang
+   punya toggle dark mode sendiri, lihat [data-theme='dark'] di bawah).
+   Ini SELALU aktif, tidak tergantung scroll/overscroll sama sekali. */
+html {
+    /* Sengaja disamakan dengan admin-surface (putih), BUKAN admin-canvas
+       (krem) -- navbar frontend (sticky top-0) warnanya putih (bg-admin-surface),
+       jadi kalau ada efek overscroll glow yang lolos, warnanya nyambung
+       ke navbar dan garis krem di atas navbar tidak lagi terlihat. */
+    background-color: var(--color-admin-surface);
+    color-scheme: light;
+}
 
 /* Alpine.js: sembunyikan elemen [x-cloak] sebelum Alpine selesai inisialisasi,
    mencegah flash konten (dipakai mis. di tab Description/Specification/Reviews
@@ -88,6 +112,7 @@ input[type="number"] {
    warna kayu/coklat toko tetap terasa di kedua tema.
    ========================================================== */
 [data-theme='dark'] {
+    color-scheme: dark;
     --color-admin-canvas: #16120D;
     --color-admin-surface: #221B14;
     --color-admin-ink: #F4EEE3;

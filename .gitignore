@@ -22,3 +22,15 @@ yarn-error.log
 /.nova
 /.vscode
 /.zed
+
+# Backup files dari sesi kerja sebelumnya
+*.bak
+*.bak-*
+.backup-*/
+temp-*-patch/
+
+# Vendor assets yang bisa di-generate ulang (php artisan livewire:publish)
+/public/vendor
+
+# Compiled Blade view cache
+/storage/framework/views/*.php

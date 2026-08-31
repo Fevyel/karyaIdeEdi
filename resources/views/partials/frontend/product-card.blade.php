@@ -38,7 +38,13 @@
     $averageRating = $reviewCount > 0 ? round((float) $averageRating, 1) : null;
 @endphp
 
-<a href="{{ route('products.show', $product) }}" class="group block">
+@php
+    $cardDisplayPrice = ($product->harga_diskon && (float) $product->harga_diskon > 0)
+        ? (float) $product->harga_diskon
+        : (float) $product->harga;
+@endphp
+
+<article class="group relative block">
     {{-- Kotak foto — mengikuti referensi terbaru: foto produk studio (bg putih)
          ditampilkan utuh (object-contain) di atas card berwarna admin-cream,
          dengan padding rapat (bukan p-8 lama) supaya tidak ada ruang kosong berlebih. --}}
@@ -56,7 +62,43 @@
         @endif
     </div>
 
-    {{-- Info produk --}}
+    <div class="absolute right-3 top-3 z-10 flex flex-col gap-2">
+        <button
+            type="button"
+            aria-label="Tambahkan {{ $product->nama }} ke favorit"
+            data-favorite-product
+            data-product-id="{{ $product->id }}"
+            data-product-slug="{{ $product->slug }}"
+            data-product-name="{{ $product->nama }}"
+            data-product-price="{{ $cardDisplayPrice }}"
+            data-product-image="{{ $thumbnailUrl }}"
+            data-product-category="{{ $product->category?->name ?? 'Furniture' }}"
+            data-product-stock="{{ max(0, (int) $product->stok) }}"
+            onclick="event.preventDefault(); event.stopPropagation();"
+            class="flex h-9 w-9 items-center justify-center rounded-full bg-white/95 text-[#6E6257] shadow-sm transition hover:text-[#9C6B3F]"
+        >
+            <i data-favorite-icon class="fa-regular fa-heart text-xs"></i>
+        </button>
+        <button
+            type="button"
+            aria-label="Masukkan {{ $product->nama }} ke keranjang"
+            data-cart-product
+            data-product-id="{{ $product->id }}"
+            data-product-slug="{{ $product->slug }}"
+            data-product-name="{{ $product->nama }}"
+            data-product-price="{{ $cardDisplayPrice }}"
+            data-product-image="{{ $thumbnailUrl }}"
+            data-product-category="{{ $product->category?->name ?? 'Furniture' }}"
+            data-product-stock="{{ max(0, (int) $product->stok) }}"
+            onclick="event.preventDefault(); event.stopPropagation();"
+            class="flex h-9 w-9 items-center justify-center rounded-full bg-[#2A211B] text-white shadow-sm transition hover:bg-[#9C6B3F] disabled:cursor-not-allowed disabled:opacity-50"
+        >
+            <i class="fa-solid fa-bag-shopping text-xs"></i>
+        </button>
+    </div>
+
+    <a href="{{ route('products.show', $product) }}" class="block">
+        {{-- Info produk --}}
     <div class="mt-4">
         <p class="text-base font-semibold text-[#4B3A26]">{{ $product->nama }}</p>
         <p class="mt-0.5 text-sm text-admin-ink-soft">{{ $product->deskripsi_pendek }}</p>
@@ -105,3 +147,4 @@
         </div>
     </div>
 </a>
+</article>

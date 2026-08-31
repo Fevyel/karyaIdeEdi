@@ -26,13 +26,17 @@
 
     @php
         $profileSetting = \App\Models\Setting::current();
-        $profileWaNumber = $profileSetting->whatsapp ? preg_replace('/\D/', '', $profileSetting->whatsapp) : null;
+        $profileWaNumber = $profileSetting->whatsappDigits();
     @endphp
 
     {{-- =====================================================
          A. HERO PROFILE
+         Sengaja beda dari hero Beranda: bg putih (bukan krem
+         #F9F7F2 yang dipakai Beranda) dan foto kanan pakai
+         kursi.png (bukan hero.png yang sudah dipakai di Beranda),
+         supaya tidak terlihat seperti halaman yang sama.
     ====================================================== --}}
-    <section class="relative overflow-hidden bg-[#F9F7F2]">
+    <section class="relative overflow-hidden bg-white">
         <div class="mx-auto grid max-w-7xl grid-cols-1 items-center gap-12 px-6 py-14 sm:px-8 lg:grid-cols-2 lg:gap-10 lg:px-10 lg:py-20">
             <div data-reveal>
                 <div class="flex items-center gap-3 text-xs font-semibold uppercase tracking-[0.2em] text-admin-accent">
@@ -73,11 +77,11 @@
             </div>
 
             <div class="relative flex items-center justify-center" data-reveal style="transition-delay:.1s">
-                <span class="relative flex aspect-10/9 w-full items-center justify-center overflow-hidden rounded-[28px] bg-[#D7A26E] shadow-xl shadow-black/10">
+                <span class="relative flex aspect-10/9 w-full items-center justify-center overflow-hidden rounded-[28px] bg-admin-cream shadow-xl shadow-black/10">
                     <img
-                        src="{{ asset('images/admin-login/hero.png') }}"
+                        src="{{ asset('images/admin-login/kursi.png') }}"
                         alt="Furniture {{ $profileSetting->site_name }}"
-                        class="h-[88%] w-auto object-contain drop-shadow-2xl"
+                        class="h-[82%] w-auto object-contain drop-shadow-2xl"
                     >
                 </span>
             </div>
@@ -87,12 +91,12 @@
     {{-- =====================================================
          B. TENTANG KARYA IDE EDI
     ====================================================== --}}
-    <section class="bg-white">
+    <section class="bg-admin-cream/40">
         <div class="mx-auto grid max-w-7xl grid-cols-1 items-center gap-12 px-6 py-16 sm:px-8 lg:grid-cols-2 lg:gap-16 lg:px-10 lg:py-24">
             <div class="order-2 lg:order-1" data-reveal>
-                <span class="relative flex aspect-4/5 w-full items-center justify-center overflow-hidden rounded-[24px] bg-admin-cream shadow-lg">
+                <span class="relative flex aspect-4/5 w-full items-center justify-center overflow-hidden rounded-3xl bg-white shadow-lg">
                     <img
-                        src="{{ asset('images/admin-login/kursi.png') }}"
+                        src="{{ asset('images/admin-login/hero.png') }}"
                         alt="Furniture {{ $profileSetting->site_name }}"
                         class="h-[82%] w-auto object-contain"
                     >
@@ -142,24 +146,65 @@
                 </h2>
             </div>
 
-            <div class="mt-12 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
-                @foreach ([
+            @php
+                $valueDefs = [
                     ['no' => '01', 'icon' => 'fa-gem', 'title' => 'Kualitas Terpilih', 'desc' => 'Produk dipilih dengan mempertimbangkan kualitas dan fungsi.'],
                     ['no' => '02', 'icon' => 'fa-drafting-compass', 'title' => 'Desain Berkarakter', 'desc' => 'Furniture yang dirancang untuk melengkapi berbagai gaya ruang.'],
                     ['no' => '03', 'icon' => 'fa-shield-halved', 'title' => 'Pelayanan Terpercaya', 'desc' => 'Memberikan pengalaman belanja yang nyaman dan jelas.'],
                     ['no' => '04', 'icon' => 'fa-house', 'title' => 'Untuk Setiap Ruang', 'desc' => 'Pilihan furniture untuk kebutuhan rumah maupun ruang kerja.'],
-                ] as $i => $value)
+                ];
+
+                // Visualnya diambil dari foto produk ASLI (thumbnail), bukan
+                // cuma ikon — supaya "Nilai Kami" kelihatan konkret, bukan
+                // abstrak. Kalau produk berfoto belum sampai 4, sisanya
+                // otomatis fallback ke tampilan ikon polos (tanpa foto rusak).
+                $valueShowcaseProducts = \App\Models\Product::query()
+                    ->where('status', 'aktif')
+                    ->whereNotNull('thumbnail')
+                    ->orderByDesc('featured')
+                    ->orderByDesc('created_at')
+                    ->take(4)
+                    ->get()
+                    ->values();
+
+                foreach ($valueDefs as $i => &$valueDef) {
+                    $valueProduct = $valueShowcaseProducts->get($i);
+                    $valueDef['image'] = ($valueProduct && \Illuminate\Support\Facades\Storage::disk('public')->exists($valueProduct->thumbnail))
+                        ? \Illuminate\Support\Facades\Storage::disk('public')->url($valueProduct->thumbnail)
+                        : null;
+                }
+                unset($valueDef);
+            @endphp
+
+            <div class="mt-12 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
+                @foreach ($valueDefs as $i => $value)
                     <div
                         data-reveal
                         style="transition-delay:{{ $i * .08 }}s"
-                        class="group rounded-2xl border border-admin-border bg-white p-6 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg hover:shadow-black/5"
+                        class="group overflow-hidden rounded-2xl border border-admin-border bg-white transition-all duration-300 hover:-translate-y-1 hover:shadow-lg hover:shadow-black/5"
                     >
-                        <p class="font-display text-2xl text-admin-gold">{{ $value['no'] }}</p>
-                        <span class="mt-4 flex h-12 w-12 items-center justify-center rounded-xl bg-admin-cream text-admin-accent transition-colors duration-300 group-hover:bg-admin-accent group-hover:text-white">
-                            <i class="fa-solid {{ $value['icon'] }}"></i>
-                        </span>
-                        <p class="mt-4 text-base font-semibold text-[#3D2B1F]">{{ $value['title'] }}</p>
-                        <p class="mt-2 text-sm leading-relaxed text-admin-ink-soft">{{ $value['desc'] }}</p>
+                        <div class="relative aspect-4/3 w-full overflow-hidden bg-admin-cream">
+                            @if ($value['image'])
+                                <img
+                                    src="{{ $value['image'] }}"
+                                    alt="{{ $value['title'] }}"
+                                    loading="lazy"
+                                    class="h-full w-full object-cover transition-transform duration-500 ease-out group-hover:scale-105"
+                                >
+                            @else
+                                <div class="flex h-full w-full items-center justify-center text-admin-ink-soft/30">
+                                    <i class="fa-solid {{ $value['icon'] }} text-3xl"></i>
+                                </div>
+                            @endif
+                            <span class="absolute left-3 top-3 flex h-10 w-10 items-center justify-center rounded-full bg-white/90 text-admin-accent shadow-sm backdrop-blur-sm">
+                                <i class="fa-solid {{ $value['icon'] }}"></i>
+                            </span>
+                        </div>
+                        <div class="p-6">
+                            <p class="font-display text-xl text-admin-gold">{{ $value['no'] }}</p>
+                            <p class="mt-2 text-base font-semibold text-[#3D2B1F]">{{ $value['title'] }}</p>
+                            <p class="mt-2 text-sm leading-relaxed text-admin-ink-soft">{{ $value['desc'] }}</p>
+                        </div>
                     </div>
                 @endforeach
             </div>
@@ -193,7 +238,7 @@
                     ['icon' => 'fa-headset', 'text' => 'Dukungan pelanggan'],
                     ['icon' => 'fa-couch', 'text' => 'Pengalaman belanja yang nyaman'],
                 ] as $point)
-                    <div class="flex items-center gap-3 rounded-xl border border-white/10 bg-white/[0.04] px-4 py-3.5">
+                    <div class="flex items-center gap-3 rounded-xl border border-white/10 bg-white/4 px-4 py-3.5">
                         <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-admin-gold/15 text-admin-gold">
                             <i class="fa-solid {{ $point['icon'] }} text-sm"></i>
                         </span>
@@ -205,18 +250,53 @@
     </section>
 
     {{-- =====================================================
-         E. VALUE PROPOSITION
-         (Bukan section statistik angka — belum ada data
-         jumlah pelanggan/produk/tahun berdiri di database,
-         jadi memakai pernyataan nilai tanpa angka karangan.)
+         E. TOKO & PRODUK DALAM ANGKA — fakta dari database,
+         bukan kalimat generik. Jumlah kategori & produk ambil
+         dari tabel categories/products (otomatis update).
+         Alamat & WhatsApp ambil dari menu Pengaturan admin.
+         Sengaja beda tampilan dari section "Produk Berdasarkan
+         Kategori" di Beranda (kartu foto kategori) supaya tidak
+         jadi duplikat visual — di sini bentuknya kartu angka/info.
     ====================================================== --}}
+    @php
+        $profileCategoryCount = \App\Models\Category::query()->active()->count();
+        $profileActiveProductCount = \App\Models\Product::query()->where('status', 'aktif')->count();
+    @endphp
     <section class="bg-white">
-        <div class="mx-auto max-w-4xl px-6 py-16 text-center sm:px-8 lg:py-20" data-reveal>
-            <i class="fa-solid fa-quote-left text-2xl text-admin-gold"></i>
-            <p class="mt-6 font-display text-2xl leading-snug text-[#3D2B1F] sm:text-3xl">
-                Pilihan furniture untuk ruang yang lebih nyaman —
-                dipilih dengan teliti, disampaikan dengan jelas.
-            </p>
+        <div class="mx-auto max-w-6xl px-6 py-16 sm:px-8 lg:px-10 lg:py-20" data-reveal>
+            <div class="mx-auto max-w-xl text-center">
+                <div class="mx-auto flex items-center justify-center gap-3 text-xs font-semibold uppercase tracking-[0.2em] text-admin-accent">
+                    <span class="h-px w-8 bg-admin-accent"></span>
+                    Toko Kami
+                    <span class="h-px w-8 bg-admin-accent"></span>
+                </div>
+                <h2 class="mt-5 font-display text-3xl leading-tight text-[#4B3A26] sm:text-4xl">
+                    {{ $profileSetting->site_name }} dalam angka.
+                </h2>
+            </div>
+
+            <div class="mt-12 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
+                <div class="rounded-2xl border border-admin-border bg-admin-cream/40 p-6 text-center">
+                    <p class="font-display text-3xl text-admin-accent">{{ $profileCategoryCount }}</p>
+                    <p class="mt-2 text-sm font-medium text-[#3D2B1F]">Kategori Produk</p>
+                </div>
+                <div class="rounded-2xl border border-admin-border bg-admin-cream/40 p-6 text-center">
+                    <p class="font-display text-3xl text-admin-accent">{{ $profileActiveProductCount }}</p>
+                    <p class="mt-2 text-sm font-medium text-[#3D2B1F]">Produk Tersedia</p>
+                </div>
+                <div class="rounded-2xl border border-admin-border bg-admin-cream/40 p-6 text-center">
+                    <i class="fa-solid fa-location-dot text-xl text-admin-accent"></i>
+                    <p class="mt-3 text-sm font-medium text-[#3D2B1F]">
+                        {{ $profileSetting->alamat ?: 'Alamat belum diatur admin' }}
+                    </p>
+                </div>
+                <div class="rounded-2xl border border-admin-border bg-admin-cream/40 p-6 text-center">
+                    <i class="fa-brands fa-whatsapp text-xl text-admin-accent"></i>
+                    <p class="mt-3 text-sm font-medium text-[#3D2B1F]">
+                        {{ $profileSetting->whatsapp ?: 'Nomor belum diatur admin' }}
+                    </p>
+                </div>
+            </div>
         </div>
     </section>
 
@@ -260,7 +340,123 @@
     </section>
 
     {{-- =====================================================
-         G. CTA
+         G. GARANSI
+         Isi & angka (30 hari) SENGAJA disamakan persis dengan klaim
+         yang sudah ada di homepage (partials/frontend/mission.blade.php
+         — poin "Garansi Retur 30 Hari"), bukan angka baru yang
+         dikarang. Section ini cuma menjelaskan klaim yang sama itu
+         lebih detail, di halaman yang seharusnya memang jadi rujukan
+         (Profil). Anchor #garansi dipakai link "Warranty" di footer.
+    ====================================================== --}}
+    <section id="garansi" class="bg-white scroll-mt-20">
+        <div class="mx-auto max-w-6xl px-6 py-16 sm:px-8 lg:px-10 lg:py-24">
+            <div class="mx-auto max-w-xl text-center" data-reveal>
+                <div class="mx-auto flex items-center justify-center gap-3 text-xs font-semibold uppercase tracking-[0.2em] text-admin-accent">
+                    <span class="h-px w-8 bg-admin-accent"></span>
+                    Garansi
+                    <span class="h-px w-8 bg-admin-accent"></span>
+                </div>
+                <h2 class="mt-5 font-display text-3xl leading-tight text-[#4B3A26] sm:text-4xl">
+                    Garansi Retur 30 Hari
+                </h2>
+                <p class="mt-4 text-sm leading-relaxed text-admin-ink-soft sm:text-base">
+                    Tidak sesuai ekspektasi? Kami jemput dan proses pengembalian tanpa ribet.
+                </p>
+            </div>
+
+            <div class="mt-12 grid grid-cols-1 gap-6 sm:grid-cols-3">
+                @foreach ([
+                    ['icon' => 'fa-calendar-check', 'title' => '30 Hari Sejak Diterima', 'desc' => 'Anda punya waktu 30 hari sejak barang diterima untuk mengajukan retur atau komplain.'],
+                    ['icon' => 'fa-hammer', 'title' => 'Cacat Produksi Ditanggung', 'desc' => 'Kerusakan atau cacat akibat proses produksi kami tangani — kirim foto/video kondisi barang lewat WhatsApp.'],
+                    ['icon' => 'fa-truck-ramp-box', 'title' => 'Proses Dijemput', 'desc' => 'Setelah klaim disetujui, penjemputan barang retur dikoordinasikan langsung lewat WhatsApp.'],
+                ] as $i => $garansiPoint)
+                    <div
+                        data-reveal
+                        style="transition-delay:{{ $i * .08 }}s"
+                        class="rounded-2xl border border-admin-border bg-admin-cream/40 p-6 text-center"
+                    >
+                        <span class="mx-auto flex h-11 w-11 items-center justify-center rounded-full bg-admin-cream text-admin-accent">
+                            <i class="fa-solid {{ $garansiPoint['icon'] }}"></i>
+                        </span>
+                        <p class="mt-4 text-base font-semibold text-[#3D2B1F]">{{ $garansiPoint['title'] }}</p>
+                        <p class="mt-2 text-sm leading-relaxed text-admin-ink-soft">{{ $garansiPoint['desc'] }}</p>
+                    </div>
+                @endforeach
+            </div>
+
+            <div class="mt-10 flex justify-center">
+                <a
+                    href="{{ $profileWaNumber ? 'https://wa.me/'.$profileWaNumber.'?text='.urlencode('Halo, saya ingin mengajukan klaim garansi/retur produk.') : route('booking.index') }}"
+                    @if ($profileWaNumber) target="_blank" rel="noopener" @endif
+                    class="inline-flex items-center gap-2 rounded-lg bg-admin-accent px-6 py-3 text-sm font-medium text-white transition-colors duration-300 hover:bg-admin-accent-strong"
+                >
+                    <i class="fa-brands fa-whatsapp"></i>
+                    Ajukan Klaim via WhatsApp
+                </a>
+            </div>
+        </div>
+    </section>
+
+    {{-- =====================================================
+         H. PENGIRIMAN & PENGEMBALIAN
+         Ditaruh persis di bawah section Garansi (bukan halaman
+         terpisah) — link "Shipping & Returns" di footer mengarah ke
+         Profil#pengiriman. Bagian retur sudah dijelaskan di section
+         Garansi di atas, jadi di sini fokus ke proses pengiriman saja
+         supaya tidak diulang dua kali.
+    ====================================================== --}}
+    <section id="pengiriman" class="bg-admin-cream/40 scroll-mt-20">
+        <div class="mx-auto max-w-4xl px-6 py-16 sm:px-8 lg:py-20">
+            <div class="mx-auto max-w-xl text-center" data-reveal>
+                <div class="mx-auto flex items-center justify-center gap-3 text-xs font-semibold uppercase tracking-[0.2em] text-admin-accent">
+                    <span class="h-px w-8 bg-admin-accent"></span>
+                    Pengiriman
+                    <span class="h-px w-8 bg-admin-accent"></span>
+                </div>
+                <h2 class="mt-5 font-display text-3xl leading-tight text-[#4B3A26] sm:text-4xl">
+                    Pengiriman & Pengembalian
+                </h2>
+            </div>
+
+            <div class="mt-10 space-y-5" data-reveal style="transition-delay:.08s">
+                <div class="flex items-start gap-4 rounded-xl border border-admin-border bg-white p-5">
+                    <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-admin-cream text-admin-accent">
+                        <i class="fa-solid fa-comment-dots text-sm"></i>
+                    </span>
+                    <p class="text-sm leading-relaxed text-admin-ink-soft">
+                        Pesanan diproses setelah spesifikasi dan kesepakatan dikonfirmasi lewat
+                        WhatsApp (lihat halaman <a href="{{ route('booking.index') }}" class="font-medium text-admin-accent underline underline-offset-2">Booking</a>).
+                    </p>
+                </div>
+                <div class="flex items-start gap-4 rounded-xl border border-admin-border bg-white p-5">
+                    <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-admin-cream text-admin-accent">
+                        <i class="fa-solid fa-truck text-sm"></i>
+                    </span>
+                    <p class="text-sm leading-relaxed text-admin-ink-soft">
+                        Area pengiriman, estimasi waktu, dan biaya ongkir menyesuaikan lokasi
+                        dan ukuran pesanan — akan diinfokan sebelum pesanan difinalkan.
+                    </p>
+                </div>
+                <div class="flex items-start gap-4 rounded-xl border border-admin-border bg-white p-5">
+                    <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-admin-cream text-admin-accent">
+                        <i class="fa-solid fa-magnifying-glass-location text-sm"></i>
+                    </span>
+                    <p class="text-sm leading-relaxed text-admin-ink-soft">
+                        Status pesanan yang sudah dikonfirmasi bisa dipantau lewat halaman
+                        <a href="{{ route('tracking.index') }}" class="font-medium text-admin-accent underline underline-offset-2">Lacak Pesanan</a>.
+                    </p>
+                </div>
+            </div>
+
+            <p class="mt-6 text-center text-sm leading-relaxed text-admin-ink-soft">
+                Untuk retur & garansi, lihat section
+                <a href="#garansi" class="font-medium text-admin-accent underline underline-offset-2">Garansi</a> di atas.
+            </p>
+        </div>
+    </section>
+
+    {{-- =====================================================
+         I. CTA
     ====================================================== --}}
     <section class="bg-[#2A1B12]">
         <div class="mx-auto max-w-4xl px-6 py-16 text-center sm:px-8 lg:py-20" data-reveal>

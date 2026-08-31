@@ -95,8 +95,8 @@
                         <i class="fa-brands fa-facebook-f text-sm"></i>
                     </a>
                     <a
-                        href="{{ $prosesSetting->whatsapp ? 'https://wa.me/'.preg_replace('/\D/', '', $prosesSetting->whatsapp) : '#' }}"
-                        target="{{ $prosesSetting->whatsapp ? '_blank' : '_self' }}"
+                        href="{{ $prosesSetting->whatsappDigits() ? 'https://wa.me/'.$prosesSetting->whatsappDigits() : '#' }}"
+                        target="{{ $prosesSetting->whatsappDigits() ? '_blank' : '_self' }}"
                         rel="noopener"
                         aria-label="WhatsApp"
                         class="flex h-9 w-9 items-center justify-center rounded-full border border-admin-ink/15 text-admin-ink transition-colors duration-300 hover:bg-[#1A1A1A] hover:text-white"

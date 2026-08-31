@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="id">
     <head>
         <meta charset="utf-8">
@@ -46,9 +46,7 @@
         $averageRating = $reviewCount > 0 ? (float) $approvedTestimonials->avg('rating') : 0;
 
         $siteSetting = \App\Models\Setting::current();
-        $waNumber = $siteSetting->whatsapp
-            ? preg_replace('/\D/', '', $siteSetting->whatsapp)
-            : null;
+        $waNumber = $siteSetting->whatsappDigits();
 
         $waText = urlencode('Halo, saya tertarik dengan produk "'.$product->nama.'".');
     @endphp
@@ -65,7 +63,7 @@
                     <nav aria-label="Breadcrumb" class="text-[10px] text-[#9A8E82] sm:text-[11px]">
                         <a href="{{ route('home') }}" class="transition hover:text-admin-accent">Home</a>
                         <span class="mx-1.5">/</span>
-                        <a href="{{ route('products.index') }}" class="transition hover:text-admin-accent">Shop</a>
+                        <a href="{{ route('products.index') }}" class="transition hover:text-admin-accent">Produk</a>
                         @if ($product->category)
                             <span class="mx-1.5">/</span>
                             <span>{{ $product->category->name }}</span>
@@ -175,30 +173,123 @@
                                     {{ $product->deskripsi_pendek }}
                                 </p>
                             @endif
+                            @php
+                                $productData = [
+                                    'id' => $product->id,
+                                    'slug' => $product->slug,
+                                    'name' => $product->nama,
+                                    'price' => $displayPrice,
+                                    'image' => $thumbnailUrl,
+                                    'category' => $product->category?->name ?? 'Furniture',
+                                    'stock' => max(0, (int) $product->stok),
+                                ];
+                            @endphp
 
-                            <div class="mt-7">
+                            <div class="mt-7 flex flex-wrap gap-2.5">
+                                <button
+                                    type="button"
+                                    data-favorite-product
+                                    data-product-id="{{ $product->id }}"
+                                    data-product-slug="{{ $product->slug }}"
+                                    data-product-name="{{ $product->nama }}"
+                                    data-product-price="{{ $displayPrice }}"
+                                    data-product-image="{{ $thumbnailUrl }}"
+                                    data-product-category="{{ $product->category?->name ?? 'Furniture' }}"
+                                    data-product-stock="{{ max(0, (int) $product->stok) }}"
+                                    class="inline-flex h-10 items-center gap-2 rounded-md border border-[#E3DED7] bg-white px-4 text-[11px] font-semibold text-[#5C5147] transition hover:border-[#C7A16D] hover:text-admin-accent"
+                                >
+                                    <i data-favorite-icon class="fa-regular fa-heart text-xs"></i>
+                                    <span data-favorite-label>Simpan ke Favorit</span>
+                                </button>
+                                <button
+                                    type="button"
+                                    data-cart-product
+                                    data-product-id="{{ $product->id }}"
+                                    data-product-slug="{{ $product->slug }}"
+                                    data-product-name="{{ $product->nama }}"
+                                    data-product-price="{{ $displayPrice }}"
+                                    data-product-image="{{ $thumbnailUrl }}"
+                                    data-product-category="{{ $product->category?->name ?? 'Furniture' }}"
+                                    data-product-stock="{{ max(0, (int) $product->stok) }}"
+                                    data-cart-quantity-source="data-product-quantity"
+                                    class="inline-flex h-10 items-center gap-2 rounded-md bg-[#2A211B] px-4 text-[11px] font-semibold text-white transition hover:bg-[#403129] disabled:cursor-not-allowed disabled:opacity-50"
+                                >
+                                    <i class="fa-solid fa-bag-shopping text-xs"></i>
+                                    <span>Masukkan ke Keranjang</span>
+                                </button>
+                            </div>
+
+                            <div class="mt-7" data-product-quantity data-max-stock="{{ max(0, (int) $product->stok) }}" data-wa-number="{{ $waNumber }}" data-product-name="{{ $product->nama }}">
                                 <label class="mb-2 block text-[10px] font-semibold text-[#2A211B]">Quantity:</label>
                                 <div class="flex items-center gap-3">
                                     <div class="inline-flex h-10 shrink-0 items-center overflow-hidden rounded-md border border-[#E3DED7] bg-white">
-                                        <button type="button" data-qty-minus class="flex h-full w-8 items-center justify-center text-[#7A6E63] transition hover:bg-[#F8F4EF]" aria-label="Kurangi jumlah">
-                                            &minus;
+                                        <button type="button" data-quantity-minus class="flex h-full w-8 items-center justify-center text-[#7A6E63] transition hover:bg-[#F8F4EF] disabled:cursor-not-allowed disabled:opacity-40" aria-label="Kurangi jumlah">
+                                            <i class="fa-solid fa-minus text-[9px]"></i>
                                         </button>
-                                        <span data-qty-value class="flex w-7 items-center justify-center text-xs font-medium text-[#2A211B]">1</span>
+                                        <span data-quantity-display class="flex w-7 items-center justify-center text-xs font-medium text-[#2A211B]">1</span>
+                                        <button type="button" data-quantity-plus class="flex h-full w-8 items-center justify-center text-[#7A6E63] transition hover:bg-[#F8F4EF] disabled:cursor-not-allowed disabled:opacity-40" aria-label="Tambah jumlah">
+                                            <i class="fa-solid fa-plus text-[9px]"></i>
+                                        </button>
                                     </div>
-
-                                    {{-- Backend keranjang belum ada di repo — tombol disiapkan sesuai
-                                         desain, tanpa mengarang logic checkout. --}}
-                                    <button
-                                        type="button"
-                                        class="h-10 flex-1 rounded-md bg-[#F28A22] px-5 text-[11px] font-semibold text-white transition hover:bg-[#D97612]"
-                                        onclick="window.dispatchEvent(new CustomEvent('karya-ide-edi-cart-unavailable'))"
+                                    <a
+                                        href="{{ $waNumber ? 'https://wa.me/'.$waNumber.'?text='.urlencode('Halo, saya ingin memesan produk "'.$product->nama.'" sebanyak 1 pcs.') : '#' }}"
+                                        data-booking-link
+                                        @if ($waNumber) target="_blank" rel="noopener" @endif
+                                        class="h-10 flex flex-1 items-center justify-center rounded-md bg-[#F28A22] px-5 text-[11px] font-semibold text-white transition hover:bg-[#DD7614] {{ (int) $product->stok < 1 ? 'pointer-events-none cursor-not-allowed opacity-50' : '' }}"
+                                        @unless ($waNumber) title="Nomor WhatsApp belum diisi di Admin > Pengaturan" onclick="event.preventDefault()" @endunless
                                     >
-                                        Add to Cart
-                                    </button>
+                                        {{ (int) $product->stok < 1 ? 'Stok Habis' : 'Pesan Sekarang' }}
+                                    </a>
                                 </div>
+                                <p class="mt-2 text-[10px] text-[#A1988E]">Jumlah yang dipilih akan disertakan saat menghubungi admin via WhatsApp.</p>
+                            </div>
 
-                                <a
-                                    href="{{ $waNumber ? 'https://wa.me/'.$waNumber.'?text='.$waText : '#' }}"
+                            <script>
+                                (() => {
+                                    const box = document.querySelector('[data-product-quantity]');
+                                    if (!box) return;
+
+                                    const maxStock = Number.parseInt(box.dataset.maxStock || '0', 10);
+                                    const waNumber = box.dataset.waNumber || '';
+                                    const productName = box.dataset.productName || '';
+                                    const display = box.querySelector('[data-quantity-display]');
+                                    const minus = box.querySelector('[data-quantity-minus]');
+                                    const plus = box.querySelector('[data-quantity-plus]');
+                                    const link = box.querySelector('[data-booking-link]');
+
+                                    if (!display || !minus || !plus || !link) return;
+
+                                    let quantity = maxStock > 0 ? 1 : 0;
+
+                                    const render = () => {
+                                        display.textContent = String(quantity);
+                                        minus.disabled = quantity <= 1;
+                                        plus.disabled = maxStock <= 0 || quantity >= maxStock;
+                                        if (maxStock > 0 && waNumber) {
+                                            const waMessage = `Halo, saya ingin memesan produk "${productName}" sebanyak ${quantity} pcs.`;
+                                            link.href = `https://wa.me/${waNumber}?text=${encodeURIComponent(waMessage)}`;
+                                        }
+                                    };
+
+                                    minus.addEventListener('click', () => {
+                                        if (quantity > 1) {
+                                            quantity -= 1;
+                                            render();
+                                        }
+                                    });
+
+                                    plus.addEventListener('click', () => {
+                                        if (quantity < maxStock) {
+                                            quantity += 1;
+                                            render();
+                                        }
+                                    });
+
+                                    render();
+                                })();
+                            </script>
+                            <a
+                            href="{{ $waNumber ? 'https://wa.me/'.$waNumber.'?text='.$waText : '#' }}"
                                     @if ($waNumber) target="_blank" rel="noopener" @endif
                                     class="mt-3 flex h-10 w-full items-center justify-center gap-2 rounded-md bg-[#58B13F] px-5 text-[11px] font-semibold text-white transition hover:bg-[#489C32] {{ $waNumber ? '' : 'cursor-not-allowed opacity-90' }}"
                                     @unless ($waNumber) title="Nomor WhatsApp belum diisi di Admin > Pengaturan" onclick="event.preventDefault()" @endunless

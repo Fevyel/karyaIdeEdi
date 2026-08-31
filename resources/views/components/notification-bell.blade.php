@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 
 use Livewire\Attributes\On;
 use Livewire\Component;
@@ -95,9 +95,9 @@ new class extends Component
             wire:navigate
             wire:poll.20s
             aria-label="Admin Access — buka Dashboard"
-            class="relative flex h-9 w-9 items-center justify-center rounded-full border border-admin-border text-admin-ink-soft transition-all duration-300 hover:border-admin-accent hover:text-admin-accent hover:shadow-md"
+            class="group relative flex h-10 w-10 items-center justify-center rounded-full text-admin-ink-soft transition-all duration-200 hover:bg-admin-canvas hover:text-admin-accent"
         >
-            <i class="fa-solid fa-user-shield text-sm"></i>
+            <i class="fa-solid fa-user-shield text-[15px] transition-transform duration-200 group-hover:scale-110"></i>
 
             @if ($this->unreadCount > 0)
                 <span class="pointer-events-none absolute -right-1 -top-1 flex h-4.5 min-w-4.5 items-center justify-center rounded-full border-2 border-admin-surface bg-admin-danger px-1 text-[9px] font-bold leading-none text-white">

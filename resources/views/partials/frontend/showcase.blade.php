@@ -43,8 +43,8 @@
 --}}
 @php
     $showcaseSetting = \App\Models\Setting::current();
-    $showcaseWaLink = $showcaseSetting->whatsapp
-        ? 'https://wa.me/'.preg_replace('/[^0-9]/', '', $showcaseSetting->whatsapp)
+    $showcaseWaLink = $showcaseSetting->whatsappDigits()
+        ? 'https://wa.me/'.$showcaseSetting->whatsappDigits()
         : null;
 @endphp
 
@@ -52,7 +52,7 @@
     <div class="mx-auto grid max-w-7xl grid-cols-1 items-center gap-0 overflow-hidden rounded-[28px] bg-white shadow-sm sm:mx-6 sm:my-14 lg:grid-cols-2 lg:mx-8 lg:my-20 xl:mx-10">
 
         {{-- ============ KIRI: Gambar besar grayscale + tombol play + badge ============ --}}
-        <div class="relative flex h-80 items-center justify-center overflow-hidden bg-[#2A241E] sm:h-[26rem] lg:h-[32rem]">
+        <div class="relative flex h-80 items-center justify-center overflow-hidden bg-[#2A241E] sm:h-104 lg:h-128">
             <img
                 src="{{ asset('images/admin-login/kursi.png') }}"
                 alt="Proses pengerjaan furniture {{ $showcaseSetting->site_name }}"

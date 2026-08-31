@@ -90,6 +90,7 @@
                                 $navItem('admin.products', 'fa-couch', 'Produk'),
                                 $navItem('admin.categories', 'fa-tags', 'Kategori'),
                                 $navItem('admin.transactions', 'fa-receipt', 'Pesanan'),
+                                $navItem('admin.transactions.history', 'fa-clock-rotate-left', 'History Pesanan'),
                                 $navItem('admin.customers', 'fa-users', 'Pelanggan'),
                                 $navItem('admin.reports', 'fa-chart-column', 'Laporan'),
                             ];
@@ -144,6 +145,8 @@
                     <ul class="space-y-1.5">
                         @php
                             $otherNav = [
+                                $navItem('admin.testimonials', 'fa-star', 'Testimoni'),
+                                $navItem('admin.website-editor', 'fa-pen-to-square', 'Edit Web'),
                                 $navItem('admin.settings', 'fa-gear', 'Pengaturan'),
                             ];
                             $isInteraksiActive = request()->routeIs('admin.interaksi');

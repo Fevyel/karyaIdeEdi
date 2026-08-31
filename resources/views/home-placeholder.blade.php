@@ -34,6 +34,9 @@
         {{-- ================= KEUNGGULAN KAMI ================= --}}
         @include('partials.frontend.expertise')
 
+        {{-- ================= FAQ ================= --}}
+        @include('partials.frontend.faq')
+
         {{-- ================= FOOTER ================= --}}
         @include('partials.frontend.footer')
     </body>

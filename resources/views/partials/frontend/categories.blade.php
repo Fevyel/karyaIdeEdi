@@ -21,9 +21,8 @@
     - JUMLAH PRODUK dihitung otomatis (withCount, hanya produk
       berstatus "aktif") — ikut berubah begitu admin tambah/edit/
       hapus/ubah status produk, tanpa perlu ubah kode di sini.
-    - Klik kartu kategori -> mengarah ke section "Semua Produk" di
-      halaman ini juga (route('home')) dengan query string
-      ?kategori=<slug-kategori>, lalu discroll ke #produk.
+    - Klik kartu kategori -> langsung membuka halaman katalog Produk
+      dengan filter kategori aktif (query string ?category=<slug>).
 
     Pemakaian:
         @include('partials.frontend.categories')
@@ -52,7 +51,7 @@
             <div class="mt-10 grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-4">
                 @foreach ($displayCategories as $category)
                     <a
-                        href="{{ route('home', ['kategori' => $category->slug]) }}#produk"
+                        href="{{ route('products.index', ['category' => $category->slug]) }}"
                         class="group block"
                     >
                         <div class="relative aspect-4/5 w-full overflow-hidden rounded-3xl shadow-sm transition-all duration-300 ease-out group-hover:-translate-y-1.5 group-hover:shadow-xl">

@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 
 use App\Models\Testimonial;
 use Illuminate\Support\Facades\Storage;
@@ -169,6 +169,7 @@ new #[Layout('layouts::admin-panel')] #[Title('Interaksi')] class extends Compon
     public function with(): array
     {
         $query = Testimonial::query()
+            ->with('parent:id,customer_name,created_at')
             ->when($this->search !== '', fn ($q) => $q
                 ->where('customer_name', 'like', '%'.$this->search.'%')
                 ->orWhere('comment', 'like', '%'.$this->search.'%'))
@@ -182,7 +183,7 @@ new #[Layout('layouts::admin-panel')] #[Title('Interaksi')] class extends Compon
             'rejectedCount' => Testimonial::query()->rejected()->count(),
             'featuredCount' => Testimonial::query()->featuredHome()->count(),
             'detailItem' => $this->showDetail && $this->detailId
-                ? Testimonial::query()->find($this->detailId)
+                ? Testimonial::query()->with('parent:id,customer_name,created_at')->find($this->detailId)
                 : null,
             'swapCandidate' => $this->swapCandidateId ? Testimonial::query()->find($this->swapCandidateId) : null,
             'currentlyFeatured' => $this->showSwapModal
@@ -211,14 +212,14 @@ new #[Layout('layouts::admin-panel')] #[Title('Interaksi')] class extends Compon
     </div>
 
     @if (session('status'))
-        <div class="flex items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-700">
+        <div class="mb-4 flex items-center gap-2.5 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-700 shadow-sm">
             <i class="fa-solid fa-circle-check"></i>
             {{ session('status') }}
         </div>
     @endif
 
     @if (session('error'))
-        <div class="flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-600">
+        <div class="mb-4 flex items-center gap-2.5 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-600 shadow-sm">
             <i class="fa-solid fa-triangle-exclamation"></i>
             {{ session('error') }}
         </div>
@@ -299,7 +300,27 @@ new #[Layout('layouts::admin-panel')] #[Title('Interaksi')] class extends Compon
                                     <i class="fa-solid fa-star text-[9px]"></i> Tampil di Beranda
                                 </span>
                             @endif
+
+                            @if ($item->parent)
+                                <span
+                                    title="Update dari komentar {{ $item->parent->customer_name }} tanggal {{ $item->parent->created_at->translatedFormat('d M Y') }}"
+                                    class="inline-flex items-center gap-1 rounded-full bg-[#F28A22]/10 px-2 py-0.5 text-[10px] font-semibold text-[#C46A1A]"
+                                >
+                                    <i class="fa-solid fa-arrow-turn-up text-[9px]"></i>
+                                    Update dari {{ $item->parent->created_at->translatedFormat('d M Y') }}
+                                </span>
+                            @endif
                         </div>
+
+                        @if (!empty($item->photos))
+                            <div class="mt-2 flex flex-wrap gap-1.5">
+                                @foreach ($item->photos as $photo)
+                                    @if (Storage::disk('public')->exists($photo))
+                                        <img src="{{ Storage::disk('public')->url($photo) }}" alt="Foto komentar" class="h-10 w-10 rounded-md object-cover">
+                                    @endif
+                                @endforeach
+                            </div>
+                        @endif
 
                         @if ($item->rating)
                             <div class="mt-1 flex items-center gap-0.5">
@@ -459,6 +480,32 @@ new #[Layout('layouts::admin-panel')] #[Title('Interaksi')] class extends Compon
                         <p class="text-[11px] font-semibold uppercase tracking-wide text-admin-ink-soft">Isi Komentar</p>
                         <p class="mt-1 text-sm leading-relaxed text-admin-ink">{{ $detailItem->comment }}</p>
                     </div>
+
+                    @if ($detailItem->parent)
+                        <div class="rounded-xl border border-[#F28A22]/30 bg-[#FFF7ED] p-3">
+                            <p class="text-[11px] font-semibold uppercase tracking-wide text-[#C46A1A]">
+                                <i class="fa-solid fa-arrow-turn-up mr-1"></i>Ini adalah Update Komentar
+                            </p>
+                            <p class="mt-1 text-xs text-admin-ink-soft">
+                                Susulan dari komentar {{ $detailItem->parent->customer_name }} tanggal {{ $detailItem->parent->created_at->translatedFormat('d M Y, H:i') }}.
+                            </p>
+                        </div>
+                    @endif
+
+                    @if (!empty($detailItem->photos))
+                        <div>
+                            <p class="text-[11px] font-semibold uppercase tracking-wide text-admin-ink-soft">Foto Lampiran</p>
+                            <div class="mt-2 flex flex-wrap gap-2">
+                                @foreach ($detailItem->photos as $photo)
+                                    @if (Storage::disk('public')->exists($photo))
+                                        <a href="{{ Storage::disk('public')->url($photo) }}" target="_blank" rel="noopener">
+                                            <img src="{{ Storage::disk('public')->url($photo) }}" alt="Foto komentar" class="h-20 w-20 rounded-lg object-cover">
+                                        </a>
+                                    @endif
+                                @endforeach
+                            </div>
+                        </div>
+                    @endif
                 </div>
 
                 <div class="flex items-center justify-end gap-3 border-t border-admin-border px-6 py-4">
@@ -521,3 +568,4 @@ new #[Layout('layouts::admin-panel')] #[Title('Interaksi')] class extends Compon
         </div>
     @endif
 </div>
+

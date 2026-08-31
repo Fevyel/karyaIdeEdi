@@ -23,14 +23,21 @@
        punya jumlah & gaya penulisan yang mirip referensi.
 
     3. Kolom "COMPANY" & "SUPPORT": labelnya SAMA PERSIS dengan
-       referensi Figma (Bahasa Inggris, 5 item tiap kolom, posisi
-       sama, TIDAK diterjemahkan), tapi karena halaman "Careers",
-       "Press", "Order Status", "Track Your Order", dll BELUM ADA di
-       project ini, link-nya mengarah ke "#" -- pola yang SUDAH ada
-       sebelumnya di project ini juga (lihat tombol "Jelajahi Profil"
-       di hero.blade.php, sama-sama "#" karena halamannya belum
-       dibuat). "Contact Us" terhubung ke WhatsApp asli kalau data-nya
-       terisi di Pengaturan.
+       referensi Figma (Bahasa Inggris, posisi sama, TIDAK
+       diterjemahkan). Semua link sudah disambungkan ke halaman nyata
+       (tidak ada lagi yang "#"): "About Us" -> Profil, "Order Status"
+       & "Track Your Order" -> halaman tracking (/lacak), "Contact Us"
+       -> WhatsApp asli (kalau nomornya terisi di Pengaturan), "Our
+       Craftsmen" -> /pengrajin-kami (konten & foto masih DUMMY, lihat
+       catatan di view-nya), "Sustainability" -> /keberlanjutan
+       (halaman generik soal kualitas/custom furniture), "Careers" ->
+       /karier (belum ada lowongan, arahkan ke WhatsApp),
+       "Shipping & Returns" -> Profil#pengiriman (section baru,
+       ditaruh persis di bawah section Garansi — bukan halaman
+       terpisah), "Warranty" -> Profil#garansi (section Garansi,
+       isinya klaim yang sama dengan homepage: Garansi Retur 30 Hari).
+       "Press" DIHAPUS dari kolom ini atas instruksi eksplisit (skip,
+       bukan kelupaan).
 
     Ikon metode pembayaran (Visa/Mastercard/Apple Pay/PayPal) ditampilkan
     sebagai badge generik ala kebanyakan website (belum tentu semua
@@ -50,27 +57,28 @@
         ->take(5)
         ->get();
 
-    $footerWaLink = $footerSetting->whatsapp
-        ? 'https://wa.me/'.preg_replace('/[^0-9]/', '', $footerSetting->whatsapp)
+    $footerWaLink = $footerSetting->whatsappDigits()
+        ? 'https://wa.me/'.$footerSetting->whatsappDigits()
         : null;
 
     // Company & Support: label PERSIS sama dengan referensi Figma
     // (Bahasa Inggris, tidak diterjemahkan) -- href '#' untuk yang
-    // halamannya belum ada, pola yang sama seperti tombol "Jelajahi
-    // Profil" di hero.blade.php.
+    // halamannya belum ada. "About Us" -> halaman Profil (satu-satunya
+    // yang punya padanan nyata di project ini). "Order Status" & "Track
+    // Your Order" -> halaman tracking pesanan (/lacak). "Press" sengaja
+    // TIDAK ada di array ini (dihapus dari footer atas instruksi).
     $footerCompany = [
-        ['label' => 'About Us', 'href' => '#'],
-        ['label' => 'Our Craftsmen', 'href' => '#'],
-        ['label' => 'Sustainability', 'href' => '#'],
-        ['label' => 'Careers', 'href' => '#'],
-        ['label' => 'Press', 'href' => '#'],
+        ['label' => 'About Us', 'href' => route('profile.index')],
+        ['label' => 'Our Craftsmen', 'href' => route('craftsmen.index')],
+        ['label' => 'Sustainability', 'href' => route('sustainability.index')],
+        ['label' => 'Careers', 'href' => route('careers.index')],
     ];
 
     $footerSupport = [
-        ['label' => 'Order Status', 'href' => '#'],
-        ['label' => 'Shipping & Returns', 'href' => '#'],
-        ['label' => 'Track Your Order', 'href' => '#'],
-        ['label' => 'Warranty', 'href' => '#'],
+        ['label' => 'Order Status', 'href' => route('tracking.index')],
+        ['label' => 'Shipping & Returns', 'href' => route('profile.index').'#pengiriman'],
+        ['label' => 'Track Your Order', 'href' => route('tracking.index')],
+        ['label' => 'Warranty', 'href' => route('profile.index').'#garansi'],
         ['label' => 'Contact Us', 'href' => $footerWaLink ?? '#'],
     ];
 @endphp
@@ -123,7 +131,7 @@
                 <ul class="mt-4 space-y-2.5">
                     @forelse ($footerCategories as $category)
                         <li>
-                            <a href="#" class="text-sm text-white/60 transition-colors duration-300 hover:text-white">
+                            <a href="{{ route('products.index', ['category' => $category->slug]) }}" class="text-sm text-white/60 transition-colors duration-300 hover:text-white">
                                 {{ $category->name }}
                             </a>
                         </li>
@@ -177,9 +185,9 @@
             </p>
 
             <div class="flex items-center gap-6">
-                <a href="#" class="text-[11px] uppercase tracking-wide text-white/40 transition-colors duration-300 hover:text-white/70">Privacy Policy</a>
-                <a href="#" class="text-[11px] uppercase tracking-wide text-white/40 transition-colors duration-300 hover:text-white/70">Terms of Service</a>
-                <a href="#" class="text-[11px] uppercase tracking-wide text-white/40 transition-colors duration-300 hover:text-white/70">Cookies</a>
+                <a href="{{ route('legal.privacy') }}" class="text-[11px] uppercase tracking-wide text-white/40 transition-colors duration-300 hover:text-white/70">Privacy Policy</a>
+                <a href="{{ route('legal.terms') }}" class="text-[11px] uppercase tracking-wide text-white/40 transition-colors duration-300 hover:text-white/70">Terms of Service</a>
+                <a href="{{ route('legal.cookies') }}" class="text-[11px] uppercase tracking-wide text-white/40 transition-colors duration-300 hover:text-white/70">Cookies</a>
             </div>
 
             {{-- Badge metode pembayaran -- generik, mengikuti pola visual referensi --}}

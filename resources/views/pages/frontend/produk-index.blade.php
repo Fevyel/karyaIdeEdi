@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Shop — {{ \App\Models\Setting::current()->site_name }}</title>
+    <title>Produk &mdash; {{ \App\Models\Setting::current()->site_name }}</title>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
 </head>
@@ -20,11 +20,11 @@
                 <span class="h-1 w-1 rounded-full bg-[#C7B6A3]"></span>
             </div>
             <div class="flex flex-col items-center text-center">
-                <h1 class="font-display text-4xl font-semibold tracking-tight text-[#171717] sm:text-5xl">Shop</h1>
+                <h1 class="font-display text-4xl font-semibold tracking-tight text-[#171717] sm:text-5xl">Produk</h1>
                 <div class="mt-3 flex items-center gap-2 text-[11px] text-[#A29587]">
                     <a href="{{ route('home') }}" class="transition-colors hover:text-[#2A211B]">Home</a>
                     <span>/</span>
-                    <span class="font-medium text-[#2A211B]">Shop</span>
+                    <span class="font-medium text-[#2A211B]">Produk</span>
                 </div>
             </div>
             <div class="hidden shrink-0 translate-y-3 grid-cols-2 gap-1 sm:grid">
@@ -66,46 +66,7 @@
                                 @endforeach
                             </div>
                         </div>
-
-                        {{-- Price --}}
-                        <div class="mt-10">
-                            <p class="text-xs font-semibold text-[#2A211B]">Price</p>
-                            <div class="mt-2 flex items-center justify-between text-[10px] text-[#75685B]">
-                                <span id="min-price-label">Rp{{ number_format((float) (request('min_price', $catalogMinPrice ?? 0)), 0, ',', '.') }}</span>
-                                <span>-</span>
-                                <span id="max-price-label">Rp{{ number_format((float) (request('max_price', $catalogMaxPrice ?? 0)), 0, ',', '.') }}</span>
-                            </div>
-
-                            <div class="relative mt-5 h-5">
-                                <div class="absolute left-0 right-0 top-2.5 h-1 rounded-full bg-[#E2D5C5]"></div>
-                                <div id="price-track" class="absolute top-2.5 h-1 rounded-full bg-[#2A211B]"></div>
-
-                                <input
-                                    id="min-price-range"
-                                    type="range"
-                                    min="{{ (int) floor($catalogMinPrice ?? 0) }}"
-                                    max="{{ (int) ceil($catalogMaxPrice ?? 0) }}"
-                                    value="{{ (int) request('min_price', $catalogMinPrice ?? 0) }}"
-                                    step="1000"
-                                    aria-label="Harga minimum"
-                                    class="price-range pointer-events-none absolute inset-x-0 top-0 h-5 w-full appearance-none bg-transparent"
-                                >
-                                <input
-                                    id="max-price-range"
-                                    type="range"
-                                    min="{{ (int) floor($catalogMinPrice ?? 0) }}"
-                                    max="{{ (int) ceil($catalogMaxPrice ?? 0) }}"
-                                    value="{{ (int) request('max_price', $catalogMaxPrice ?? 0) }}"
-                                    step="1000"
-                                    aria-label="Harga maksimum"
-                                    class="price-range pointer-events-none absolute inset-x-0 top-0 h-5 w-full appearance-none bg-transparent"
-                                >
-                                <input id="min-price-input" type="hidden" name="min_price" value="{{ (int) request('min_price', $catalogMinPrice ?? 0) }}">
-                                <input id="max-price-input" type="hidden" name="max_price" value="{{ (int) request('max_price', $catalogMaxPrice ?? 0) }}">
-                            </div>
-                        </div>
-
-                        <button type="submit" class="mt-7 inline-flex w-full items-center justify-center rounded-md bg-[#2A211B] px-3 py-2.5 text-[10px] font-semibold uppercase tracking-[0.08em] text-white transition hover:bg-[#403129]">
+<button type="submit" class="mt-7 inline-flex w-full items-center justify-center rounded-md bg-[#2A211B] px-3 py-2.5 text-[10px] font-semibold uppercase tracking-[0.08em] text-white transition hover:bg-[#403129]">
                             Terapkan Filter
                         </button>
                     </aside>
@@ -146,11 +107,6 @@
                                 @endif
                             @endforeach
 
-                            @if (request()->filled('min_price') || request()->filled('max_price'))
-                                <span class="inline-flex items-center gap-2 rounded-sm bg-[#FBE4C5] px-2.5 py-1.5 text-[9px] font-medium text-[#8C6A45]">
-                                    Price: Rp{{ number_format((float) request('min_price', $catalogMinPrice ?? 0), 0, ',', '.') }} - Rp{{ number_format((float) request('max_price', $catalogMaxPrice ?? 0), 0, ',', '.') }}
-                                </span>
-                            @endif
 
                             @if (request()->filled('search'))
                                 <span class="inline-flex items-center gap-2 rounded-sm bg-[#FBE4C5] px-2.5 py-1.5 text-[9px] font-medium text-[#8C6A45]">
@@ -193,7 +149,7 @@
                                         $reviewCount = (int) ($product->approved_testimonials_count ?? 0);
                                     @endphp
 
-                                    <article class="group min-w-0">
+                                    <article class="group relative min-w-0">
                                         <a href="{{ route('products.show', $product) }}" class="block">
                                             <div class="relative aspect-[1.02/1] overflow-hidden bg-[#F7FAF7]">
                                                 @if ($hasDiscount)
@@ -201,15 +157,6 @@
                                                         {{ $discountPercent }}% off
                                                     </span>
                                                 @endif
-
-                                                <button
-                                                    type="button"
-                                                    aria-label="Wishlist {{ $product->nama }}"
-                                                    onclick="event.preventDefault();"
-                                                    class="absolute right-2.5 top-2.5 z-10 flex h-8 w-8 items-center justify-center rounded-full bg-white/90 text-[#6E6257] opacity-0 shadow-sm transition group-hover:opacity-100 hover:text-[#9C6B3F]"
-                                                >
-                                                    <i class="fa-regular fa-heart text-xs"></i>
-                                                </button>
 
                                                 @if ($thumbnailUrl)
                                                     <img
@@ -253,6 +200,37 @@
                                                 </div>
                                             </div>
                                         </a>
+
+                                        <button
+                                            type="button"
+                                            aria-label="Tambahkan {{ $product->nama }} ke favorit"
+                                            data-favorite-product
+                                            data-product-id="{{ $product->id }}"
+                                            data-product-slug="{{ $product->slug }}"
+                                            data-product-name="{{ $product->nama }}"
+                                            data-product-price="{{ $displayPrice }}"
+                                            data-product-image="{{ $thumbnailUrl }}"
+                                            data-product-category="{{ $product->category?->name ?? 'Furniture' }}"
+                                            data-product-stock="{{ max(0, (int) $product->stok) }}"
+                                            class="absolute right-2.5 top-2.5 z-20 flex h-9 w-9 items-center justify-center rounded-full bg-white/95 text-[#6E6257] shadow-sm transition hover:text-[#9C6B3F]"
+                                        >
+                                            <i data-favorite-icon class="fa-regular fa-heart text-xs"></i>
+                                        </button>
+                                        <button
+                                            type="button"
+                                            aria-label="Masukkan {{ $product->nama }} ke keranjang"
+                                            data-cart-product
+                                            data-product-id="{{ $product->id }}"
+                                            data-product-slug="{{ $product->slug }}"
+                                            data-product-name="{{ $product->nama }}"
+                                            data-product-price="{{ $displayPrice }}"
+                                            data-product-image="{{ $thumbnailUrl }}"
+                                            data-product-category="{{ $product->category?->name ?? 'Furniture' }}"
+                                            data-product-stock="{{ max(0, (int) $product->stok) }}"
+                                            class="absolute bottom-[4.7rem] right-2.5 z-20 flex h-9 w-9 items-center justify-center rounded-full bg-[#2A211B]/95 text-white shadow-sm transition hover:bg-[#9C6B3F]"
+                                        >
+                                            <i class="fa-solid fa-bag-shopping text-xs"></i>
+                                        </button>
                                     </article>
                                 @endforeach
                             </div>
@@ -271,85 +249,7 @@
 
     @include('partials.frontend.footer')
 
-    {{-- Dual range slider styling + synchronization --}}
-    <style>
-        .price-range::-webkit-slider-thumb {
-            pointer-events: auto;
-            -webkit-appearance: none;
-            appearance: none;
-            width: 9px;
-            height: 9px;
-            border-radius: 999px;
-            background: #2A211B;
-            cursor: grab;
-            border: 0;
-        }
-
-        .price-range::-moz-range-thumb {
-            pointer-events: auto;
-            width: 9px;
-            height: 9px;
-            border-radius: 999px;
-            background: #2A211B;
-            cursor: grab;
-            border: 0;
-        }
-
-        .price-range::-webkit-slider-runnable-track,
-        .price-range::-moz-range-track {
-            background: transparent;
-            border: 0;
-        }
-    </style>
-
-    <script>
-        (() => {
-            const minRange = document.getElementById('min-price-range');
-            const maxRange = document.getElementById('max-price-range');
-            const minInput = document.getElementById('min-price-input');
-            const maxInput = document.getElementById('max-price-input');
-            const minLabel = document.getElementById('min-price-label');
-            const maxLabel = document.getElementById('max-price-label');
-            const track = document.getElementById('price-track');
-
-            if (!minRange || !maxRange) return;
-
-            const formatRupiah = (value) => 'Rp' + new Intl.NumberFormat('id-ID', { maximumFractionDigits: 0 }).format(value);
-
-            const sync = (changed) => {
-                let min = Number(minRange.value);
-                let max = Number(maxRange.value);
-
-                if (min > max) {
-                    if (changed === 'min') {
-                        min = max;
-                        minRange.value = min;
-                    } else {
-                        max = min;
-                        maxRange.value = max;
-                    }
-                }
-
-                minInput.value = min;
-                maxInput.value = max;
-                minLabel.textContent = formatRupiah(min);
-                maxLabel.textContent = formatRupiah(max);
-
-                const low = Number(minRange.min);
-                const high = Number(minRange.max);
-                const range = Math.max(high - low, 1);
-                const start = ((min - low) / range) * 100;
-                const end = ((max - low) / range) * 100;
-
-                track.style.left = start + '%';
-                track.style.width = Math.max(end - start, 0) + '%';
-            };
-
-            minRange.addEventListener('input', () => sync('min'));
-            maxRange.addEventListener('input', () => sync('max'));
-            sync();
-        })();
-    </script>
 </body>
 </html>
+
 

@@ -12,11 +12,7 @@ new #[Layout('layouts::admin-panel')] #[Title('Pengaturan')] class extends Compo
 
     public string $tagline = '';
 
-    public string $email = '';
-
     public string $whatsapp = '';
-
-    public string $alamat = '';
 
     /** Hasil crop dari kanvas JS, dikirim sebagai data URL base64 PNG. Null = logo tidak diganti. */
     public ?string $logoBase64 = null;
@@ -30,9 +26,7 @@ new #[Layout('layouts::admin-panel')] #[Title('Pengaturan')] class extends Compo
 
         $this->site_name = $setting->site_name;
         $this->tagline = (string) $setting->tagline;
-        $this->email = (string) $setting->email;
         $this->whatsapp = (string) $setting->whatsapp;
-        $this->alamat = (string) $setting->alamat;
         $this->existingLogoUrl = $setting->logoUrl();
     }
 
@@ -41,9 +35,7 @@ new #[Layout('layouts::admin-panel')] #[Title('Pengaturan')] class extends Compo
         $validated = $this->validate([
             'site_name' => ['required', 'string', 'max:100'],
             'tagline' => ['nullable', 'string', 'max:150'],
-            'email' => ['nullable', 'email', 'max:150'],
             'whatsapp' => ['nullable', 'string', 'max:20'],
-            'alamat' => ['nullable', 'string', 'max:500'],
         ]);
 
         $setting = Setting::current();
@@ -83,7 +75,7 @@ new #[Layout('layouts::admin-panel')] #[Title('Pengaturan')] class extends Compo
                 Pengaturan
             </h2>
             <p class="mt-1 text-sm text-[var(--color-admin-ink-soft)]">
-                Atur identitas website dan informasi kontak yang tampil untuk pelanggan.
+                Atur identitas website dan nomor WhatsApp yang tampil untuk pelanggan.
             </p>
         </div>
     </div>
@@ -105,7 +97,7 @@ new #[Layout('layouts::admin-panel')] #[Title('Pengaturan')] class extends Compo
     <form
         wire:submit="save"
         x-data="logoCropper('{{ $existingLogoUrl }}')"
-        class="grid grid-cols-1 gap-6 lg:grid-cols-2"
+        class="grid grid-cols-1 gap-6"
     >
 
         {{-- ================= SECTION 1: IDENTITAS WEBSITE ================= --}}
@@ -183,59 +175,20 @@ new #[Layout('layouts::admin-panel')] #[Title('Pengaturan')] class extends Compo
                         </div>
                     </div>
                 </div>
-            </div>
-        </div>
-
-        {{-- ================= SECTION 2: KONTAK ================= --}}
-        <div class="flex flex-col rounded-2xl border border-[var(--color-admin-border)] bg-admin-surface p-5 shadow-sm sm:p-6">
-            <h3 class="mb-1 flex items-center gap-2 text-sm font-semibold text-[var(--color-admin-ink)]">
-                <i class="fa-solid fa-address-book text-[var(--color-admin-accent)]"></i>
-                Kontak
-            </h3>
-            <p class="mb-5 text-xs text-[var(--color-admin-ink-soft)]">
-                Informasi kontak yang tampil di halaman website untuk pelanggan.
-            </p>
-
-            <div class="grid flex-1 content-start gap-5 sm:grid-cols-2">
-                <div>
-                    <label for="setting_email" class="mb-1.5 block text-sm font-medium text-[var(--color-admin-ink)]">
-                        Email
-                    </label>
-                    <div class="relative">
-                        <i class="fa-regular fa-envelope pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-sm text-[var(--color-admin-ink-soft)]"></i>
-                        <input
-                            id="setting_email" type="email" wire:model="email" placeholder="info@karyaideedi.com"
-                            class="w-full rounded-lg border border-[var(--color-admin-border)] bg-admin-surface py-2.5 pl-10 pr-3 text-sm text-[var(--color-admin-ink)] transition focus:border-[var(--color-admin-accent)] focus:outline-none focus:ring-2 focus:ring-[var(--color-admin-accent)]/20"
-                        >
-                    </div>
-                    @error('email')
-                        <p class="mt-1.5 text-xs font-medium text-red-600">{{ $message }}</p>
-                    @enderror
-                </div>
 
                 <div>
                     <label for="setting_whatsapp" class="mb-1.5 block text-sm font-medium text-[var(--color-admin-ink)]">
                         WhatsApp
                     </label>
+                    <p class="mb-1.5 text-xs text-[var(--color-admin-ink-soft)]">
+                        Nomor ini otomatis dipakai di semua tombol WhatsApp di seluruh website.
+                    </p>
                     <div class="relative">
                         <i class="fa-brands fa-whatsapp pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-sm text-[var(--color-admin-ink-soft)]"></i>
                         <input
                             id="setting_whatsapp" type="text" wire:model="whatsapp" placeholder="08xxxxxxxxxx"
                             class="w-full rounded-lg border border-[var(--color-admin-border)] bg-admin-surface py-2.5 pl-10 pr-3 text-sm text-[var(--color-admin-ink)] transition focus:border-[var(--color-admin-accent)] focus:outline-none focus:ring-2 focus:ring-[var(--color-admin-accent)]/20"
                         >
-                    </div>
-                </div>
-
-                <div class="sm:col-span-2">
-                    <label for="setting_alamat" class="mb-1.5 block text-sm font-medium text-[var(--color-admin-ink)]">
-                        Alamat
-                    </label>
-                    <div class="relative">
-                        <i class="fa-solid fa-location-dot pointer-events-none absolute left-3.5 top-3 text-sm text-[var(--color-admin-ink-soft)]"></i>
-                        <textarea
-                            id="setting_alamat" wire:model="alamat" rows="4" placeholder="Alamat lengkap toko"
-                            class="w-full resize-none rounded-lg border border-[var(--color-admin-border)] bg-admin-surface py-2.5 pl-10 pr-3 text-sm text-[var(--color-admin-ink)] transition focus:border-[var(--color-admin-accent)] focus:outline-none focus:ring-2 focus:ring-[var(--color-admin-accent)]/20"
-                        ></textarea>
                     </div>
                 </div>
             </div>
@@ -423,3 +376,4 @@ new #[Layout('layouts::admin-panel')] #[Title('Pengaturan')] class extends Compo
     }));
 </script>
 @endscript
+

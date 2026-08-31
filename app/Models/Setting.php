@@ -31,7 +31,33 @@ class Setting extends Model
     }
 
     /**
-     * URL publik logo, atau null kalau belum ada logo yang diunggah.
+     * Nomor WhatsApp dalam format internasional siap pakai di link wa.me
+     * (mis. "6281234567890"), atau null kalau belum diisi.
+     *
+     * Menerima format 08xxxxxxxxxx, 8xxxxxxxxxx, +62xxxxxxxxxx, dengan atau
+     * tanpa spasi/tanda hubung. Semua tombol WhatsApp di website (navbar,
+     * footer, halaman produk, keranjang, dst.) harus lewat method ini,
+     * supaya normalisasi nomor cuma ada di satu tempat.
+     */
+    public function whatsappDigits(): ?string
+    {
+        $digits = $this->whatsapp ? preg_replace('/\D+/', '', $this->whatsapp) : '';
+
+        if ($digits === '') {
+            return null;
+        }
+
+        if (str_starts_with($digits, '0')) {
+            $digits = '62'.substr($digits, 1);
+        } elseif (! str_starts_with($digits, '62')) {
+            $digits = '62'.$digits;
+        }
+
+        return $digits;
+    }
+
+    /**
+     * URL public logo, atau null kalau belum ada logo yang diunggah.
      */
     public function logoUrl(): ?string
     {

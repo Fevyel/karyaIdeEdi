@@ -122,14 +122,14 @@ new #[Layout('layouts::admin-panel')] #[Title('Kategori')] class extends Compone
     --}}
 
     @if (session('status'))
-        <div class="flex items-center gap-2.5 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-700">
+        <div class="mb-4 flex items-center gap-2.5 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-700 shadow-sm">
             <i class="fa-solid fa-circle-check"></i>
             {{ session('status') }}
         </div>
     @endif
 
     @if (session('error'))
-        <div class="flex items-center gap-2.5 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-600">
+        <div class="mb-4 flex items-center gap-2.5 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-600 shadow-sm">
             <i class="fa-solid fa-triangle-exclamation"></i>
             {{ session('error') }}
         </div>
@@ -322,3 +322,4 @@ new #[Layout('layouts::admin-panel')] #[Title('Kategori')] class extends Compone
     }));
 </script>
 @endscript
+

@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 /**
  * Testimoni pelanggan.
@@ -28,8 +29,11 @@ class Testimonial extends Model
 
     protected $fillable = [
         'product_id',
+        'transaction_id',
+        'parent_id',
         'customer_name',
         'foto',
+        'photos',
         'jabatan',
         'rating',
         'comment',
@@ -48,12 +52,38 @@ class Testimonial extends Model
             'is_read_admin' => 'boolean',
             'rating' => 'integer',
             'urutan' => 'integer',
+            'photos' => 'array',
         ];
     }
 
     public function product(): BelongsTo
     {
         return $this->belongsTo(Product::class);
+    }
+
+    public function transaction(): BelongsTo
+    {
+        return $this->belongsTo(Transaction::class);
+    }
+
+    /** Komentar aslinya, kalau baris ini adalah komentar Update. */
+    public function parent(): BelongsTo
+    {
+        return $this->belongsTo(Testimonial::class, 'parent_id');
+    }
+
+    /** Komentar Update dari komentar ini (kalau ada). Maksimal 1, dijaga di controller. */
+    public function updateComment(): HasOne
+    {
+        return $this->hasOne(Testimonial::class, 'parent_id');
+    }
+
+    /** Komentar Update yang sudah disetujui & aktif, siap tampil publik di bawah komentar aslinya. */
+    public function approvedUpdateComment(): HasOne
+    {
+        return $this->hasOne(Testimonial::class, 'parent_id')
+            ->where('approval_status', 'approved')
+            ->where('is_active', true);
     }
 
     /** Komentar yang masih menunggu keputusan admin. */
@@ -95,5 +125,22 @@ class Testimonial extends Model
     public function scopeUnreadAdmin(Builder $query): Builder
     {
         return $query->where('is_read_admin', false);
+    }
+
+    /** Komentar utama saja (BUKAN komentar Update susulan). Dipakai untuk list utama publik/admin. */
+    public function scopeTopLevel(Builder $query): Builder
+    {
+        return $query->whereNull('parent_id');
+    }
+
+    /** Khusus komentar Update susulan. */
+    public function scopeUpdates(Builder $query): Builder
+    {
+        return $query->whereNotNull('parent_id');
+    }
+
+    public function isUpdate(): bool
+    {
+        return $this->parent_id !== null;
     }
 }
