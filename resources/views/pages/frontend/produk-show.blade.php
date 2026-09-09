@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="id">
+<html lang="id" data-site="frontend">
     <head>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -185,43 +185,8 @@
                                 ];
                             @endphp
 
-                            <div class="mt-7 flex flex-wrap gap-2.5">
-                                <button
-                                    type="button"
-                                    data-favorite-product
-                                    data-product-id="{{ $product->id }}"
-                                    data-product-slug="{{ $product->slug }}"
-                                    data-product-name="{{ $product->nama }}"
-                                    data-product-price="{{ $displayPrice }}"
-                                    data-product-image="{{ $thumbnailUrl }}"
-                                    data-product-category="{{ $product->category?->name ?? 'Furniture' }}"
-                                    data-product-stock="{{ max(0, (int) $product->stok) }}"
-                                    class="inline-flex h-10 items-center gap-2 rounded-md border border-[#E3DED7] bg-white px-4 text-[11px] font-semibold text-[#5C5147] transition hover:border-[#C7A16D] hover:text-admin-accent"
-                                >
-                                    <i data-favorite-icon class="fa-regular fa-heart text-xs"></i>
-                                    <span data-favorite-label>Simpan ke Favorit</span>
-                                </button>
-                                <button
-                                    type="button"
-                                    data-cart-product
-                                    data-product-id="{{ $product->id }}"
-                                    data-product-slug="{{ $product->slug }}"
-                                    data-product-name="{{ $product->nama }}"
-                                    data-product-price="{{ $displayPrice }}"
-                                    data-product-image="{{ $thumbnailUrl }}"
-                                    data-product-category="{{ $product->category?->name ?? 'Furniture' }}"
-                                    data-product-stock="{{ max(0, (int) $product->stok) }}"
-                                    data-cart-quantity-source="data-product-quantity"
-                                    class="inline-flex h-10 items-center gap-2 rounded-md bg-[#2A211B] px-4 text-[11px] font-semibold text-white transition hover:bg-[#403129] disabled:cursor-not-allowed disabled:opacity-50"
-                                >
-                                    <i class="fa-solid fa-bag-shopping text-xs"></i>
-                                    <span>Masukkan ke Keranjang</span>
-                                </button>
-                            </div>
-
                             <div class="mt-7" data-product-quantity data-max-stock="{{ max(0, (int) $product->stok) }}" data-wa-number="{{ $waNumber }}" data-product-name="{{ $product->nama }}">
-                                <label class="mb-2 block text-[10px] font-semibold text-[#2A211B]">Quantity:</label>
-                                <div class="flex items-center gap-3">
+                                <div class="flex items-center gap-2.5">
                                     <div class="inline-flex h-10 shrink-0 items-center overflow-hidden rounded-md border border-[#E3DED7] bg-white">
                                         <button type="button" data-quantity-minus class="flex h-full w-8 items-center justify-center text-[#7A6E63] transition hover:bg-[#F8F4EF] disabled:cursor-not-allowed disabled:opacity-40" aria-label="Kurangi jumlah">
                                             <i class="fa-solid fa-minus text-[9px]"></i>
@@ -231,6 +196,39 @@
                                             <i class="fa-solid fa-plus text-[9px]"></i>
                                         </button>
                                     </div>
+                                    <button
+                                        type="button"
+                                        aria-label="Simpan ke Favorit"
+                                        title="Simpan ke Favorit"
+                                        data-favorite-product
+                                        data-product-id="{{ $product->id }}"
+                                        data-product-slug="{{ $product->slug }}"
+                                        data-product-name="{{ $product->nama }}"
+                                        data-product-price="{{ $displayPrice }}"
+                                        data-product-image="{{ $thumbnailUrl }}"
+                                        data-product-category="{{ $product->category?->name ?? 'Furniture' }}"
+                                        data-product-stock="{{ max(0, (int) $product->stok) }}"
+                                        class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-[#E3DED7] bg-white text-[#5C5147] transition hover:border-[#C7A16D] hover:text-admin-accent"
+                                    >
+                                        <i data-favorite-icon class="fa-regular fa-heart text-sm"></i>
+                                    </button>
+                                    <button
+                                        type="button"
+                                        aria-label="Masukkan ke Keranjang"
+                                        title="Masukkan ke Keranjang"
+                                        data-cart-product
+                                        data-product-id="{{ $product->id }}"
+                                        data-product-slug="{{ $product->slug }}"
+                                        data-product-name="{{ $product->nama }}"
+                                        data-product-price="{{ $displayPrice }}"
+                                        data-product-image="{{ $thumbnailUrl }}"
+                                        data-product-category="{{ $product->category?->name ?? 'Furniture' }}"
+                                        data-product-stock="{{ max(0, (int) $product->stok) }}"
+                                        data-cart-quantity-source="data-product-quantity"
+                                        class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#2A211B] text-white transition hover:bg-[#403129] disabled:cursor-not-allowed disabled:opacity-50"
+                                    >
+                                        <i class="fa-solid fa-bag-shopping text-sm"></i>
+                                    </button>
                                     <a
                                         href="{{ $waNumber ? 'https://wa.me/'.$waNumber.'?text='.urlencode('Halo, saya ingin memesan produk "'.$product->nama.'" sebanyak 1 pcs.') : '#' }}"
                                         data-booking-link
@@ -294,7 +292,7 @@
                                     class="mt-3 flex h-10 w-full items-center justify-center gap-2 rounded-md bg-[#58B13F] px-5 text-[11px] font-semibold text-white transition hover:bg-[#489C32] {{ $waNumber ? '' : 'cursor-not-allowed opacity-90' }}"
                                     @unless ($waNumber) title="Nomor WhatsApp belum diisi di Admin > Pengaturan" onclick="event.preventDefault()" @endunless
                                 >
-                                    Whatsapp
+                                    Konsultasi via WhatsApp
                                     <i class="fa-brands fa-whatsapp"></i>
                                 </a>
                             </div>

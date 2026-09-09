@@ -24,6 +24,45 @@ window.Sortable = Sortable;
 
 /**
  * ==========================================================
+ * ADMIN NUMBER STEPPER (tombol naik/turun kustom)
+ * ==========================================================
+ * Dipakai bareng <x-icon-arrow> untuk tombol naik/turun di setiap
+ * <input type="number"> (gantinya spinner bawaan browser yang
+ * disembunyikan lewat CSS di app.css). Lihat pemakaiannya di
+ * produk-form.blade.php & kategori-form.blade.php.
+ *
+ * SENGAJA didaftarkan di sini (dibundel Vite, dimuat di <head>),
+ * BUKAN lewat tag <script> biasa di admin-panel.blade.php. Alpine
+ * ikut dibundel di dalam livewire.js dan Alpine.start() bisa saja
+ * sudah kepanggil duluan sebelum tag <script> di body sempat
+ * mendaftarkan Alpine.data() — begitu itu terjadi, x-data="numberStepper()"
+ * gagal diam-diam (Alpine tidak menemukan komponennya) dan tombol
+ * naik/turun jadi tidak merespons klik sama sekali. Mendaftarkan
+ * lewat event 'alpine:init' di file yang dimuat awal seperti ini
+ * adalah pola resmi yang direkomendasikan Livewire, aman dari race
+ * condition tersebut.
+ */
+document.addEventListener('alpine:init', () => {
+    Alpine.data('numberStepper', () => ({
+        step(delta) {
+            const el = this.$refs.numInput;
+            const stepAttr = parseFloat(el.step) || 1;
+            const min = el.min !== '' ? parseFloat(el.min) : -Infinity;
+            const max = el.max !== '' ? parseFloat(el.max) : Infinity;
+            let current = parseFloat(el.value);
+            if (isNaN(current)) current = 0;
+
+            const next = Math.min(max, Math.max(min, current + delta * stepAttr));
+            const decimals = (stepAttr.toString().split('.')[1] || '').length;
+            el.value = decimals ? next.toFixed(decimals) : String(next);
+
+            el.dispatchEvent(new Event('input', { bubbles: true }));
+        },
+    }));
+});
+
+/**
+ * ==========================================================
  * ADMIN NUMBER INPUT UX
  * ==========================================================
  *

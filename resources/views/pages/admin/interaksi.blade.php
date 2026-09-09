@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 
 use App\Models\Testimonial;
 use Illuminate\Support\Facades\Storage;

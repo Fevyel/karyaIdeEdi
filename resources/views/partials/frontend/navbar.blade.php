@@ -3,7 +3,7 @@
 
     $navMenu = [
         ['label' => 'Beranda',   'route' => 'home',              'icon' => 'fa-house'],
-        ['label' => 'Profil',    'route' => 'profile.index',     'icon' => 'fa-couch'],
+        ['label' => 'Tentang Kami', 'route' => 'profile.index',     'icon' => 'fa-couch'],
         ['label' => 'Produk',    'route' => 'products.index',    'icon' => 'fa-layer-group'],
         ['label' => 'Testimoni', 'route' => 'testimonials.index','icon' => 'fa-star'],
         ['label' => 'Booking',   'route' => 'booking.index',     'icon' => 'fa-calendar-check'],

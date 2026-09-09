@@ -268,7 +268,19 @@ new #[Layout('layouts::admin-panel')] #[Title('Pelanggan')] class extends Compon
                     </span>
                 </div>
 
-                <p class="relative mt-5 font-display text-2xl font-bold tracking-tight sm:text-[1.7rem] {{ $card['highlight'] ? 'text-white' : 'text-admin-ink' }}">
+                @php
+                    // Nilai kartu ini panjangnya beda-beda (mis. "11 orang" vs
+                    // "Rp5.100.000.000") -- kalau dipaksa satu ukuran font besar,
+                    // angka rupiah yang panjang bisa kepotong di kartu yang sempit.
+                    // Jadi ukuran font dibuat mengecil otomatis kalau teksnya panjang.
+                    $valueLength = strlen($card['value']);
+                    $valueSizeClass = match (true) {
+                        $valueLength > 15 => 'text-lg sm:text-xl',
+                        $valueLength > 11 => 'text-xl sm:text-[1.35rem]',
+                        default => 'text-2xl sm:text-[1.7rem]',
+                    };
+                @endphp
+                <p class="relative mt-5 truncate font-display font-bold tracking-tight {{ $valueSizeClass }} {{ $card['highlight'] ? 'text-white' : 'text-admin-ink' }}">
                     {{ $card['value'] }}
                 </p>
             </div>

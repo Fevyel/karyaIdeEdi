@@ -36,15 +36,67 @@
         ->ordered()
         ->take(4)
         ->get();
+
+    // Warna latar section ini bisa diatur admin lewat Edit Web > Kategori
+    // Produk (lihat pages/admin/edit-web.blade.php) -- data kategorinya
+    // sendiri TIDAK diedit dari sana, ambil langsung dari database seperti
+    // di atas. Data warna tersimpan di home_sections, section_key
+    // 'kategori'. Pola sama persis dengan partials/frontend/products.blade.php.
+    $kategoriSection = \App\Models\HomeSection::dataFor('kategori', ['bg_color' => null]);
+    $kategoriBgColor = $kategoriSection['bg_color'] ?: '#FEEDD8';
+
+    // Judul, nama kategori & jumlah produk duduk LANGSUNG di atas warna
+    // latar (tidak ada kartu putih di belakangnya seperti kartu produk),
+    // jadi warnanya dihitung otomatis dari kontras latar -- pola sama
+    // dengan $contrastProdukColors di products.blade.php. Warna latar
+    // bawaan (peach lembut, belum diganti admin) selalu menghasilkan
+    // warna coklat tua persis seperti sebelum section ini bisa diedit.
+    $contrastKategoriColors = function (string $hex): array {
+        $hex = ltrim($hex, '#');
+
+        $r = hexdec(substr($hex, 0, 2)) / 255;
+        $g = hexdec(substr($hex, 2, 2)) / 255;
+        $b = hexdec(substr($hex, 4, 2)) / 255;
+
+        $linearize = fn (float $c): float => $c <= 0.03928 ? $c / 12.92 : (($c + 0.055) / 1.055) ** 2.4;
+        $luminance = 0.2126 * $linearize($r) + 0.7152 * $linearize($g) + 0.0722 * $linearize($b);
+
+        return $luminance > 0.5
+            ? ['heading' => '#4B3A26', 'title' => '#4B3A26', 'count' => 'rgba(75, 58, 38, 0.75)']
+            : ['heading' => '#FFFFFF', 'title' => '#FFFFFF', 'count' => 'rgba(255, 255, 255, 0.75)'];
+    };
+
+    $kategoriColors = $contrastKategoriColors($kategoriBgColor);
 @endphp
 
 @if ($displayCategories->isNotEmpty())
-    <section class="bg-[#FEEDD8]">
-        <div class="mx-auto max-w-7xl px-6 py-14 sm:px-8 lg:px-10 lg:py-20">
+    <section
+        class="relative overflow-hidden"
+        style="background: linear-gradient(135deg, color-mix(in oklab, {{ $kategoriBgColor }} 100%, white 10%) 0%, {{ $kategoriBgColor }} 55%, color-mix(in oklab, {{ $kategoriBgColor }} 100%, black 14%) 100%);"
+    >
+        {{--
+            Lapisan glow & tekstur tipis supaya latar tidak terasa flat
+            walau admin belum ganti warnanya -- keduanya diturunkan dari
+            $kategoriBgColor (bukan warna baru yang di-hardcode), jadi
+            otomatis ikut menyesuaikan setiap kali admin ganti warna di
+            Edit Web.
+        --}}
+        <div
+            class="pointer-events-none absolute -right-24 -top-32 h-105 w-105 rounded-full blur-3xl"
+            style="background: color-mix(in oklab, {{ $kategoriBgColor }} 100%, white 60%); opacity: 0.45;"
+        ></div>
+        <div
+            class="pointer-events-none absolute inset-0 opacity-[0.05] mix-blend-overlay"
+            style="background-image: url('data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22140%22 height=%22140%22%3E%3Cfilter id=%22n%22%3E%3CfeTurbulence type=%22fractalNoise%22 baseFrequency=%220.85%22 numOctaves=%222%22 stitchTiles=%22stitch%22/%3E%3C/filter%3E%3Crect width=%22140%22 height=%22140%22 filter=%22url(%23n)%22/%3E%3C/svg%3E');"
+        ></div>
 
-            {{-- ============ Header: judul ============ --}}
-            <div class="flex flex-wrap items-end justify-between gap-6">
-                <h2 class="font-display text-2xl text-[#4B3A26] sm:text-3xl">Produk Berdasarkan Kategori</h2>
+        <div class="relative mx-auto max-w-7xl px-6 py-14 sm:px-8 lg:px-10 lg:py-20">
+
+            {{-- ============ Header: judul + subjudul ============ --}}
+            <div class="max-w-xl">
+                <span class="mb-3 block h-0.75 w-12 rounded-full bg-[#C97B5A]"></span>
+                <h2 class="font-display text-3xl sm:text-4xl" style="color: {{ $kategoriColors['heading'] }};">Produk Berdasarkan Kategori</h2>
+                <p class="mt-2 text-sm" style="color: {{ $kategoriColors['count'] }};">Telusuri koleksi kami berdasarkan kebutuhan ruang Anda.</p>
             </div>
 
             {{-- ============ Grid kategori ============ --}}
@@ -54,27 +106,39 @@
                         href="{{ route('products.index', ['category' => $category->slug]) }}"
                         class="group block"
                     >
-                        <div class="relative aspect-4/5 w-full overflow-hidden rounded-3xl shadow-sm transition-all duration-300 ease-out group-hover:-translate-y-1.5 group-hover:shadow-xl">
-                            @if ($category->coverUrl())
-                                <img
-                                    src="{{ $category->coverUrl() }}"
-                                    alt="Kategori {{ $category->name }}"
-                                    class="h-full w-full object-cover object-center transition-transform duration-500 ease-out group-hover:scale-105"
-                                >
-                            @else
-                                <div class="flex h-full w-full items-center justify-center bg-admin-cream text-admin-ink-soft/40">
-                                    <i class="fa-solid fa-tags text-4xl"></i>
-                                </div>
-                            @endif
+                        {{--
+                            "Frame": matting tipis di sekeliling foto (efek
+                            bingkai foto galeri) -- warnanya diturunkan dari
+                            $kategoriBgColor supaya tetap satu keluarga warna
+                            dengan latar section, jadi kelihatan seperti satu
+                            komposisi, bukan warna acak.
+                        --}}
+                        <div
+                            class="relative aspect-4/5 w-full overflow-hidden rounded-[28px] p-2 transition-all duration-300 ease-out group-hover:-translate-y-1.5"
+                            style="background: linear-gradient(160deg, color-mix(in oklab, {{ $kategoriBgColor }} 100%, white 45%) 0%, color-mix(in oklab, {{ $kategoriBgColor }} 100%, black 8%) 100%); box-shadow: 0 20px 34px -20px color-mix(in oklab, {{ $kategoriBgColor }} 100%, black 55%);"
+                        >
+                            <div class="h-full w-full overflow-hidden rounded-3xl shadow-inner">
+                                @if ($category->coverUrl())
+                                    <img
+                                        src="{{ $category->coverUrl() }}"
+                                        alt="Kategori {{ $category->name }}"
+                                        class="h-full w-full object-cover object-center transition-transform duration-500 ease-out group-hover:scale-105"
+                                    >
+                                @else
+                                    <div class="flex h-full w-full items-center justify-center bg-admin-cream text-admin-ink-soft/40">
+                                        <i class="fa-solid fa-tags text-4xl"></i>
+                                    </div>
+                                @endif
+                            </div>
 
                             {{-- Badge ikon kanan atas --}}
-                            <span class="absolute right-3 top-3 flex h-8 w-8 items-center justify-center rounded-full bg-white/85 text-[#4B3A26] shadow-sm backdrop-blur-sm">
+                            <span class="absolute right-4 top-4 flex h-8 w-8 items-center justify-center rounded-full bg-white/90 text-[#4B3A26] shadow-md backdrop-blur-sm transition-transform duration-300 group-hover:scale-110">
                                 <x-icon-arrow direction="external" />
                             </span>
                         </div>
 
-                        <p class="mt-4 text-base font-semibold text-[#4B3A26]">{{ $category->name }}</p>
-                        <p class="mt-0.5 text-sm text-admin-ink-soft">{{ $category->products_count }} Produk</p>
+                        <p class="mt-4 text-base font-semibold" style="color: {{ $kategoriColors['title'] }};">{{ $category->name }}</p>
+                        <p class="mt-0.5 text-sm" style="color: {{ $kategoriColors['count'] }};">{{ $category->products_count }} Produk</p>
                     </a>
                 @endforeach
             </div>

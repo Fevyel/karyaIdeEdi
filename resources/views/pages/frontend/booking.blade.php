@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="id">
+<html lang="id" data-site="frontend">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -81,6 +81,15 @@
                     lalu kamu dapat link tracking pribadi untuk memantau statusnya.
                 </p>
 
+                {{-- Trust badges — bukan angka statistik seperti hero beranda,
+                     dan tidak mengulang 3 langkah yang sudah ditampilkan
+                     detail di kartu sebelah kanan. --}}
+                <div class="mt-5 flex flex-wrap gap-x-7 gap-y-3 border-t border-[#3D2B1F]/10 pt-4 text-[11px] text-[#8A7C6E]">
+                    <span class="inline-flex items-center gap-2"><i class="fa-solid fa-circle-check text-[#9B6E3E]"></i> Tanpa checkout publik</span>
+                    <span class="inline-flex items-center gap-2"><i class="fa-solid fa-shield-halved text-[#9B6E3E]"></i> Detail pesanan privat</span>
+                    <span class="inline-flex items-center gap-2"><i class="fa-solid fa-link text-[#9B6E3E]"></i> Tracking pribadi</span>
+                </div>
+
                 {{-- CTA --}}
                 <div class="mt-6 flex flex-wrap items-center gap-3">
                     <a href="#pilih-produk" class="group inline-flex items-center gap-2 rounded-lg bg-[#1A1A1A] px-5 py-2.5 text-sm font-medium text-white shadow-sm transition-all duration-300 hover:bg-black hover:shadow-md">
@@ -93,15 +102,6 @@
                             Hubungi Admin
                         </a>
                     @endif
-                </div>
-
-                {{-- Trust badges — bukan angka statistik seperti hero beranda,
-                     dan tidak mengulang 3 langkah yang sudah ditampilkan
-                     detail di kartu sebelah kanan. --}}
-                <div class="mt-5 flex flex-wrap gap-x-7 gap-y-3 border-t border-[#3D2B1F]/10 pt-4 text-[11px] text-[#8A7C6E]">
-                    <span class="inline-flex items-center gap-2"><i class="fa-solid fa-circle-check text-[#9B6E3E]"></i> Tanpa checkout publik</span>
-                    <span class="inline-flex items-center gap-2"><i class="fa-solid fa-shield-halved text-[#9B6E3E]"></i> Detail pesanan privat</span>
-                    <span class="inline-flex items-center gap-2"><i class="fa-solid fa-link text-[#9B6E3E]"></i> Tracking pribadi</span>
                 </div>
             </div>
 

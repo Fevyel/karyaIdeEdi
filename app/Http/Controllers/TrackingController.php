@@ -125,6 +125,9 @@ class TrackingController
      * (approval_status = pending, sesuai default kolom) untuk difilter admin.
      * Kalau dikosongkan, tidak terjadi apa-apa — memang opsional.
      *
+     * `rating` (1-5, opsional) & `is_name_masked` (opsional, hanya berlaku
+     * pada komentar pertama — lihat catatan di form) ikut disimpan di sini.
+     *
      * Hanya perangkat tepercaya (pemilik link asli) yang boleh mengirim,
      * konsisten dengan proteksi privasi yang sudah ada di method show().
      *
@@ -154,14 +157,18 @@ class TrackingController
 
         $validated = $request->validate([
             'comment' => ['nullable', 'string', 'max:1000'],
+            'rating' => ['nullable', 'integer', 'min:1', 'max:5'],
+            'is_name_masked' => ['nullable', 'boolean'],
             'photos' => ['nullable', 'array', 'max:'.self::MAX_PHOTOS],
             'photos.*' => ['image', 'mimes:jpg,jpeg,png,webp', 'max:2048'], // 2048 KB = 2 MB
         ]);
 
         $comment = trim((string) ($validated['comment'] ?? ''));
+        $rating = $validated['rating'] ?? null;
+        $isNameMasked = $request->boolean('is_name_masked');
         $photos = $this->storePhotos($request->file('photos') ?? []);
 
-        if ($comment === '' && $photos === []) {
+        if ($comment === '' && $rating === null && $photos === []) {
             return redirect()->route('tracking.show', $trackingToken);
         }
 
@@ -177,6 +184,8 @@ class TrackingController
                 'product_id' => $transaction->product_id,
                 'transaction_id' => $transaction->id,
                 'customer_name' => $transaction->customer_name,
+                'is_name_masked' => $isNameMasked,
+                'rating' => $rating,
                 'comment' => $comment,
                 'photos' => $photos === [] ? null : $photos,
             ]);
@@ -201,6 +210,7 @@ class TrackingController
             'transaction_id' => $transaction->id,
             'parent_id' => $originalComment->id,
             'customer_name' => $transaction->customer_name,
+            'rating' => $rating,
             'comment' => $comment,
             'photos' => $photos === [] ? null : $photos,
         ]);

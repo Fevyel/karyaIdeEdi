@@ -85,25 +85,25 @@ Route::get('/produk/{product:slug}', function (\App\Models\Product $product) {
 // Profil
 Route::view('/profil', 'pages.frontend.profil')->name('profile.index');
 
-// Koleksi pembeli — disimpan di browser/perangkat, tanpa akun dan tanpa mengubah database.
+// Koleksi pembeli â€” disimpan di browser/perangkat, tanpa akun dan tanpa mengubah database.
 Route::view('/favorit', 'pages.frontend.favorit')->name('favorites.index');
 Route::view('/keranjang', 'pages.frontend.keranjang')->name('cart.index');
 
 // Dipanggil dari Keranjang (resources/js/app.js) untuk cek produk mana yang
 // pesanannya sudah diinput admin DAN sudah dikonfirmasi berasal dari
 // perangkat yang sama (pakai cookie device yang sama dengan fitur Lacak
-// Pesanan) — lihat app/Http/Controllers/CartStatusController.php.
+// Pesanan) â€” lihat app/Http/Controllers/CartStatusController.php.
 Route::get('/keranjang/status', [CartStatusController::class, 'check'])->name('cart.status');
 
 // Halaman statis kolom "Company" di footer.
 // Our Craftsmen: konten & foto masih dummy (belum ada data tukang asli),
-// tandanya ada di komentar dalam masing-masing view — ganti begitu ada
+// tandanya ada di komentar dalam masing-masing view â€” ganti begitu ada
 // data & foto asli dari pemilik toko.
 Route::view('/pengrajin-kami', 'pages.frontend.pengrajin')->name('craftsmen.index');
 Route::view('/keberlanjutan', 'pages.frontend.keberlanjutan')->name('sustainability.index');
 Route::view('/karier', 'pages.frontend.karier')->name('careers.index');
 
-// Legal — Privacy Policy, Terms of Service, Cookies.
+// Legal â€” Privacy Policy, Terms of Service, Cookies.
 Route::view('/kebijakan-privasi', 'pages.frontend.privacy-policy')->name('legal.privacy');
 Route::view('/ketentuan-layanan', 'pages.frontend.terms-of-service')->name('legal.terms');
 Route::view('/kebijakan-cookie', 'pages.frontend.cookies')->name('legal.cookies');
@@ -114,7 +114,7 @@ Route::get('/testimoni', function () {
         ->approved()
         ->active()
         ->topLevel()
-        ->with('approvedUpdateComment')
+        ->with(['approvedUpdateComment', 'product:id,nama'])
         ->where('is_featured_home', false)
         ->latest()
         ->paginate(9)

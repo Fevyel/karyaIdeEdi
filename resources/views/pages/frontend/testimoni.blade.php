@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="id">
+<html lang="id" data-site="frontend">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -84,40 +84,59 @@
                 <div class="mt-6 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
                     @foreach ($testimonials as $testimonial)
                         <div class="flex flex-col rounded-2xl border border-[#F0ECE7] bg-white p-6 shadow-sm">
-                            <div class="flex items-center gap-0.5 text-[#F0A321]">
-                                @for ($i = 1; $i <= 5; $i++)
-                                    <i class="fa-solid fa-star text-[11px] {{ $i > ($testimonial->rating ?? 0) ? 'text-[#E3DED7]' : '' }}"></i>
-                                @endfor
-                            </div>
 
-                            <p class="mt-4 flex-1 text-[11px] leading-relaxed text-[#5C5147] sm:text-xs">
-                                {{ $testimonial->comment }}
-                            </p>
-
-                            <div class="mt-5 flex items-center gap-3 border-t border-[#F0ECE7] pt-4">
+                            {{-- 1. Nama pembeli (foto profil admin/rating menyertai baris yang sama) --}}
+                            <div class="flex items-center gap-3">
                                 @if ($testimonial->foto && \Illuminate\Support\Facades\Storage::disk('public')->exists($testimonial->foto))
                                     <img
                                         src="{{ \Illuminate\Support\Facades\Storage::disk('public')->url($testimonial->foto) }}"
-                                        alt="{{ $testimonial->customer_name }}"
+                                        alt="{{ $testimonial->displayName() }}"
                                         class="h-10 w-10 shrink-0 rounded-full object-cover"
                                     >
                                 @else
                                     <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#F7F1E8] text-xs font-semibold text-[#F28A22]">
-                                        {{ strtoupper(substr($testimonial->customer_name, 0, 1)) }}
+                                        {{ strtoupper(substr($testimonial->displayName(), 0, 1)) }}
                                     </span>
                                 @endif
 
-                                <div class="min-w-0">
+                                <div class="min-w-0 flex-1">
                                     <p class="truncate text-[11px] font-semibold text-[#2A211B] sm:text-xs">
-                                        {{ $testimonial->customer_name }}
+                                        {{ $testimonial->displayName() }}
                                     </p>
-                                    @if ($testimonial->jabatan)
-                                        <p class="truncate text-[10px] text-[#A1988E]">
-                                            {{ $testimonial->jabatan }}
-                                        </p>
-                                    @endif
+                                </div>
+
+                                <div class="flex shrink-0 items-center gap-0.5 text-[#F0A321]">
+                                    @for ($i = 1; $i <= 5; $i++)
+                                        <i class="fa-solid fa-star text-[11px] {{ $i > ($testimonial->rating ?? 0) ? 'text-[#E3DED7]' : '' }}"></i>
+                                    @endfor
                                 </div>
                             </div>
+
+                            {{-- 2. Produk yang dibeli --}}
+                            @if ($testimonial->product)
+                                <div class="mt-3 inline-flex w-fit items-center gap-1.5 rounded-full bg-[#F7F1E8] px-3 py-1 text-[10px] font-medium text-[#8A6D3B]">
+                                    <i class="fa-solid fa-box text-[9px]"></i>
+                                    {{ $testimonial->product->nama }}
+                                </div>
+                            @endif
+
+                            {{-- 3. Foto yang dikirim pembeli (kalau ada) — kalau tidak ada, langsung ke komentar --}}
+                            @if (! empty($testimonial->photos))
+                                <div class="mt-3 flex gap-2 overflow-x-auto">
+                                    @foreach ($testimonial->photos as $photo)
+                                        <img
+                                            src="{{ \Illuminate\Support\Facades\Storage::disk('public')->url($photo) }}"
+                                            alt="Foto dari {{ $testimonial->displayName() }}"
+                                            class="h-16 w-16 shrink-0 rounded-lg object-cover"
+                                        >
+                                    @endforeach
+                                </div>
+                            @endif
+
+                            {{-- 4. Komentar --}}
+                            <p class="mt-3 flex-1 text-[11px] leading-relaxed text-[#5C5147] sm:text-xs">
+                                {{ $testimonial->comment }}
+                            </p>
                         </div>
                     @endforeach
                 </div>

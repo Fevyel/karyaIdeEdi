@@ -208,3 +208,6 @@
         </div>
     </div>
 </footer>
+
+<x-whatsapp-float :href="$footerWaLink" />
+<x-back-to-top />

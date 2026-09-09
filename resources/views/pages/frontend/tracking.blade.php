@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="id">
+<html lang="id" data-site="frontend">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -173,6 +173,15 @@
                     <div class="mt-4 space-y-3">
                         <div class="rounded-xl border border-[#E8DED1] bg-[#F7F8F6] p-4">
                             <p class="text-[11px] font-semibold uppercase tracking-wide text-[#A29587]">Komentar Anda</p>
+
+                            @if ($originalComment->rating)
+                                <div class="mt-1.5 flex items-center gap-0.5 text-[#F0A321]">
+                                    @for ($i = 1; $i <= 5; $i++)
+                                        <i class="fa-solid fa-star text-xs {{ $i > $originalComment->rating ? 'text-[#E3DED7]' : '' }}"></i>
+                                    @endfor
+                                </div>
+                            @endif
+
                             <p class="mt-1.5 text-sm leading-relaxed text-[#2A211B]">{{ $originalComment->comment }}</p>
 
                             @if (!empty($originalComment->photos))
@@ -195,6 +204,15 @@
                                 <p class="text-[11px] font-semibold uppercase tracking-wide text-[#C46A1A]">
                                     <i class="fa-solid fa-arrow-turn-up mr-1"></i>Update Komentar
                                 </p>
+
+                                @if ($updateComment->rating)
+                                    <div class="mt-1.5 flex items-center gap-0.5 text-[#F0A321]">
+                                        @for ($i = 1; $i <= 5; $i++)
+                                            <i class="fa-solid fa-star text-xs {{ $i > $updateComment->rating ? 'text-[#E3DED7]' : '' }}"></i>
+                                        @endfor
+                                    </div>
+                                @endif
+
                                 <p class="mt-1.5 text-sm leading-relaxed text-[#2A211B]">{{ $updateComment->comment }}</p>
 
                                 @if (!empty($updateComment->photos))
@@ -234,6 +252,34 @@
                             </p>
                         @endif
 
+                        {{-- Rating bintang — opsional, dipilih pembeli dengan klik. Nilainya
+                             dikirim lewat hidden input "rating" (1-5) dan dipakai sebagai
+                             bintang testimoni publik (lihat Testimonial::rating). --}}
+                        <div x-data="{ rating: {{ (int) old('rating', 0) }}, hover: 0 }" class="mb-3">
+                            <label class="text-xs font-semibold text-[#8A7C6E]">
+                                Beri Rating <span class="font-normal text-[#A29587]">(opsional)</span>
+                            </label>
+                            <div class="mt-1.5 flex items-center gap-1">
+                                <input type="hidden" name="rating" :value="rating || ''">
+                                @for ($i = 1; $i <= 5; $i++)
+                                    <button
+                                        type="button"
+                                        x-on:click="rating = (rating === {{ $i }} ? 0 : {{ $i }})"
+                                        x-on:mouseenter="hover = {{ $i }}"
+                                        x-on:mouseleave="hover = 0"
+                                        class="p-0.5 text-xl leading-none transition-colors"
+                                        :class="(hover || rating) >= {{ $i }} ? 'text-[#F0A321]' : 'text-[#E3DED7]'"
+                                        aria-label="Beri {{ $i }} bintang"
+                                    >
+                                        <i class="fa-solid fa-star"></i>
+                                    </button>
+                                @endfor
+                            </div>
+                            @error('rating')
+                                <p class="mt-1.5 text-xs text-red-500">{{ $message }}</p>
+                            @enderror
+                        </div>
+
                         <textarea
                             name="comment"
                             rows="4"
@@ -244,6 +290,25 @@
                         @error('comment')
                             <p class="mt-1.5 text-xs text-red-500">{{ $message }}</p>
                         @enderror
+
+                        {{-- Sensor nama — hanya tampil di komentar PERTAMA, karena hanya
+                             komentar pertama (topLevel) yang dijadikan kartu testimoni
+                             publik. Lihat Testimonial::displayName(). --}}
+                        @unless ($originalComment)
+                            <label class="mt-3 flex items-start gap-2.5 text-xs text-[#5C5147]">
+                                <input
+                                    type="checkbox"
+                                    name="is_name_masked"
+                                    value="1"
+                                    {{ old('is_name_masked') ? 'checked' : '' }}
+                                    class="mt-0.5 h-4 w-4 shrink-0 rounded border-[#E8DED1] text-[#F28A22] focus:ring-[#F28A22]/30"
+                                >
+                                <span>
+                                    Samarkan sebagian nama saya saat tampil sebagai testimoni publik
+                                    <span class="text-[#A29587]">(mis. "{{ \Illuminate\Support\Str::of($transaction->customer_name)->explode(' ')->map(fn ($w) => \Illuminate\Support\Str::substr($w, 0, 1).str_repeat('*', max(\Illuminate\Support\Str::length($w) - 1, 1)))->implode(' ') }}")</span>
+                                </span>
+                            </label>
+                        @endunless
 
                         <div class="mt-3">
                             <label class="text-xs font-semibold text-[#8A7C6E]">

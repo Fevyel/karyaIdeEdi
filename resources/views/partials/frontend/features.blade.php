@@ -6,20 +6,23 @@
     keunggulan singkat yang tampil tepat di bawah hero, sesuai
     referensi desain Figma.
 
-    Isi teks & ikon MASIH statis (hardcode) — belum ada
-    tabel/kolom di database untuk data ini, jadi gampang
-    diganti nanti begitu ada sumbernya.
+    Isi teks & ikon sekarang diatur admin lewat Edit Web > tab
+    "Keunggulan" (disimpan di tabel home_sections, key "keunggulan").
+    Default di bawah ini cuma fallback kalau admin belum pernah
+    menyimpan apa-apa.
 
     Pemakaian:
         @include('partials.frontend.features')
     ==========================================================
 --}}
 @php
-    $featureList = [
+    $featureDefaults = [
         ['icon' => 'fa-truck-fast',  'title' => 'Custom Sesuai Pesanan',  'desc' => 'Bebas request sesuai kebutuhan Anda'],
         ['icon' => 'fa-comment-dots','title' => 'Konsultasi via WhatsApp', 'desc' => 'Tanya produk, harga, dan booking langsung'],
         ['icon' => 'fa-headset',     'title' => 'Pembayaran Fleksibel',    'desc' => 'Berbagai pilihan pembayaran yang aman'],
     ];
+
+    $featureList = \App\Models\HomeSection::dataFor('keunggulan', ['items' => $featureDefaults])['items'];
 @endphp
 
 <section class="bg-admin-surface">

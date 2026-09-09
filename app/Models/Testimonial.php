@@ -32,6 +32,7 @@ class Testimonial extends Model
         'transaction_id',
         'parent_id',
         'customer_name',
+        'is_name_masked',
         'foto',
         'photos',
         'jabatan',
@@ -48,12 +49,35 @@ class Testimonial extends Model
     {
         return [
             'is_active' => 'boolean',
+            'is_name_masked' => 'boolean',
             'is_featured_home' => 'boolean',
             'is_read_admin' => 'boolean',
             'rating' => 'integer',
             'urutan' => 'integer',
             'photos' => 'array',
         ];
+    }
+
+    /**
+     * Nama yang ditampilkan di halaman publik. Kalau pembeli mencentang
+     * "sembunyikan sebagian nama" waktu kirim komentar pertama (di halaman
+     * Lacak Pesanan), tiap kata pada nama disamarkan jadi huruf pertama +
+     * bintang, mis. "Ahmad Fauzi" -> "A**** F****". Admin (menu Interaksi/
+     * Testimoni) tetap melihat nama asli lewat kolom `customer_name`
+     * langsung — method ini hanya dipakai di view publik.
+     */
+    public function displayName(): string
+    {
+        if (! $this->is_name_masked) {
+            return $this->customer_name;
+        }
+
+        $words = preg_split('/\s+/', trim($this->customer_name)) ?: [];
+
+        return collect($words)
+            ->filter(fn ($word) => $word !== '')
+            ->map(fn ($word) => mb_substr($word, 0, 1).str_repeat('*', max(mb_strlen($word) - 1, 1)))
+            ->implode(' ');
     }
 
     public function product(): BelongsTo

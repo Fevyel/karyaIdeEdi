@@ -24,6 +24,17 @@
 --}}
 
 @php
+    // Warna teks kartu (judul, deskripsi/rating, harga) bisa dikirim dari
+    // halaman pemanggil lewat $cardTextColors -- dipakai di Beranda > Semua
+    // Produk (partials/frontend/products.blade.php) supaya ikut kontras
+    // warna latar section "Produk Unggulan" yang diatur admin di Edit Web.
+    // Kalau tidak dikirim (dipakai di tempat lain nanti), fallback ke warna
+    // asli kartu ini -- sama persis seperti sebelum bisa diedit.
+    $cardTextColors = $cardTextColors ?? [];
+    $cardTitleColor = $cardTextColors['title'] ?? '#4B3A26';
+    $cardBodyColor = $cardTextColors['body'] ?? '#756A5D';
+    $cardPriceColor = $cardTextColors['price'] ?? '#1A1A1A';
+
     $hasDiscount = $product->harga_diskon && (float) $product->harga_diskon > 0;
 
     $thumbnailUrl = ($product->thumbnail && \Illuminate\Support\Facades\Storage::disk('public')->exists($product->thumbnail))
@@ -48,12 +59,12 @@
     {{-- Kotak foto — mengikuti referensi terbaru: foto produk studio (bg putih)
          ditampilkan utuh (object-contain) di atas card berwarna admin-cream,
          dengan padding rapat (bukan p-8 lama) supaya tidak ada ruang kosong berlebih. --}}
-    <div class="relative aspect-square w-full overflow-hidden rounded-3xl bg-admin-cream p-4 shadow-sm transition-all duration-300 ease-out group-hover:-translate-y-1.5 group-hover:shadow-xl sm:p-5">
+    <div class="relative aspect-square w-full overflow-hidden rounded-3xl bg-admin-cream p-1.5 shadow-sm transition-all duration-300 ease-out group-hover:-translate-y-1.5 group-hover:shadow-xl sm:p-2">
         @if ($thumbnailUrl)
             <img
                 src="{{ $thumbnailUrl }}"
                 alt="{{ $product->nama }}"
-                class="h-full w-full object-contain object-center transition-transform duration-500 ease-out group-hover:scale-105"
+                class="h-full w-full rounded-2xl object-contain object-center transition-transform duration-500 ease-out group-hover:scale-105"
             >
         @else
             <div class="flex h-full w-full items-center justify-center text-admin-ink-soft/40">
@@ -75,7 +86,7 @@
             data-product-category="{{ $product->category?->name ?? 'Furniture' }}"
             data-product-stock="{{ max(0, (int) $product->stok) }}"
             onclick="event.preventDefault(); event.stopPropagation();"
-            class="flex h-9 w-9 items-center justify-center rounded-full bg-white/95 text-[#6E6257] shadow-sm transition hover:text-[#9C6B3F]"
+            class="flex h-9 w-9 items-center justify-center rounded-full bg-white/95 text-[#6E6257] shadow-sm transition hover:text-admin-accent"
         >
             <i data-favorite-icon class="fa-regular fa-heart text-xs"></i>
         </button>
@@ -91,7 +102,7 @@
             data-product-category="{{ $product->category?->name ?? 'Furniture' }}"
             data-product-stock="{{ max(0, (int) $product->stok) }}"
             onclick="event.preventDefault(); event.stopPropagation();"
-            class="flex h-9 w-9 items-center justify-center rounded-full bg-[#2A211B] text-white shadow-sm transition hover:bg-[#9C6B3F] disabled:cursor-not-allowed disabled:opacity-50"
+            class="flex h-9 w-9 items-center justify-center rounded-full bg-[#2A211B] text-white shadow-sm transition hover:bg-admin-accent disabled:cursor-not-allowed disabled:opacity-50"
         >
             <i class="fa-solid fa-bag-shopping text-xs"></i>
         </button>
@@ -100,8 +111,8 @@
     <a href="{{ route('products.show', $product) }}" class="block">
         {{-- Info produk --}}
     <div class="mt-4">
-        <p class="text-base font-semibold text-[#4B3A26]">{{ $product->nama }}</p>
-        <p class="mt-0.5 text-sm text-admin-ink-soft">{{ $product->deskripsi_pendek }}</p>
+        <p class="text-base font-semibold" style="color: {{ $cardTitleColor }};">{{ $product->nama }}</p>
+        <p class="mt-0.5 text-sm" style="color: {{ $cardBodyColor }};">{{ $product->deskripsi_pendek }}</p>
 
         {{-- Rating — hanya tampil kalau sudah ada testimonial approved --}}
         <div class="mt-2 flex items-center gap-1.5">
@@ -117,7 +128,7 @@
                         @endif
                     @endfor
                 </div>
-                <span class="text-xs text-admin-ink-soft">
+                <span class="text-xs" style="color: {{ $cardBodyColor }};">
                     {{ number_format($averageRating, 1) }} ({{ $reviewCount }})
                 </span>
             @else
@@ -126,7 +137,7 @@
                         <i class="fa-regular fa-star text-xs"></i>
                     @endfor
                 </div>
-                <span class="text-xs text-admin-ink-soft/70">Belum ada ulasan</span>
+                <span class="text-xs" style="color: {{ $cardBodyColor }}; opacity: 0.7;">Belum ada ulasan</span>
             @endif
         </div>
 
@@ -136,11 +147,11 @@
                 <span class="text-base font-semibold text-red-600">
                     Rp{{ number_format((float) $product->harga_diskon, 0, ',', '.') }}
                 </span>
-                <span class="text-sm text-admin-ink-soft/70 line-through">
+                <span class="text-sm line-through" style="color: {{ $cardBodyColor }}; opacity: 0.7;">
                     Rp{{ number_format((float) $product->harga, 0, ',', '.') }}
                 </span>
             @else
-                <span class="text-base font-semibold text-[#1A1A1A]">
+                <span class="text-base font-semibold" style="color: {{ $cardPriceColor }};">
                     Rp{{ number_format((float) $product->harga, 0, ',', '.') }}
                 </span>
             @endif

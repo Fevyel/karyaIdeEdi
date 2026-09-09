@@ -440,12 +440,12 @@ new #[Layout('layouts::admin-panel')] #[Title('Pesanan')] class extends Componen
                     'catatan' => $this->catatan !== '' ? $this->catatan : null,
                     'total' => $hargaSatuan * $this->quantity,
                     'status' => 'pending',
-                    // is_read_admin sengaja TIDAK di-set di sini â€” biarkan pakai
+                    // is_read_admin sengaja TIDAK di-set di sini — biarkan pakai
                     // default kolom (false/belum dibaca), sesuai desain sistem
                     // badge: baris baru selalu unread sampai admin membuka
                     // halaman Pesanan lagi (lihat User::markPesananRead()).
                     // Berlaku juga untuk pesanan yang dibuat manual oleh admin
-                    // sendiri di sini â€” supaya badge tetap muncul sebagai
+                    // sendiri di sini — supaya badge tetap muncul sebagai
                     // pengingat "ada pesanan yang belum diproses".
                 ]);
 
@@ -489,7 +489,7 @@ new #[Layout('layouts::admin-panel')] #[Title('Pesanan')] class extends Componen
         $query = Transaction::query()
             ->with('product:id,nama')
             // History Pesanan: status final (completed/cancelled) sudah
-            // punya halaman sendiri (/admin/pesanan/history) â€” halaman ini
+            // punya halaman sendiri (/admin/pesanan/history) — halaman ini
             // fokus cuma ke antrean yang masih perlu ditangani admin.
             ->whereIn('status', Transaction::ACTIVE_STATUSES)
             ->when($this->search !== '', function ($q) {
@@ -649,7 +649,7 @@ new #[Layout('layouts::admin-panel')] #[Title('Pesanan')] class extends Componen
                                     {{ $transaction->customer_name }}
                                 </td>
                                 <td class="px-3 py-3 text-admin-ink-soft">
-                                    {{ $transaction->product?->nama ?? 'â€”' }}
+                                    {{ $transaction->product?->nama ?? '—' }}
                                     @if ($transaction->order_type === 'custom')
                                         <span class="ml-1.5 inline-flex items-center rounded-full bg-admin-accent/10 px-2 py-0.5 text-[10px] font-semibold text-admin-accent">Custom</span>
                                     @endif
@@ -751,11 +751,11 @@ new #[Layout('layouts::admin-panel')] #[Title('Pesanan')] class extends Componen
                         </div>
                         <div>
                             <p class="text-[11px] uppercase tracking-wide text-admin-ink-soft">WhatsApp</p>
-                            <p class="mt-1 text-sm font-semibold text-admin-ink">{{ $detailItem->whatsapp ?: 'â€”' }}</p>
+                            <p class="mt-1 text-sm font-semibold text-admin-ink">{{ $detailItem->whatsapp ?: '—' }}</p>
                         </div>
                         <div>
                             <p class="text-[11px] uppercase tracking-wide text-admin-ink-soft">Produk</p>
-                            <p class="mt-1 text-sm font-semibold text-admin-ink">{{ $detailItem->product?->nama ?? 'â€”' }}</p>
+                            <p class="mt-1 text-sm font-semibold text-admin-ink">{{ $detailItem->product?->nama ?? '—' }}</p>
                         </div>
                         <div>
                             <p class="text-[11px] uppercase tracking-wide text-admin-ink-soft">Tipe Pesanan</p>
@@ -789,7 +789,7 @@ new #[Layout('layouts::admin-panel')] #[Title('Pesanan')] class extends Componen
                                 @if (in_array($detailItem->status, \App\Models\Transaction::FINAL_STATUSES, true))
                                     {{ $detailItem->status === 'completed' ? 'Selesai' : 'Dibatalkan' }} &mdash; sudah keluar dari antrean
                                 @else
-                                    {{ $detailItem->queue_number ? '#'.$detailItem->queue_number : 'â€”' }}
+                                    {{ $detailItem->queue_number ? '#'.$detailItem->queue_number : '—' }}
                                 @endif
                             </p>
                         </div>

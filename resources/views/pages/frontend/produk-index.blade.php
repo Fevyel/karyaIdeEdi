@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="id">
+<html lang="id" data-site="frontend">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -13,7 +13,7 @@
 
     {{-- ================= SHOP HERO / BREADCRUMB ================= --}}
     <section class="bg-[#F6F9F6]">
-        <div class="mx-auto flex min-h-[175px] max-w-[1180px] items-center justify-center gap-6 px-5 py-12 sm:px-7 lg:px-8">
+        <div class="mx-auto flex min-h-43.75 max-w-295 items-center justify-center gap-6 px-5 py-12 sm:px-7 lg:px-8">
             <div class="hidden shrink-0 -translate-y-3 grid-cols-2 gap-1 sm:grid">
                 <span class="h-1 w-1 rounded-full bg-[#C7B6A3]"></span>
                 <span class="h-1 w-1 rounded-full bg-[#C7B6A3]"></span>
@@ -37,7 +37,7 @@
 
     {{-- ================= SHOP CONTENT ================= --}}
     <section class="bg-[#FEEDD8]">
-        <div class="mx-auto max-w-[1180px] px-5 py-10 sm:px-7 sm:py-12 lg:px-8 lg:py-14">
+        <div class="mx-auto max-w-295 px-5 py-10 sm:px-7 sm:py-12 lg:px-8 lg:py-14">
 
             <form id="shop-filter-form" action="{{ route('products.index') }}" method="GET">
                 <div class="grid grid-cols-1 gap-10 lg:grid-cols-[145px_minmax(0,1fr)] lg:gap-8">
@@ -114,13 +114,13 @@
                                 </span>
                             @endif
 
-                            <a href="{{ route('products.index') }}" class="ml-auto text-[10px] font-semibold text-[#4D433A] underline decoration-[#C7B6A3] underline-offset-4 transition hover:text-[#9C6B3F]">
+                            <a href="{{ route('products.index') }}" class="ml-auto text-[10px] font-semibold text-[#4D433A] underline decoration-[#C7B6A3] underline-offset-4 transition hover:text-admin-accent">
                                 Clear All
                             </a>
                         </div>
 
                         @if ($products->isEmpty())
-                            <div class="flex min-h-[360px] items-center justify-center rounded-xl border border-dashed border-[#DCCDBB] bg-[#FFF5E9]/60 px-6 text-center">
+                            <div class="flex min-h-90 items-center justify-center rounded-xl border border-dashed border-[#DCCDBB] bg-[#FFF5E9]/60 px-6 text-center">
                                 <div>
                                     <div class="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-[#FBE4C5] text-[#8C6A45]">
                                         <i class="fa-solid fa-magnifying-glass"></i>
@@ -151,7 +151,13 @@
 
                                     <article class="group relative min-w-0">
                                         <a href="{{ route('products.show', $product) }}" class="block">
-                                            <div class="relative aspect-[1.02/1] overflow-hidden bg-[#F7FAF7]">
+                                            {{-- Kotak foto -- disamakan dengan partials/frontend/product-card.blade.php
+                                                 (aspect-square + object-contain + padding p-4/sm:p-5) supaya foto
+                                                 produk tampil identik di Beranda, Detail Produk, maupun Katalog ini.
+                                                 Sebelumnya pakai aspect-[1.02/1] (nyaris kotak tapi tidak persis 1:1)
+                                                 sementara hasil crop thumbnail admin SELALU kotak 800x800 -- beda
+                                                 rasio kotak inilah yang bikin foto kelihatan beda tiap pindah halaman. --}}
+                                            <div class="relative aspect-square overflow-hidden bg-[#F7FAF7]">
                                                 @if ($hasDiscount)
                                                     <span class="absolute left-2.5 top-2.5 z-10 rounded-full bg-[#203D2E] px-2 py-1 text-[9px] font-semibold text-white">
                                                         {{ $discountPercent }}% off
@@ -163,7 +169,7 @@
                                                         src="{{ $thumbnailUrl }}"
                                                         alt="{{ $product->nama }}"
                                                         loading="lazy"
-                                                        class="h-full w-full object-contain object-center p-5 transition-transform duration-500 ease-out group-hover:scale-[1.035]"
+                                                        class="h-full w-full rounded-2xl object-contain object-center p-1.5 transition-transform duration-500 ease-out group-hover:scale-[1.035] sm:p-2"
                                                     >
                                                 @else
                                                     <div class="flex h-full w-full items-center justify-center text-[#C8BAA9]">
@@ -212,7 +218,7 @@
                                             data-product-image="{{ $thumbnailUrl }}"
                                             data-product-category="{{ $product->category?->name ?? 'Furniture' }}"
                                             data-product-stock="{{ max(0, (int) $product->stok) }}"
-                                            class="absolute right-2.5 top-2.5 z-20 flex h-9 w-9 items-center justify-center rounded-full bg-white/95 text-[#6E6257] shadow-sm transition hover:text-[#9C6B3F]"
+                                            class="absolute right-2.5 top-2.5 z-20 flex h-9 w-9 items-center justify-center rounded-full bg-white/95 text-[#6E6257] shadow-sm transition hover:text-admin-accent"
                                         >
                                             <i data-favorite-icon class="fa-regular fa-heart text-xs"></i>
                                         </button>
@@ -227,7 +233,7 @@
                                             data-product-image="{{ $thumbnailUrl }}"
                                             data-product-category="{{ $product->category?->name ?? 'Furniture' }}"
                                             data-product-stock="{{ max(0, (int) $product->stok) }}"
-                                            class="absolute bottom-[4.7rem] right-2.5 z-20 flex h-9 w-9 items-center justify-center rounded-full bg-[#2A211B]/95 text-white shadow-sm transition hover:bg-[#9C6B3F]"
+                                            class="absolute bottom-[4.7rem] right-2.5 z-20 flex h-9 w-9 items-center justify-center rounded-full bg-[#2A211B]/95 text-white shadow-sm transition hover:bg-admin-accent"
                                         >
                                             <i class="fa-solid fa-bag-shopping text-xs"></i>
                                         </button>
@@ -251,5 +257,3 @@
 
 </body>
 </html>
-
-

@@ -24,7 +24,7 @@
             Garis aksen emas: SENGAJA ditaruh di sini, sebagai anak langsung
             <body>, BUKAN di dalam <header>. <header> memakai backdrop-blur-xl,
             dan backdrop-filter membuat browser menganggap header sebagai
-            containing block baru — akibatnya `fixed inset-x-0` jadi relatif
+            containing block baru â€” akibatnya `fixed inset-x-0` jadi relatif
             terhadap header (tidak full-width, terpotong di sisi sidebar),
             bukan relatif terhadap viewport. Ditaruh di luar semua ancestor
             ber-filter/transform supaya `fixed` benar-benar relatif ke
@@ -43,7 +43,7 @@
                 {{-- garis aksen emas tipis di tepi kanan sidebar --}}
                 <div class="pointer-events-none absolute inset-y-0 right-0 w-px bg-linear-to-b from-transparent via-admin-gold/30 to-transparent"></div>
 
-                {{-- logo lockup — sumber tunggal: partials.logo (Pengaturan > Identitas Website) --}}
+                {{-- logo lockup â€” sumber tunggal: partials.logo (Pengaturan > Identitas Website) --}}
                 @php $siteSetting = \App\Models\Setting::current(); @endphp
                 <div class="relative flex h-18 shrink-0 items-center gap-3 border-b border-admin-sidebar-border bg-admin-sidebar-ink/3 px-6">
                     @include('partials.logo', [
@@ -173,7 +173,7 @@
                             </li>
                         @endforeach
 
-                        {{-- Interaksi — moderasi komentar/testimoni pembeli --}}
+                        {{-- Interaksi â€” moderasi komentar/testimoni pembeli --}}
                         <li>
                             <a
                                 href="{{ route('admin.interaksi') }}"
@@ -293,6 +293,9 @@
                                 <span>{{ now()->translatedFormat('l, d M Y') }}</span>
                             </div>
 
+                            {{-- panel Reset (Reset Pabrik / Reset Data) --}}
+                            <livewire:admin.reset-data-panel :key="'reset-data-panel'" />
+
                             {{-- dropdown profil --}}
                             <div x-data="{ profileOpen: false }" class="relative">
                                 <button
@@ -374,12 +377,12 @@
             BUG FIX: sidebar admin (menu Dashboard/Produk/Kategori/.../Interaksi)
             punya scroll sendiri (overflow-y-auto). Setiap kali pindah halaman
             lewat wire:navigate, seluruh <body> dimuat ulang dari server supaya
-            badge notifikasi selalu segar — efek sampingnya, tanpa kode ini,
+            badge notifikasi selalu segar â€” efek sampingnya, tanpa kode ini,
             posisi scroll sidebar ikut ke-reset ke paling atas setiap navigasi.
 
             Simpan posisi scroll sidebar sesaat SEBELUM navigasi dimulai
             (livewire:navigate), lalu kembalikan lagi begitu halaman baru
-            selesai dimuat (livewire:navigated) — jadi sidebar terasa "diam"
+            selesai dimuat (livewire:navigated) â€” jadi sidebar terasa "diam"
             seperti dashboard modern (TikTok/Facebook/Discord), walau
             sebenarnya di-render ulang dari server tiap pindah menu.
         --}}
@@ -404,35 +407,18 @@
             })();
         </script>
 
-            {{--
-                Helper Alpine dipakai bareng <x-icon-arrow> untuk tombol
-                naik/turun kustom di setiap <input type="number"> (gantinya
-                spinner bawaan browser yang disembunyikan lewat CSS di
-                app.css). SATU tempat, dipakai ulang di semua field angka —
-                lihat resources/views/pages/admin/produk-form.blade.php dan
-                kategori-form.blade.php untuk contoh pemakaian.
-            --}}
-        <script>
-            document.addEventListener('alpine:init', function () {
-                Alpine.data('numberStepper', function () {
-                    return {
-                        step(delta) {
-                            var el = this.$refs.numInput;
-                            var stepAttr = parseFloat(el.step) || 1;
-                            var min = el.min !== '' ? parseFloat(el.min) : -Infinity;
-                            var max = el.max !== '' ? parseFloat(el.max) : Infinity;
-                            var current = parseFloat(el.value);
-                            if (isNaN(current)) current = 0;
+        @if (session('reset-panel-message'))
+            <div
+                x-data="{ show: true }"
+                x-init="setTimeout(() => show = false, 5000)"
+                x-show="show"
+                x-transition
+                class="fixed bottom-6 left-1/2 z-100 w-[calc(100%-2rem)] max-w-md -translate-x-1/2 rounded-xl bg-admin-ink px-4 py-3 text-center text-xs font-semibold text-white shadow-xl"
+            >
+                {{ session('reset-panel-message') }}
+            </div>
+        @endif
 
-                            var next = Math.min(max, Math.max(min, current + delta * stepAttr));
-                            var decimals = (stepAttr.toString().split('.')[1] || '').length;
-                            el.value = decimals ? next.toFixed(decimals) : String(next);
-
-                            el.dispatchEvent(new Event('input', { bubbles: true }));
-                        },
-                    };
-                });
-            });
-        </script>
+        <x-back-to-top />
     </body>
 </html>

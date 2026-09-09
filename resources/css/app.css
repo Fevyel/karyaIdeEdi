@@ -24,6 +24,27 @@ html {
     color-scheme: light;
 }
 
+/* Website (frontend) diminta tampil PERSIS seperti browser di-zoom manual
+   ke 80% (bukan 100%) -- BUKAN admin panel, jadi discope ke
+   [data-site="frontend"] (atribut ini sudah ditaruh di tag <html> setiap
+   halaman frontend, lihat home-placeholder & semua
+   resources/views/pages/frontend/*.blade.php).
+
+   PENTING -- ini BUKAN percobaan pertama (font-size: 50% di <html>) yang
+   kemarin bikin navbar berantakan. Bedanya:
+   - `font-size` cuma mengecilkan satuan `rem` doang, sedangkan lebar
+     viewport yang dipakai browser untuk menghitung breakpoint (sm:/lg:/dst)
+     TETAP variasinya px asli layar -- makanya proporsi jadi kacau balau
+     (elemen mengecil tapi breakpoint tidak "ikut" mengecil).
+   - `zoom` (didukung semua browser modern: Chrome, Edge, Safari, Firefox
+     versi baru) beda -- ini benar-benar mensimulasikan tombol zoom browser
+     sungguhan. Breakpoint & perhitungan layout ikut dihitung ulang
+     berdasarkan viewport versi "sudah di-zoom", persis seperti kalau kamu
+     pencet Ctrl -- di keyboard. Makanya ini tidak merusak wrap navbar. */
+html[data-site='frontend'] {
+    zoom: 80%;
+}
+
 /* Alpine.js: sembunyikan elemen [x-cloak] sebelum Alpine selesai inisialisasi,
    mencegah flash konten (dipakai mis. di tab Description/Specification/Reviews
    pada halaman detail produk). */
