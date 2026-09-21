@@ -60,8 +60,7 @@ new #[Layout('layouts::admin-panel')] #[Title('Edit Web')] class extends Compone
         ['key' => 'tentang-kami-2', 'label' => 'Tentang Kami 2', 'icon' => 'fa-couch', 'ready' => true],
         ['key' => 'sejarah', 'label' => 'Sejarah', 'icon' => 'fa-clock-rotate-left', 'ready' => true],
         ['key' => 'nilai-kami', 'label' => 'Nilai Kami', 'icon' => 'fa-gem', 'ready' => true],
-        ['key' => 'keberlanjutan', 'label' => 'Keberlanjutan', 'icon' => 'fa-leaf', 'ready' => false],
-        ['key' => 'karier', 'label' => 'Karier', 'icon' => 'fa-briefcase', 'ready' => false],
+        ['key' => 'why-choose-us', 'label' => 'Why Choose Us', 'icon' => 'fa-leaf', 'ready' => true],
     ];
 
     /**
@@ -85,12 +84,53 @@ new #[Layout('layouts::admin-panel')] #[Title('Edit Web')] class extends Compone
     public ?string $profilHeroFotoPathLama = null;
 
     /**
+     * Daftar section untuk grup "Produk" (frontend: /produk, halaman
+     * katalog -- lihat resources/views/pages/frontend/produk-index.blade.php).
+     * Baru "Warna" yang diaktifkan dulu, sisanya menyusul bertahap sama
+     * seperti pola grup lain di atas.
+     */
+    public array $produkSections = [
+        ['key' => 'warna', 'label' => 'Warna', 'icon' => 'fa-palette', 'ready' => true],
+    ];
+
+    /**
+     * Warna latar halaman katalog Produk (section di bawah judul
+     * "Produk" -- yang berisi Filter Options & daftar produk). Data
+     * tersimpan di home_sections, section_key 'produk'. Bawaan
+     * (belum diganti admin) = #FEEDD8, PERSIS sama dengan warna yang
+     * sebelumnya hardcode di produk-index.blade.php supaya tampilan
+     * tidak berubah sebelum admin menyimpan warna baru.
+     */
+    public bool $produkWarnaUseCustomBg = false;
+
+    public string $produkWarnaBgColor = '#FEEDD8';
+
+    public array $produkWarnaBgPresets = \App\Support\ColorPalette::PRESETS;
+
+    /**
+     * Warna latar section PALING ATAS halaman Produk -- bagian breadcrumb
+     * yang menampilkan judul besar "Produk" & "Home / Produk", TEPAT DI
+     * BAWAH navbar. Section terpisah dari Filter Options & daftar produk
+     * di atas (2 warna berbeda, lihat produk-index.blade.php). Bawaan
+     * (belum diganti admin) = #F6F9F6, PERSIS sama dengan warna yang
+     * sebelumnya hardcode.
+     */
+    public bool $produkWarnaHeroUseCustomBg = false;
+
+    public string $produkWarnaHeroBgColor = '#F6F9F6';
+
+    public array $produkWarnaHeroBgPresets = \App\Support\ColorPalette::PRESETS;
+
+    /**
      * Daftar section untuk grup "Dokumentasi". Cuma 1 section (hero teks
      * saja, tidak ada sub-halaman lain seperti Sejarah/Pengrajin dst di
      * "Tentang Kami"), jadi langsung `ready => true`.
      */
     public array $dokumentasiSections = [
-        ['key' => 'dokumentasi', 'label' => 'Dokumentasi', 'icon' => 'fa-images', 'ready' => true],
+        ['key' => 'dokumentasi', 'label' => 'Hero & Galeri', 'icon' => 'fa-images', 'ready' => true],
+        ['key' => 'dokumentasi-1', 'label' => 'Dokumentasi 1', 'icon' => 'fa-arrows-left-right', 'ready' => true],
+        ['key' => 'dokumentasi-2', 'label' => 'Dokumentasi 2', 'icon' => 'fa-table-cells-large', 'ready' => true],
+        ['key' => 'dokumentasi-3', 'label' => 'Dokumentasi 3', 'icon' => 'fa-layer-group', 'ready' => true],
     ];
 
     /**
@@ -122,6 +162,123 @@ new #[Layout('layouts::admin-panel')] #[Title('Edit Web')] class extends Compone
     public ?string $dokumentasiVideoPathLama = null;
 
     /**
+     * Galeri "Dokumentasi" (foto & video jejak karya) yang tampil DI BAWAH
+     * hero teks+video di atas -- lihat resources/views/pages/frontend/booking.blade.php,
+     * bagian "GALERI DOKUMENTASI". Disimpan di section_key 'dokumentasi' yang
+     * SAMA dengan hero (cuma nambah key 'galeri'), tidak mengubah data hero.
+     *
+     * Pola slot TETAP (SAMA seperti $existingAdditionalImages di
+     * produk-form.blade.php), bukan daftar dinamis -- lebih sederhana &
+     * konsisten dengan konvensi yang sudah ada di project ini.
+     */
+    public const DOKUMENTASI_GALERI_SLOTS = 6;
+
+    /** Tipe media tiap slot: 'foto' atau 'video'. */
+    public array $dokumentasiGaleriTipe = ['foto', 'foto', 'foto', 'foto', 'foto', 'foto'];
+
+    /** Keterangan singkat tiap slot (opsional, ditampilkan kecil di galeri). */
+    public array $dokumentasiGaleriKeterangan = ['', '', '', '', '', ''];
+
+    /** Path foto/video yang SUDAH tersimpan per slot. Null = slot belum diisi. */
+    public array $dokumentasiGaleriPathLama = [null, null, null, null, null, null];
+
+    /** File baru yang di-upload admin tapi belum disimpan, per slot (Livewire TemporaryUploadedFile). */
+    public array $dokumentasiGaleriUploadBaru = [null, null, null, null, null, null];
+
+    /**
+     * ================= 3 SECTION TAMBAHAN HALAMAN DOKUMENTASI =================
+     *
+     * Ini SECTION BARU yang ditaruh DI BAWAH hero + galeri di atas -- hero dan
+     * galeri TIDAK diubah sedikit pun oleh fitur ini. Lihat bagian "SECTION
+     * TAMBAHAN: DOKUMENTASI 1, 2, 3" di
+     * resources/views/pages/frontend/booking.blade.php.
+     *
+     *   Dokumentasi 1 -> pita foto/video berjalan kanan ke kiri + teks di kanan
+     *                    (section_key 'dokumentasi-1')
+     *   Dokumentasi 2 -> Video Wall Mosaic, klik ubin untuk zoom
+     *                    (section_key 'dokumentasi-2')
+     *   Dokumentasi 3 -> kartu foto/video bertumpuk miring 3D
+     *                    (section_key 'dokumentasi-3')
+     *
+     * TIDAK ADA BATAS JUMLAH foto/video di ketiga section ini -- admin bisa
+     * menambah (tombol "Tambah") atau menghapus item sebanyak yang mau.
+     * Karena itu setiap item DIKUNCI DENGAN KEY STRING (UUID), bukan indeks
+     * angka biasa: index bisa berubah kalau ada item yang dihapus di
+     * tengah, sedangkan key UUID selalu tetap sama untuk item yang sama --
+     * ini supaya wire:model & upload file per item tidak pernah nyasar ke
+     * item lain, dan wire:key di blade bisa dipasang stabil per baris.
+     *
+     * $dokNKeys menyimpan URUTAN item (array of string), sedangkan properti
+     * lain ($dokNTipe, $dokNKeterangan, dst) adalah array asosiatif yang
+     * di-index oleh key yang sama.
+     */
+
+    // ---- Dokumentasi 1 (Pita Berjalan) ----
+
+    public string $dok1Judul = 'Jejak Proses';
+
+    public string $dok1Subjudul = 'Pita Karya';
+
+    public string $dok1Deskripsi = '';
+
+    /**
+     * Kecepatan pita berjalan dalam DETIK per satu putaran penuh. Makin besar
+     * = makin pelan. Dipakai frontend sebagai `--kie-dok1-speed`.
+     * Sengaja bertipe string supaya input number yang dikosongkan admin tidak
+     * bikin error tipe di Livewire -- dicasting ke int waktu disimpan.
+     */
+    public string $dok1MarqueeSpeed = '45';
+
+    /** Urutan item pita, berisi key UUID. */
+    public array $dok1Keys = [];
+
+    public array $dok1Tipe = [];
+
+    public array $dok1Keterangan = [];
+
+    public array $dok1PathLama = [];
+
+    public array $dok1UploadBaru = [];
+
+    // ---- Dokumentasi 2 (Video Wall Mosaic) ----
+
+    public string $dok2Judul = 'Dinding Karya';
+
+    public string $dok2Subjudul = 'Video Wall';
+
+    public string $dok2Deskripsi = '';
+
+    /** Urutan ubin, berisi key UUID. */
+    public array $dok2Keys = [];
+
+    public array $dok2Tipe = [];
+
+    public array $dok2Keterangan = [];
+
+    public array $dok2PathLama = [];
+
+    public array $dok2UploadBaru = [];
+
+    // ---- Dokumentasi 3 (3D Tilt Card Stack) ----
+
+    public string $dok3Judul = 'Arsip Pilihan';
+
+    public string $dok3Subjudul = 'Kartu Karya';
+
+    public string $dok3Deskripsi = '';
+
+    /** Urutan kartu, berisi key UUID. */
+    public array $dok3Keys = [];
+
+    public array $dok3Tipe = [];
+
+    public array $dok3Keterangan = [];
+
+    public array $dok3PathLama = [];
+
+    public array $dok3UploadBaru = [];
+
+    /**
      * Halaman apa saja yang bisa dikelola dari "Edit Web", ditampilkan
      * sebagai KARTU PILIHAN dulu (bukan langsung sidebar tab). Klik kartu
      * yang `ready` => baru masuk ke daftar section (sidebar + form)
@@ -145,14 +302,21 @@ new #[Layout('layouts::admin-panel')] #[Title('Edit Web')] class extends Compone
             'key' => 'tentang-kami',
             'label' => 'Tentang Kami',
             'icon' => 'fa-circle-info',
-            'description' => 'Tentang Kami, Sejarah, Nilai Kami, Keberlanjutan, Karier.',
+            'description' => 'Tentang Kami, Sejarah, Nilai Kami, Why Choose Us.',
+            'ready' => true,
+        ],
+        [
+            'key' => 'produk',
+            'label' => 'Produk',
+            'icon' => 'fa-box-open',
+            'description' => 'Warna.',
             'ready' => true,
         ],
         [
             'key' => 'dokumentasi',
             'label' => 'Dokumentasi',
             'icon' => 'fa-images',
-            'description' => 'Judul, subjudul, dan deskripsi halaman Dokumentasi.',
+            'description' => 'Hero & Galeri, Dokumentasi 1 (pita berjalan), Dokumentasi 2 (video wall), Dokumentasi 3 (kartu 3D).',
             'ready' => true,
         ],
     ];
@@ -177,6 +341,7 @@ new #[Layout('layouts::admin-panel')] #[Title('Edit Web')] class extends Compone
         // sidebar & panel tidak "nyangkut" di section grup sebelumnya.
         $this->activeSection = match ($key) {
             'tentang-kami' => $this->tentangKamiSections[0]['key'],
+            'produk' => $this->produkSections[0]['key'],
             'dokumentasi' => $this->dokumentasiSections[0]['key'],
             'beranda' => 'header',
             default => $this->activeSection,
@@ -764,6 +929,80 @@ new #[Layout('layouts::admin-panel')] #[Title('Edit Web')] class extends Compone
         ];
     }
 
+    // ================= WHY CHOOSE US (halaman Tentang Kami) =================
+
+    /**
+     * Section "Why Choose Us" halaman Tentang Kami (frontend: /profil, blok
+     * "D. WHY CHOOSE US" -- section gelap paling bawah: teks di kiri, 5
+     * kartu poin di kanan; lihat resources/views/pages/frontend/profil.blade.php).
+     * Yang bisa diedit: warna frame (warna polos + gradasi opsional), isi
+     * teks (label kecil, judul, paragraf, teks tiap kartu), dan ikon tiap
+     * kartu. Disimpan di home_sections dengan section_key 'why-choose-us-profil'.
+     */
+    public string $whyChooseUsEyebrow = 'Why Choose Us';
+
+    public string $whyChooseUsHeading = '';
+
+    public string $whyChooseUsDescription = '';
+
+    /** @var array<int, array{icon: string, text: string}> Selalu tepat 5 kartu. */
+    public array $whyChooseUsItems = [];
+
+    public bool $whyChooseUsUseCustomBg = false;
+
+    /** Warna bawaan section ini (cokelat gelap) -- hanya awalan color picker. */
+    public string $whyChooseUsBgColor = '#221B14';
+
+    /**
+     * Palet warna rekomendasi untuk: Why Choose Us.
+     * SATU daftar yang sama untuk SEMUA pilihan warna di Edit Web -- ubah/tambah
+     * warna di app/Support/ColorPalette.php, jangan bikin daftar sendiri di sini.
+     *
+     * @var array<int, array{label: string, value: string, check: string}>
+     */
+    public array $whyChooseUsBgPresets = \App\Support\ColorPalette::PRESETS;
+
+    /**
+     * Pilihan ikon kartu -- dibatasi (bukan input bebas) supaya nama class
+     * FontAwesome yang tersimpan selalu valid, sama semangatnya dengan
+     * $keunggulanIconOptions. Dikunci (Locked) supaya daftar ini tidak bisa
+     * diubah dari browser.
+     *
+     * @var array<int, string>
+     */
+    #[\Livewire\Attributes\Locked]
+    public array $whyChooseUsIconOptions = [
+        'fa-layer-group', 'fa-circle-info', 'fa-cart-shopping', 'fa-headset',
+        'fa-couch', 'fa-gem', 'fa-award', 'fa-medal',
+        'fa-star', 'fa-heart', 'fa-hand-holding-heart', 'fa-handshake',
+        'fa-thumbs-up', 'fa-circle-check', 'fa-shield-halved', 'fa-truck-fast',
+        'fa-comment-dots', 'fa-clock', 'fa-house', 'fa-tree',
+        'fa-hammer', 'fa-ruler-combined', 'fa-screwdriver-wrench', 'fa-box-open',
+    ];
+
+    /**
+     * Nilai bawaan HARUS sama dengan yang ada di
+     * resources/views/pages/frontend/profil.blade.php (bagian D).
+     */
+    private function whyChooseUsDefaults(): array
+    {
+        $siteName = \App\Models\Setting::current()->site_name;
+
+        return [
+            'bg_color' => null,
+            'eyebrow' => 'Why Choose Us',
+            'heading' => 'Kenapa memilih '.$siteName.'?',
+            'description' => "Kami ingin proses memilih furniture terasa mudah dan tenang \u{2014} dari melihat produk sampai memutuskan yang paling cocok untuk ruang Anda.",
+            'items' => [
+                ['icon' => 'fa-layer-group', 'text' => 'Produk pilihan'],
+                ['icon' => 'fa-circle-info', 'text' => 'Informasi produk yang jelas'],
+                ['icon' => 'fa-cart-shopping', 'text' => 'Proses pemesanan mudah'],
+                ['icon' => 'fa-headset', 'text' => 'Dukungan pelanggan'],
+                ['icon' => 'fa-couch', 'text' => 'Pengalaman belanja yang nyaman'],
+            ],
+        ];
+    }
+
     private function dokumentasiDefaults(): array
     {
         return [
@@ -773,7 +1012,109 @@ new #[Layout('layouts::admin-panel')] #[Title('Edit Web')] class extends Compone
             'media_type' => 'video_url',
             'video_url' => null,
             'video_path' => null,
+            'galeri' => [],
         ];
+    }
+
+    private function dokumentasi1Defaults(): array
+    {
+        return [
+            'judul' => 'Jejak Proses',
+            'subjudul' => 'Pita Karya',
+            'deskripsi' => 'Cuplikan foto dan video yang berjalan terus, dari pemilihan bahan sampai furnitur siap dipakai di rumah pelanggan.',
+            'marquee_speed' => 45,
+            'items' => [],
+        ];
+    }
+
+    private function dokumentasi2Defaults(): array
+    {
+        return [
+            'judul' => 'Dinding Karya',
+            'subjudul' => 'Video Wall',
+            'deskripsi' => 'Potongan proses, detail sambungan, dan hasil akhir yang kami rekam langsung dari bengkel. Ketuk salah satu bidang untuk melihatnya lebih besar.',
+            'items' => [],
+        ];
+    }
+
+    private function dokumentasi3Defaults(): array
+    {
+        return [
+            'judul' => 'Arsip Pilihan',
+            'subjudul' => 'Kartu Karya',
+            'deskripsi' => 'Beberapa karya yang paling sering ditanyakan pelanggan. Arahkan kursor ke salah satu kartu untuk melihatnya lebih dekat.',
+            'items' => [],
+        ];
+    }
+
+    /**
+     * Isi bawaan galeri Dokumentasi -- HANYA dipakai kalau admin belum
+     * pernah menyimpan galeri sama sekali (pertama kali fitur ini aktif).
+     * Sengaja memakai foto produk & video "Kenapa Pilih Kami" yang SUDAH
+     * ada di database, supaya galeri tidak kosong melompong tanpa perlu
+     * menambah file baru apa pun ke storage. Begitu admin menyimpan galeri
+     * lewat form (walau cuma ubah keterangan), isi bawaan ini tidak
+     * dipakai lagi -- yang tersimpan di home_sections jadi acuan seterusnya.
+     */
+    private function dokumentasiGaleriDefaults(): array
+    {
+        $items = \App\Models\Product::query()
+            ->whereNotNull('thumbnail')
+            ->latest()
+            ->limit(self::DOKUMENTASI_GALERI_SLOTS)
+            ->get(['nama', 'thumbnail'])
+            ->map(fn ($produk) => [
+                'tipe' => 'foto',
+                'path' => $produk->thumbnail,
+                'keterangan' => $produk->nama,
+            ])
+            ->values()
+            ->all();
+
+        $keahlianVideoPath = HomeSection::dataFor('keahlian', ['media_type' => null, 'video_path' => null])['video_path'] ?? null;
+
+        if ($keahlianVideoPath && count($items) > 0) {
+            $items[count($items) - 1] = [
+                'tipe' => 'video',
+                'path' => $keahlianVideoPath,
+                'keterangan' => 'Proses & keahlian kami',
+            ];
+        }
+
+        return $items;
+    }
+
+    /**
+     * Isi properti dinamis ($dok{prefix}Keys/Tipe/Keterangan/PathLama) dari
+     * array item yang tersimpan di database, dengan MEMBUAT KEY UUID BARU
+     * untuk tiap item -- key ini tidak perlu sama dengan sesi sebelumnya,
+     * cuma perlu stabil SELAMA request/komponen ini hidup (dipakai untuk
+     * wire:model & wire:key). $prefix contohnya 'dok1', 'dok2', 'dok3'.
+     */
+    private function muatItemDinamis(string $prefix, array $items): void
+    {
+        $keysProp = "{$prefix}Keys";
+        $tipeProp = "{$prefix}Tipe";
+        $ketProp = "{$prefix}Keterangan";
+        $pathProp = "{$prefix}PathLama";
+
+        $this->$keysProp = [];
+        $this->$tipeProp = [];
+        $this->$ketProp = [];
+        $this->$pathProp = [];
+
+        foreach ($items as $item) {
+            if (! is_array($item) || empty($item['path'])) {
+                continue;
+            }
+
+            $key = (string) Str::uuid();
+
+            $this->$keysProp[] = $key;
+            $this->{$tipeProp}[$key] = in_array($item['tipe'] ?? null, ['foto', 'video'], true) ? $item['tipe'] : 'foto';
+            $this->{$ketProp}[$key] = (string) ($item['keterangan'] ?? '');
+            $this->{$pathProp}[$key] = $item['path'];
+        }
     }
 
     public function mount(): void
@@ -915,6 +1256,24 @@ new #[Layout('layouts::admin-panel')] #[Title('Edit Web')] class extends Compone
             $this->nilaiKamiFotoPathLama[$i] = $item['image_path'] ?? null;
         }
 
+        $whyChooseUsDefaults = $this->whyChooseUsDefaults();
+        $whyChooseUsData = HomeSection::dataFor('why-choose-us-profil', $whyChooseUsDefaults);
+        $this->whyChooseUsUseCustomBg = filled($whyChooseUsData['bg_color']);
+        $this->whyChooseUsBgColor = $whyChooseUsData['bg_color'] ?: $this->whyChooseUsBgColor;
+        $this->whyChooseUsEyebrow = (string) $whyChooseUsData['eyebrow'];
+        $this->whyChooseUsHeading = (string) $whyChooseUsData['heading'];
+        $this->whyChooseUsDescription = (string) $whyChooseUsData['description'];
+
+        foreach (range(0, 4) as $i) {
+            $item = $whyChooseUsData['items'][$i] ?? $whyChooseUsDefaults['items'][$i];
+            $icon = (string) ($item['icon'] ?? '');
+
+            $this->whyChooseUsItems[$i] = [
+                'icon' => in_array($icon, $this->whyChooseUsIconOptions, true) ? $icon : $whyChooseUsDefaults['items'][$i]['icon'],
+                'text' => (string) ($item['text'] ?? $whyChooseUsDefaults['items'][$i]['text']),
+            ];
+        }
+
         $dokumentasiDefaults = $this->dokumentasiDefaults();
         $dokumentasiData = HomeSection::dataFor('dokumentasi', $dokumentasiDefaults);
         $this->dokumentasiJudul = $dokumentasiData['judul'];
@@ -926,6 +1285,45 @@ new #[Layout('layouts::admin-panel')] #[Title('Edit Web')] class extends Compone
         $this->dokumentasiVideoUrl = $dokumentasiData['video_url'] ?? '';
         $this->dokumentasiVideoPathLama = $dokumentasiData['video_path'] ?? null;
 
+        $dokumentasiGaleriTersimpan = $dokumentasiData['galeri'] ?? [];
+        $dokumentasiGaleriTersimpan = is_array($dokumentasiGaleriTersimpan) && $dokumentasiGaleriTersimpan !== []
+            ? $dokumentasiGaleriTersimpan
+            : $this->dokumentasiGaleriDefaults();
+
+        foreach (range(0, self::DOKUMENTASI_GALERI_SLOTS - 1) as $i) {
+            $item = $dokumentasiGaleriTersimpan[$i] ?? null;
+            $this->dokumentasiGaleriTipe[$i] = in_array($item['tipe'] ?? null, ['foto', 'video'], true) ? $item['tipe'] : 'foto';
+            $this->dokumentasiGaleriKeterangan[$i] = (string) ($item['keterangan'] ?? '');
+            $this->dokumentasiGaleriPathLama[$i] = $item['path'] ?? null;
+        }
+
+        // ---- 3 section tambahan halaman Dokumentasi (jumlah item BEBAS,
+        //      lihat catatan "TIDAK ADA BATAS JUMLAH" di atas properti) ----
+        $dok1Data = HomeSection::dataFor('dokumentasi-1', $this->dokumentasi1Defaults());
+        $this->dok1Judul = (string) $dok1Data['judul'];
+        $this->dok1Subjudul = (string) $dok1Data['subjudul'];
+        $this->dok1Deskripsi = (string) $dok1Data['deskripsi'];
+        $this->dok1MarqueeSpeed = (string) (int) ($dok1Data['marquee_speed'] ?? 45);
+        $this->muatItemDinamis('dok1', $dok1Data['items'] ?? []);
+
+        $dok2Data = HomeSection::dataFor('dokumentasi-2', $this->dokumentasi2Defaults());
+        $this->dok2Judul = (string) $dok2Data['judul'];
+        $this->dok2Subjudul = (string) $dok2Data['subjudul'];
+        $this->dok2Deskripsi = (string) $dok2Data['deskripsi'];
+        $this->muatItemDinamis('dok2', $dok2Data['items'] ?? []);
+
+        $dok3Data = HomeSection::dataFor('dokumentasi-3', $this->dokumentasi3Defaults());
+        $this->dok3Judul = (string) $dok3Data['judul'];
+        $this->dok3Subjudul = (string) $dok3Data['subjudul'];
+        $this->dok3Deskripsi = (string) $dok3Data['deskripsi'];
+        $this->muatItemDinamis('dok3', $dok3Data['items'] ?? []);
+
+        $produkWarnaData = HomeSection::dataFor('produk', ['bg_color' => null, 'bg_color_hero' => null]);
+        $this->produkWarnaUseCustomBg = filled($produkWarnaData['bg_color']);
+        $this->produkWarnaBgColor = $produkWarnaData['bg_color'] ?: $this->produkWarnaBgColor;
+        $this->produkWarnaHeroUseCustomBg = filled($produkWarnaData['bg_color_hero']);
+        $this->produkWarnaHeroBgColor = $produkWarnaData['bg_color_hero'] ?: $this->produkWarnaHeroBgColor;
+
         // Gradasi "Warna Frame" tiap section (kalau belum pernah diatur -> mati, frame polos).
         $this->loadFrameGradient('mission', $missionData['bg_gradient'] ?? null);
         $this->loadFrameGradient('produkUnggulan', $produkUnggulanData['bg_gradient'] ?? null);
@@ -935,6 +1333,7 @@ new #[Layout('layouts::admin-panel')] #[Title('Edit Web')] class extends Compone
         $this->loadFrameGradient('sejarah', $sejarahData['bg_gradient'] ?? null);
         $this->loadFrameGradient('tentangKami2', $tentangKami2Data['bg_gradient'] ?? null);
         $this->loadFrameGradient('nilaiKami', $nilaiKamiData['bg_gradient'] ?? null);
+        $this->loadFrameGradient('whyChooseUs', $whyChooseUsData['bg_gradient'] ?? null);
     }
 
     public function selectSection(string $key): void
@@ -1005,6 +1404,25 @@ new #[Layout('layouts::admin-panel')] #[Title('Edit Web')] class extends Compone
     {
         $this->nilaiKamiUseCustomBg = true;
         $this->nilaiKamiBgColor = $hex;
+    }
+
+    public function selectWhyChooseUsBgPreset(string $hex): void
+    {
+        $this->whyChooseUsUseCustomBg = true;
+        $this->whyChooseUsBgColor = $hex;
+    }
+
+    /**
+     * Pilih ikon sebuah kartu Why Choose Us. Hanya ikon dari daftar
+     * $whyChooseUsIconOptions yang diterima.
+     */
+    public function selectWhyChooseUsIcon(int $index, string $icon): void
+    {
+        if (! isset($this->whyChooseUsItems[$index]) || ! in_array($icon, $this->whyChooseUsIconOptions, true)) {
+            return;
+        }
+
+        $this->whyChooseUsItems[$index]['icon'] = $icon;
     }
 
     /**
@@ -1160,6 +1578,149 @@ new #[Layout('layouts::admin-panel')] #[Title('Edit Web')] class extends Compone
         return $this->dokumentasiVideoPathLama
             ? Storage::disk('public')->url($this->dokumentasiVideoPathLama)
             : null;
+    }
+
+    /** Jumlah slot galeri Dokumentasi -- dipakai di blade (konstanta class tidak diakses langsung dari blade, ikut konvensi getMaxAdditionalPhotosProperty() di produk-form.blade.php). */
+    public function getDokumentasiGaleriSlotsProperty(): int
+    {
+        return self::DOKUMENTASI_GALERI_SLOTS;
+    }
+
+    /** URL preview tiap slot galeri Dokumentasi (foto/video yang sudah tersimpan). Null = slot kosong. */
+    public function getDokumentasiGaleriPreviewUrlsProperty(): array
+    {
+        return collect($this->dokumentasiGaleriPathLama)
+            ->map(fn (?string $path) => $path ? Storage::disk('public')->url($path) : null)
+            ->all();
+    }
+
+    /** Hapus isi slot galeri tertentu (upload baru yang belum disimpan, ATAU file lama yang sudah tersimpan). */
+    public function removeDokumentasiGaleriSlot(int $slot): void
+    {
+        if (! array_key_exists($slot, $this->dokumentasiGaleriPathLama)) {
+            return;
+        }
+
+        $this->dokumentasiGaleriUploadBaru[$slot] = null;
+
+        if ($this->dokumentasiGaleriPathLama[$slot]) {
+            Storage::disk('public')->delete($this->dokumentasiGaleriPathLama[$slot]);
+        }
+
+        $this->dokumentasiGaleriPathLama[$slot] = null;
+        $this->dokumentasiGaleriKeterangan[$slot] = '';
+    }
+
+    /**
+     * URL preview tiap item yang SUDAH tersimpan, per section (Dokumentasi
+     * 1/2/3) -- di-index oleh key UUID yang sama dengan $dok{n}Keys, bukan
+     * angka, karena jumlah item di sini TIDAK DIBATASI (lihat catatan di
+     * atas properti $dok1Keys dkk).
+     */
+
+    /** URL preview tiap item pita yang sudah tersimpan, di-index oleh key UUID-nya. */
+    public function getDok1PreviewUrlsProperty(): array
+    {
+        return collect($this->dok1PathLama)
+            ->map(fn (?string $path) => $path ? Storage::disk('public')->url($path) : null)
+            ->all();
+    }
+
+    /** Tambah 1 item pita baru (kosong) -- TIDAK ADA BATAS jumlahnya. */
+    public function addDok1Item(): void
+    {
+        $key = (string) Str::uuid();
+
+        $this->dok1Keys[] = $key;
+        $this->dok1Tipe[$key] = 'foto';
+        $this->dok1Keterangan[$key] = '';
+        $this->dok1PathLama[$key] = null;
+        $this->dok1UploadBaru[$key] = null;
+    }
+
+    /** Hapus 1 item pita (upload baru yang belum disimpan ATAU file lama), lalu buang key-nya dari urutan. */
+    public function removeDok1Item(string $key): void
+    {
+        if (! in_array($key, $this->dok1Keys, true)) {
+            return;
+        }
+
+        if ($this->dok1PathLama[$key] ?? null) {
+            Storage::disk('public')->delete($this->dok1PathLama[$key]);
+        }
+
+        $this->dok1Keys = array_values(array_diff($this->dok1Keys, [$key]));
+        unset($this->dok1Tipe[$key], $this->dok1Keterangan[$key], $this->dok1PathLama[$key], $this->dok1UploadBaru[$key]);
+    }
+
+    /** URL preview tiap item ubin mosaic yang sudah tersimpan, di-index oleh key UUID-nya. */
+    public function getDok2PreviewUrlsProperty(): array
+    {
+        return collect($this->dok2PathLama)
+            ->map(fn (?string $path) => $path ? Storage::disk('public')->url($path) : null)
+            ->all();
+    }
+
+    /** Tambah 1 item ubin mosaic baru (kosong) -- TIDAK ADA BATAS jumlahnya. */
+    public function addDok2Item(): void
+    {
+        $key = (string) Str::uuid();
+
+        $this->dok2Keys[] = $key;
+        $this->dok2Tipe[$key] = 'foto';
+        $this->dok2Keterangan[$key] = '';
+        $this->dok2PathLama[$key] = null;
+        $this->dok2UploadBaru[$key] = null;
+    }
+
+    /** Hapus 1 item ubin mosaic (upload baru yang belum disimpan ATAU file lama), lalu buang key-nya dari urutan. */
+    public function removeDok2Item(string $key): void
+    {
+        if (! in_array($key, $this->dok2Keys, true)) {
+            return;
+        }
+
+        if ($this->dok2PathLama[$key] ?? null) {
+            Storage::disk('public')->delete($this->dok2PathLama[$key]);
+        }
+
+        $this->dok2Keys = array_values(array_diff($this->dok2Keys, [$key]));
+        unset($this->dok2Tipe[$key], $this->dok2Keterangan[$key], $this->dok2PathLama[$key], $this->dok2UploadBaru[$key]);
+    }
+
+    /** URL preview tiap item kartu 3D yang sudah tersimpan, di-index oleh key UUID-nya. */
+    public function getDok3PreviewUrlsProperty(): array
+    {
+        return collect($this->dok3PathLama)
+            ->map(fn (?string $path) => $path ? Storage::disk('public')->url($path) : null)
+            ->all();
+    }
+
+    /** Tambah 1 item kartu 3D baru (kosong) -- TIDAK ADA BATAS jumlahnya. */
+    public function addDok3Item(): void
+    {
+        $key = (string) Str::uuid();
+
+        $this->dok3Keys[] = $key;
+        $this->dok3Tipe[$key] = 'foto';
+        $this->dok3Keterangan[$key] = '';
+        $this->dok3PathLama[$key] = null;
+        $this->dok3UploadBaru[$key] = null;
+    }
+
+    /** Hapus 1 item kartu 3D (upload baru yang belum disimpan ATAU file lama), lalu buang key-nya dari urutan. */
+    public function removeDok3Item(string $key): void
+    {
+        if (! in_array($key, $this->dok3Keys, true)) {
+            return;
+        }
+
+        if ($this->dok3PathLama[$key] ?? null) {
+            Storage::disk('public')->delete($this->dok3PathLama[$key]);
+        }
+
+        $this->dok3Keys = array_values(array_diff($this->dok3Keys, [$key]));
+        unset($this->dok3Tipe[$key], $this->dok3Keterangan[$key], $this->dok3PathLama[$key], $this->dok3UploadBaru[$key]);
     }
 
     /**
@@ -1747,6 +2308,49 @@ new #[Layout('layouts::admin-panel')] #[Title('Edit Web')] class extends Compone
         session()->flash('edit-web-tersimpan', true);
     }
 
+    public function saveWhyChooseUs(): void
+    {
+        $validated = $this->validate([
+            'whyChooseUsBgColor' => ['required', 'string', 'regex:/^#[0-9A-Fa-f]{6}$/'],
+            ...$this->frameGradientRules('whyChooseUs'),
+            'whyChooseUsEyebrow' => ['required', 'string', 'max:40'],
+            'whyChooseUsHeading' => ['required', 'string', 'max:100'],
+            'whyChooseUsDescription' => ['required', 'string', 'max:300'],
+            'whyChooseUsItems' => ['required', 'array', 'size:5'],
+            'whyChooseUsItems.*.icon' => ['required', 'string', 'in:'.implode(',', $this->whyChooseUsIconOptions)],
+            'whyChooseUsItems.*.text' => ['required', 'string', 'max:60'],
+        ], [
+            'whyChooseUsEyebrow.required' => 'Label kecil wajib diisi.',
+            'whyChooseUsHeading.required' => 'Judul wajib diisi.',
+            'whyChooseUsDescription.required' => 'Paragraf wajib diisi.',
+            'whyChooseUsItems.*.icon.required' => 'Ikon kartu wajib dipilih.',
+            'whyChooseUsItems.*.icon.in' => 'Ikon kartu tidak valid, pilih dari daftar yang tersedia.',
+            'whyChooseUsItems.*.text.required' => 'Teks kartu wajib diisi.',
+        ]);
+
+        $items = [];
+
+        foreach (range(0, 4) as $i) {
+            $items[] = [
+                'icon' => $validated['whyChooseUsItems'][$i]['icon'],
+                'text' => $validated['whyChooseUsItems'][$i]['text'],
+            ];
+        }
+
+        HomeSection::forSection('why-choose-us-profil')->update([
+            'data' => [
+                'bg_color' => $this->whyChooseUsUseCustomBg ? $validated['whyChooseUsBgColor'] : null,
+                'bg_gradient' => $this->frameGradientPayload('whyChooseUs'),
+                'eyebrow' => $validated['whyChooseUsEyebrow'],
+                'heading' => $validated['whyChooseUsHeading'],
+                'description' => $validated['whyChooseUsDescription'],
+                'items' => $items,
+            ],
+        ]);
+
+        session()->flash('edit-web-tersimpan', true);
+    }
+
     public function saveDokumentasi(): void
     {
         $rules = [
@@ -1768,6 +2372,16 @@ new #[Layout('layouts::admin-panel')] #[Title('Edit Web')] class extends Compone
         // saveKeahlian(): ganti video itu opsional selama yang lama masih ada).
         if ($this->dokumentasiMediaType === 'video_upload' && ! $this->dokumentasiVideoPathLama) {
             $rules['dokumentasiVideoUpload'] = ['required', 'file', 'mimetypes:video/mp4,video/webm,video/ogg,video/quicktime', 'max:51200'];
+        }
+
+        // Validasi tiap slot galeri -- foto (image, maks 8MB) atau video
+        // (mp4/webm/ogg/mov, maks 50MB) tergantung tipe yang dipilih admin.
+        foreach (range(0, self::DOKUMENTASI_GALERI_SLOTS - 1) as $i) {
+            $rules["dokumentasiGaleriTipe.$i"] = ['required', 'in:foto,video'];
+            $rules["dokumentasiGaleriKeterangan.$i"] = ['nullable', 'string', 'max:80'];
+            $rules["dokumentasiGaleriUploadBaru.$i"] = $this->dokumentasiGaleriTipe[$i] === 'video'
+                ? ['nullable', 'file', 'mimetypes:video/mp4,video/webm,video/ogg,video/quicktime', 'max:51200']
+                : ['nullable', 'image', 'max:8192'];
         }
 
         $validated = $this->validate($rules, [
@@ -1796,6 +2410,39 @@ new #[Layout('layouts::admin-panel')] #[Title('Edit Web')] class extends Compone
             $this->dokumentasiVideoUpload = null;
         }
 
+        // Slot galeri yang ada upload baru -- ganti file lama (kalau ada) dengan yang baru.
+        foreach (range(0, self::DOKUMENTASI_GALERI_SLOTS - 1) as $i) {
+            $upload = $this->dokumentasiGaleriUploadBaru[$i] ?? null;
+
+            if (! $upload) {
+                continue;
+            }
+
+            if ($this->dokumentasiGaleriPathLama[$i]) {
+                Storage::disk('public')->delete($this->dokumentasiGaleriPathLama[$i]);
+            }
+
+            $extension = $upload->getClientOriginalExtension() ?: ($this->dokumentasiGaleriTipe[$i] === 'video' ? 'mp4' : 'jpg');
+            $this->dokumentasiGaleriPathLama[$i] = $upload->storeAs(
+                'home-sections',
+                'dokumentasi-galeri-'.Str::uuid().'.'.$extension,
+                'public'
+            );
+            $this->dokumentasiGaleriUploadBaru[$i] = null;
+        }
+
+        // Slot tanpa file tersimpan (belum pernah diisi / baru dihapus) tidak
+        // ikut disimpan ke galeri -- array dirapikan ulang urutannya (values()).
+        $dokumentasiGaleri = collect(range(0, self::DOKUMENTASI_GALERI_SLOTS - 1))
+            ->map(fn ($i) => $this->dokumentasiGaleriPathLama[$i] ? [
+                'tipe' => $this->dokumentasiGaleriTipe[$i],
+                'path' => $this->dokumentasiGaleriPathLama[$i],
+                'keterangan' => trim((string) $this->dokumentasiGaleriKeterangan[$i]),
+            ] : null)
+            ->filter()
+            ->values()
+            ->all();
+
         HomeSection::forSection('dokumentasi')->update([
             'data' => [
                 'judul' => $validated['dokumentasiJudul'],
@@ -1804,6 +2451,265 @@ new #[Layout('layouts::admin-panel')] #[Title('Edit Web')] class extends Compone
                 'media_type' => $this->dokumentasiMediaType,
                 'video_url' => $this->dokumentasiVideoUrl !== '' ? $this->dokumentasiVideoUrl : null,
                 'video_path' => $this->dokumentasiVideoPathLama,
+                'galeri' => $dokumentasiGaleri,
+            ],
+        ]);
+
+        session()->flash('edit-web-tersimpan', true);
+    }
+
+
+    /**
+     * Simpan Dokumentasi 1 (section_key 'dokumentasi-1'). Polanya persis
+     * saveDokumentasi(): validasi per slot -> pindahkan upload baru ke storage
+     * -> rapikan array -> tulis ke home_sections.
+     */
+    /**
+     * Simpan Dokumentasi 1 (section_key 'dokumentasi-1'). Jumlah item
+     * BEBAS -- makanya validasi & penyimpanan mengikuti urutan key di
+     * $dok1Keys (bukan range(0, N-1) seperti pola slot tetap), lalu
+     * ditulis ulang sebagai array berurutan (values()) ke home_sections.
+     */
+    public function saveDokumentasi1(): void
+    {
+        $rules = [
+            'dok1Judul' => ['required', 'string', 'max:60'],
+            'dok1Subjudul' => ['required', 'string', 'max:100'],
+            'dok1Deskripsi' => ['required', 'string', 'max:500'],
+            'dok1MarqueeSpeed' => ['required', 'numeric', 'integer', 'min:15', 'max:180'],
+        ];
+
+        foreach ($this->dok1Keys as $key) {
+            $rules["dok1Tipe.$key"] = ['required', 'in:foto,video'];
+            $rules["dok1Keterangan.$key"] = ['nullable', 'string', 'max:80'];
+            $rules["dok1UploadBaru.$key"] = ($this->dok1Tipe[$key] ?? 'foto') === 'video'
+                ? ['nullable', 'file', 'mimetypes:video/mp4,video/webm,video/ogg,video/quicktime', 'max:51200']
+                : ['nullable', 'image', 'max:8192'];
+        }
+
+        $validated = $this->validate($rules, [
+            'dok1Judul.required' => 'Judul wajib diisi.',
+            'dok1Subjudul.required' => 'Subjudul wajib diisi.',
+            'dok1Deskripsi.required' => 'Deskripsi wajib diisi.',
+            'dok1MarqueeSpeed.required' => 'Kecepatan pita wajib diisi.',
+            'dok1MarqueeSpeed.min' => 'Kecepatan pita minimal 15 detik per putaran.',
+            'dok1MarqueeSpeed.max' => 'Kecepatan pita maksimal 180 detik per putaran.',
+        ]);
+
+        foreach ($this->dok1Keys as $key) {
+            $upload = $this->dok1UploadBaru[$key] ?? null;
+
+            if (! $upload) {
+                continue;
+            }
+
+            if ($this->dok1PathLama[$key] ?? null) {
+                Storage::disk('public')->delete($this->dok1PathLama[$key]);
+            }
+
+            $extension = $upload->getClientOriginalExtension() ?: ($this->dok1Tipe[$key] === 'video' ? 'mp4' : 'jpg');
+            $this->dok1PathLama[$key] = $upload->storeAs(
+                'home-sections',
+                'dokumentasi1-'.Str::uuid().'.'.$extension,
+                'public'
+            );
+            $this->dok1UploadBaru[$key] = null;
+        }
+
+        // Item TANPA file tersimpan (belum pernah diisi) tidak ikut disimpan --
+        // urutan yang tersisa mengikuti $dok1Keys, dirapikan ulang lewat values().
+        $items = collect($this->dok1Keys)
+            ->map(fn ($key) => ($this->dok1PathLama[$key] ?? null) ? [
+                'tipe' => $this->dok1Tipe[$key],
+                'path' => $this->dok1PathLama[$key],
+                'keterangan' => trim((string) $this->dok1Keterangan[$key]),
+            ] : null)
+            ->filter()
+            ->values()
+            ->all();
+
+        HomeSection::forSection('dokumentasi-1')->update([
+            'data' => [
+                'judul' => $validated['dok1Judul'],
+                'subjudul' => $validated['dok1Subjudul'],
+                'deskripsi' => $validated['dok1Deskripsi'],
+                'marquee_speed' => (int) $validated['dok1MarqueeSpeed'],
+                'items' => $items,
+            ],
+        ]);
+
+        session()->flash('edit-web-tersimpan', true);
+    }
+
+    /**
+     * Simpan Dokumentasi 2 (section_key 'dokumentasi-2'). Jumlah item
+     * BEBAS -- makanya validasi & penyimpanan mengikuti urutan key di
+     * $dok2Keys (bukan range(0, N-1) seperti pola slot tetap), lalu
+     * ditulis ulang sebagai array berurutan (values()) ke home_sections.
+     */
+    public function saveDokumentasi2(): void
+    {
+        $rules = [
+            'dok2Judul' => ['required', 'string', 'max:60'],
+            'dok2Subjudul' => ['required', 'string', 'max:100'],
+            'dok2Deskripsi' => ['required', 'string', 'max:500'],
+        ];
+
+        foreach ($this->dok2Keys as $key) {
+            $rules["dok2Tipe.$key"] = ['required', 'in:foto,video'];
+            $rules["dok2Keterangan.$key"] = ['nullable', 'string', 'max:80'];
+            $rules["dok2UploadBaru.$key"] = ($this->dok2Tipe[$key] ?? 'foto') === 'video'
+                ? ['nullable', 'file', 'mimetypes:video/mp4,video/webm,video/ogg,video/quicktime', 'max:51200']
+                : ['nullable', 'image', 'max:8192'];
+        }
+
+        $validated = $this->validate($rules, [
+            'dok2Judul.required' => 'Judul wajib diisi.',
+            'dok2Subjudul.required' => 'Subjudul wajib diisi.',
+            'dok2Deskripsi.required' => 'Deskripsi wajib diisi.',
+        ]);
+
+        foreach ($this->dok2Keys as $key) {
+            $upload = $this->dok2UploadBaru[$key] ?? null;
+
+            if (! $upload) {
+                continue;
+            }
+
+            if ($this->dok2PathLama[$key] ?? null) {
+                Storage::disk('public')->delete($this->dok2PathLama[$key]);
+            }
+
+            $extension = $upload->getClientOriginalExtension() ?: ($this->dok2Tipe[$key] === 'video' ? 'mp4' : 'jpg');
+            $this->dok2PathLama[$key] = $upload->storeAs(
+                'home-sections',
+                'dokumentasi2-'.Str::uuid().'.'.$extension,
+                'public'
+            );
+            $this->dok2UploadBaru[$key] = null;
+        }
+
+        // Item TANPA file tersimpan (belum pernah diisi) tidak ikut disimpan --
+        // urutan yang tersisa mengikuti $dok2Keys, dirapikan ulang lewat values().
+        $items = collect($this->dok2Keys)
+            ->map(fn ($key) => ($this->dok2PathLama[$key] ?? null) ? [
+                'tipe' => $this->dok2Tipe[$key],
+                'path' => $this->dok2PathLama[$key],
+                'keterangan' => trim((string) $this->dok2Keterangan[$key]),
+            ] : null)
+            ->filter()
+            ->values()
+            ->all();
+
+        HomeSection::forSection('dokumentasi-2')->update([
+            'data' => [
+                'judul' => $validated['dok2Judul'],
+                'subjudul' => $validated['dok2Subjudul'],
+                'deskripsi' => $validated['dok2Deskripsi'],
+                'items' => $items,
+            ],
+        ]);
+
+        session()->flash('edit-web-tersimpan', true);
+    }
+
+    /**
+     * Simpan Dokumentasi 3 (section_key 'dokumentasi-3'). Jumlah item
+     * BEBAS -- makanya validasi & penyimpanan mengikuti urutan key di
+     * $dok3Keys (bukan range(0, N-1) seperti pola slot tetap), lalu
+     * ditulis ulang sebagai array berurutan (values()) ke home_sections.
+     */
+    public function saveDokumentasi3(): void
+    {
+        $rules = [
+            'dok3Judul' => ['required', 'string', 'max:60'],
+            'dok3Subjudul' => ['required', 'string', 'max:100'],
+            'dok3Deskripsi' => ['required', 'string', 'max:500'],
+        ];
+
+        foreach ($this->dok3Keys as $key) {
+            $rules["dok3Tipe.$key"] = ['required', 'in:foto,video'];
+            $rules["dok3Keterangan.$key"] = ['nullable', 'string', 'max:80'];
+            $rules["dok3UploadBaru.$key"] = ($this->dok3Tipe[$key] ?? 'foto') === 'video'
+                ? ['nullable', 'file', 'mimetypes:video/mp4,video/webm,video/ogg,video/quicktime', 'max:51200']
+                : ['nullable', 'image', 'max:8192'];
+        }
+
+        $validated = $this->validate($rules, [
+            'dok3Judul.required' => 'Judul wajib diisi.',
+            'dok3Subjudul.required' => 'Subjudul wajib diisi.',
+            'dok3Deskripsi.required' => 'Deskripsi wajib diisi.',
+        ]);
+
+        foreach ($this->dok3Keys as $key) {
+            $upload = $this->dok3UploadBaru[$key] ?? null;
+
+            if (! $upload) {
+                continue;
+            }
+
+            if ($this->dok3PathLama[$key] ?? null) {
+                Storage::disk('public')->delete($this->dok3PathLama[$key]);
+            }
+
+            $extension = $upload->getClientOriginalExtension() ?: ($this->dok3Tipe[$key] === 'video' ? 'mp4' : 'jpg');
+            $this->dok3PathLama[$key] = $upload->storeAs(
+                'home-sections',
+                'dokumentasi3-'.Str::uuid().'.'.$extension,
+                'public'
+            );
+            $this->dok3UploadBaru[$key] = null;
+        }
+
+        // Item TANPA file tersimpan (belum pernah diisi) tidak ikut disimpan --
+        // urutan yang tersisa mengikuti $dok3Keys, dirapikan ulang lewat values().
+        $items = collect($this->dok3Keys)
+            ->map(fn ($key) => ($this->dok3PathLama[$key] ?? null) ? [
+                'tipe' => $this->dok3Tipe[$key],
+                'path' => $this->dok3PathLama[$key],
+                'keterangan' => trim((string) $this->dok3Keterangan[$key]),
+            ] : null)
+            ->filter()
+            ->values()
+            ->all();
+
+        HomeSection::forSection('dokumentasi-3')->update([
+            'data' => [
+                'judul' => $validated['dok3Judul'],
+                'subjudul' => $validated['dok3Subjudul'],
+                'deskripsi' => $validated['dok3Deskripsi'],
+                'items' => $items,
+            ],
+        ]);
+
+        session()->flash('edit-web-tersimpan', true);
+    }
+
+    /** Klik salah satu swatch preset -> langsung pakai warnanya + otomatis centang "warna kustom". */
+    public function selectProdukWarnaBgPreset(string $hex): void
+    {
+        $this->produkWarnaUseCustomBg = true;
+        $this->produkWarnaBgColor = $hex;
+    }
+
+    /** Sama seperti selectProdukWarnaBgPreset(), tapi untuk section hero/breadcrumb (warna ke-2). */
+    public function selectProdukWarnaHeroBgPreset(string $hex): void
+    {
+        $this->produkWarnaHeroUseCustomBg = true;
+        $this->produkWarnaHeroBgColor = $hex;
+    }
+
+    public function saveProdukWarna(): void
+    {
+        $validated = $this->validate([
+            'produkWarnaBgColor' => ['required', 'string', 'regex:/^#[0-9A-Fa-f]{6}$/'],
+            'produkWarnaHeroBgColor' => ['required', 'string', 'regex:/^#[0-9A-Fa-f]{6}$/'],
+        ]);
+
+        HomeSection::forSection('produk')->update([
+            'data' => [
+                'bg_color' => $this->produkWarnaUseCustomBg ? $validated['produkWarnaBgColor'] : null,
+                'bg_color_hero' => $this->produkWarnaHeroUseCustomBg ? $validated['produkWarnaHeroBgColor'] : null,
             ],
         ]);
 
@@ -1891,11 +2797,13 @@ new #[Layout('layouts::admin-panel')] #[Title('Edit Web')] class extends Compone
         @php
             $activeGroupSections = match ($activeGroup) {
                 'tentang-kami' => $tentangKamiSections,
+                'produk' => $produkSections,
                 'dokumentasi' => $dokumentasiSections,
                 default => $sections,
             };
             $activeGroupLabel = match ($activeGroup) {
                 'tentang-kami' => 'Tentang Kami',
+                'produk' => 'Produk',
                 'dokumentasi' => 'Dokumentasi',
                 default => 'Beranda',
             };
@@ -2285,7 +3193,7 @@ new #[Layout('layouts::admin-panel')] #[Title('Edit Web')] class extends Compone
                                         <div x-show="open" x-transition.scale.origin.center @click.outside="cancelCrop()" class="w-full max-w-md rounded-2xl bg-admin-surface p-6 shadow-2xl">
                                             <h4 class="mb-1 text-sm font-semibold text-admin-ink">Sesuaikan Foto Besar</h4>
                                             <p class="mb-4 text-xs text-admin-ink-soft">Geser gambar untuk memindah, gunakan slider untuk zoom. Rasio 3:4 (mengikuti kolase kiri).</p>
-                                            <div x-ref="viewport" class="relative mx-auto aspect-3/4 w-full max-w-64 cursor-move touch-none overflow-hidden rounded-2xl border-2 border-admin-accent bg-admin-cream select-none" x-on:pointerdown="startDrag($event)" x-on:pointermove="onDrag($event)" x-on:pointerup="endDrag()" x-on:pointerleave="endDrag()">
+                                            <div x-ref="viewport" class="relative mx-auto aspect-3/4 w-full max-w-64 cursor-move touch-none overflow-hidden rounded-2xl border-2 border-admin-accent bg-admin-cream select-none" x-on:pointerdown="startDrag($event)" x-on:pointermove="onDrag($event)" x-on:pointerup="endDrag($event)" x-on:pointercancel="endDrag($event)" x-on:pointerleave="endDrag($event)" x-on:wheel.prevent="onWheel($event)">
                                                 <img x-ref="cropImg" :src="rawImage" x-on:load="onImgLoad($event)" draggable="false" class="absolute left-0 top-0 max-w-none origin-top-left select-none" :style="`width:${natW * scale}px; height:${natH * scale}px; transform: translate(${posX}px, ${posY}px);`">
                                             </div>
                                             <div class="mt-4 flex items-center gap-3">
@@ -2326,7 +3234,7 @@ new #[Layout('layouts::admin-panel')] #[Title('Edit Web')] class extends Compone
                                         <div x-show="open" x-transition.scale.origin.center @click.outside="cancelCrop()" class="w-full max-w-md rounded-2xl bg-admin-surface p-6 shadow-2xl">
                                             <h4 class="mb-1 text-sm font-semibold text-admin-ink">Sesuaikan Foto Kecil</h4>
                                             <p class="mb-4 text-xs text-admin-ink-soft">Geser gambar untuk memindah, gunakan slider untuk zoom. Rasio 1:1 (mengikuti kolase kanan atas).</p>
-                                            <div x-ref="viewport" class="relative mx-auto aspect-square w-full max-w-64 cursor-move touch-none overflow-hidden rounded-2xl border-2 border-admin-accent bg-admin-cream select-none" x-on:pointerdown="startDrag($event)" x-on:pointermove="onDrag($event)" x-on:pointerup="endDrag()" x-on:pointerleave="endDrag()">
+                                            <div x-ref="viewport" class="relative mx-auto aspect-square w-full max-w-64 cursor-move touch-none overflow-hidden rounded-2xl border-2 border-admin-accent bg-admin-cream select-none" x-on:pointerdown="startDrag($event)" x-on:pointermove="onDrag($event)" x-on:pointerup="endDrag($event)" x-on:pointercancel="endDrag($event)" x-on:pointerleave="endDrag($event)" x-on:wheel.prevent="onWheel($event)">
                                                 <img x-ref="cropImg" :src="rawImage" x-on:load="onImgLoad($event)" draggable="false" class="absolute left-0 top-0 max-w-none origin-top-left select-none" :style="`width:${natW * scale}px; height:${natH * scale}px; transform: translate(${posX}px, ${posY}px);`">
                                             </div>
                                             <div class="mt-4 flex items-center gap-3">
@@ -2367,7 +3275,7 @@ new #[Layout('layouts::admin-panel')] #[Title('Edit Web')] class extends Compone
                                         <div x-show="open" x-transition.scale.origin.center @click.outside="cancelCrop()" class="w-full max-w-md rounded-2xl bg-admin-surface p-6 shadow-2xl">
                                             <h4 class="mb-1 text-sm font-semibold text-admin-ink">Sesuaikan Foto Latar Kartu Angka</h4>
                                             <p class="mb-4 text-xs text-admin-ink-soft">Geser gambar untuk memindah, gunakan slider untuk zoom. Rasio 3:5 (mengikuti tinggi sisa kolom kanan kolase), akan tampil dengan overlay gelap tipis supaya angka &amp; label tetap kebaca.</p>
-                                            <div x-ref="viewport" class="relative mx-auto aspect-3/5 w-full max-w-64 cursor-move touch-none overflow-hidden rounded-2xl border-2 border-admin-accent bg-admin-cream select-none" x-on:pointerdown="startDrag($event)" x-on:pointermove="onDrag($event)" x-on:pointerup="endDrag()" x-on:pointerleave="endDrag()">
+                                            <div x-ref="viewport" class="relative mx-auto aspect-3/5 w-full max-w-64 cursor-move touch-none overflow-hidden rounded-2xl border-2 border-admin-accent bg-admin-cream select-none" x-on:pointerdown="startDrag($event)" x-on:pointermove="onDrag($event)" x-on:pointerup="endDrag($event)" x-on:pointercancel="endDrag($event)" x-on:pointerleave="endDrag($event)" x-on:wheel.prevent="onWheel($event)">
                                                 <img x-ref="cropImg" :src="rawImage" x-on:load="onImgLoad($event)" draggable="false" class="absolute left-0 top-0 max-w-none origin-top-left select-none" :style="`width:${natW * scale}px; height:${natH * scale}px; transform: translate(${posX}px, ${posY}px);`">
                                             </div>
                                             <div class="mt-4 flex items-center gap-3">
@@ -3283,7 +4191,7 @@ new #[Layout('layouts::admin-panel')] #[Title('Edit Web')] class extends Compone
                                 <div x-show="open" x-transition.scale.origin.center @click.outside="cancelCrop()" class="w-full max-w-md rounded-2xl bg-admin-surface p-6 shadow-2xl">
                                     <h4 class="mb-1 text-sm font-semibold text-admin-ink">Sesuaikan Foto</h4>
                                     <p class="mb-4 text-xs text-admin-ink-soft">Geser gambar untuk memindah, gunakan slider untuk zoom. Rasio 10:9 (mengikuti bingkai foto di halaman).</p>
-                                    <div x-ref="viewport" class="relative mx-auto aspect-10/9 w-full max-w-64 cursor-move touch-none overflow-hidden rounded-2xl border-2 border-admin-accent bg-admin-cream select-none" x-on:pointerdown="startDrag($event)" x-on:pointermove="onDrag($event)" x-on:pointerup="endDrag()" x-on:pointerleave="endDrag()">
+                                    <div x-ref="viewport" class="relative mx-auto aspect-10/9 w-full max-w-64 cursor-move touch-none overflow-hidden rounded-2xl border-2 border-admin-accent bg-admin-cream select-none" x-on:pointerdown="startDrag($event)" x-on:pointermove="onDrag($event)" x-on:pointerup="endDrag($event)" x-on:pointercancel="endDrag($event)" x-on:pointerleave="endDrag($event)" x-on:wheel.prevent="onWheel($event)">
                                         <img x-ref="cropImg" :src="rawImage" x-on:load="onImgLoad($event)" draggable="false" class="absolute left-0 top-0 max-w-none origin-top-left select-none" :style="`width:${natW * scale}px; height:${natH * scale}px; transform: translate(${posX}px, ${posY}px);`">
                                     </div>
                                     <div class="mt-4 flex items-center gap-3">
@@ -3457,7 +4365,7 @@ new #[Layout('layouts::admin-panel')] #[Title('Edit Web')] class extends Compone
                                 <div x-show="open" x-transition.scale.origin.center @click.outside="cancelCrop()" class="w-full max-w-md rounded-2xl bg-admin-surface p-6 shadow-2xl">
                                     <h4 class="mb-1 text-sm font-semibold text-admin-ink">Sesuaikan Foto</h4>
                                     <p class="mb-4 text-xs text-admin-ink-soft">Geser gambar untuk memindah, gunakan slider untuk zoom. Rasio 4:5 (mengikuti bingkai foto di halaman).</p>
-                                    <div x-ref="viewport" class="relative mx-auto aspect-4/5 w-full max-w-64 cursor-move touch-none overflow-hidden rounded-2xl border-2 border-admin-accent bg-admin-cream select-none" x-on:pointerdown="startDrag($event)" x-on:pointermove="onDrag($event)" x-on:pointerup="endDrag()" x-on:pointerleave="endDrag()">
+                                    <div x-ref="viewport" class="relative mx-auto aspect-4/5 w-full max-w-64 cursor-move touch-none overflow-hidden rounded-2xl border-2 border-admin-accent bg-admin-cream select-none" x-on:pointerdown="startDrag($event)" x-on:pointermove="onDrag($event)" x-on:pointerup="endDrag($event)" x-on:pointercancel="endDrag($event)" x-on:pointerleave="endDrag($event)" x-on:wheel.prevent="onWheel($event)">
                                         <img x-ref="cropImg" :src="rawImage" x-on:load="onImgLoad($event)" draggable="false" class="absolute left-0 top-0 max-w-none origin-top-left select-none" :style="`width:${natW * scale}px; height:${natH * scale}px; transform: translate(${posX}px, ${posY}px);`">
                                     </div>
                                     <div class="mt-4 flex items-center gap-3">
@@ -3631,7 +4539,7 @@ new #[Layout('layouts::admin-panel')] #[Title('Edit Web')] class extends Compone
                                 <div x-show="open" x-transition.scale.origin.center @click.outside="cancelCrop()" class="w-full max-w-md rounded-2xl bg-admin-surface p-6 shadow-2xl">
                                     <h4 class="mb-1 text-sm font-semibold text-admin-ink">Sesuaikan Foto</h4>
                                     <p class="mb-4 text-xs text-admin-ink-soft">Geser gambar untuk memindah, gunakan slider untuk zoom. Rasio 4:5 (mengikuti bingkai foto di halaman).</p>
-                                    <div x-ref="viewport" class="relative mx-auto aspect-4/5 w-full max-w-64 cursor-move touch-none overflow-hidden rounded-2xl border-2 border-admin-accent bg-admin-cream select-none" x-on:pointerdown="startDrag($event)" x-on:pointermove="onDrag($event)" x-on:pointerup="endDrag()" x-on:pointerleave="endDrag()">
+                                    <div x-ref="viewport" class="relative mx-auto aspect-4/5 w-full max-w-64 cursor-move touch-none overflow-hidden rounded-2xl border-2 border-admin-accent bg-admin-cream select-none" x-on:pointerdown="startDrag($event)" x-on:pointermove="onDrag($event)" x-on:pointerup="endDrag($event)" x-on:pointercancel="endDrag($event)" x-on:pointerleave="endDrag($event)" x-on:wheel.prevent="onWheel($event)">
                                         <img x-ref="cropImg" :src="rawImage" x-on:load="onImgLoad($event)" draggable="false" class="absolute left-0 top-0 max-w-none origin-top-left select-none" :style="`width:${natW * scale}px; height:${natH * scale}px; transform: translate(${posX}px, ${posY}px);`">
                                     </div>
                                     <div class="mt-4 flex items-center gap-3">
@@ -3767,12 +4675,12 @@ new #[Layout('layouts::admin-panel')] #[Title('Edit Web')] class extends Compone
                     ])
 
                     {{-- 2. FOTO --}}
-                    <div class="space-y-4 rounded-xl border border-admin-border p-4" x-data="nilaiKamiFotoCropper(@js($this->nilaiKamiFotoPreviewUrls))">
+                    <div wire:ignore class="space-y-4 rounded-xl border border-admin-border p-4" x-data="nilaiKamiFotoCropper(@js($this->nilaiKamiFotoPreviewUrls))">
                         <div>
                             <p class="text-xs font-semibold uppercase tracking-wide text-admin-ink-soft">Foto</p>
                             <p class="mt-1 text-xs text-admin-ink-soft">
                                 Satu foto untuk tiap kartu. Klik ikon kamera, lalu geser untuk memindah posisi &amp; pakai slider
-                                untuk zoom (rasio 4:3, mengikuti bingkai foto kartu). Kartu yang fotonya belum pernah diganti
+                                untuk zoom (rasio 4:3, mengikuti bingkai foto kartu). Foto baru tampil di halaman setelah klik Simpan. Kartu yang fotonya belum pernah diganti
                                 tetap memakai foto produk otomatis seperti sebelumnya.
                             </p>
                         </div>
@@ -3800,7 +4708,7 @@ new #[Layout('layouts::admin-panel')] #[Title('Edit Web')] class extends Compone
 
                                     <div class="min-w-0">
                                         <p class="text-sm font-medium text-admin-ink">Kartu {{ $i + 1 }}</p>
-                                        <p class="mt-0.5 truncate text-xs text-admin-ink-soft">{{ $nilaiKamiItems[$i]['title'] ?? '' }}</p>
+                                        <p class="mt-0.5 truncate text-xs text-admin-ink-soft" x-text="$wire.nilaiKamiItems?.[{{ $i }}]?.title ?? ''"></p>
                                     </div>
                                 </div>
                             @endforeach
@@ -3810,8 +4718,8 @@ new #[Layout('layouts::admin-panel')] #[Title('Edit Web')] class extends Compone
                             <div x-show="open" x-cloak x-transition.opacity class="fixed inset-0 z-999 flex items-center justify-center bg-black/60 p-4" style="display: none;">
                                 <div x-show="open" x-transition.scale.origin.center @click.outside="cancelCrop()" class="w-full max-w-md rounded-2xl bg-admin-surface p-6 shadow-2xl">
                                     <h4 class="mb-1 text-sm font-semibold text-admin-ink">Sesuaikan Foto</h4>
-                                    <p class="mb-4 text-xs text-admin-ink-soft">Geser gambar untuk memindah, gunakan slider untuk zoom. Rasio 4:3 (mengikuti bingkai foto kartu di halaman).</p>
-                                    <div x-ref="viewport" class="relative mx-auto aspect-4/3 w-full cursor-move touch-none overflow-hidden rounded-2xl border-2 border-admin-accent bg-admin-cream select-none" x-on:pointerdown="startDrag($event)" x-on:pointermove="onDrag($event)" x-on:pointerup="endDrag()" x-on:pointerleave="endDrag()">
+                                    <p class="mb-4 text-xs text-admin-ink-soft">Geser gambar untuk memindah (di touchpad: geser 2 jari), zoom dengan slider, cubit 2 jari, atau Ctrl + scroll. Rasio 4:3 (mengikuti bingkai foto kartu di halaman).</p>
+                                    <div x-ref="viewport" class="relative mx-auto aspect-4/3 w-full cursor-move touch-none overflow-hidden rounded-2xl border-2 border-admin-accent bg-admin-cream select-none" x-on:pointerdown="startDrag($event)" x-on:pointermove="onDrag($event)" x-on:pointerup="endDrag($event)" x-on:pointercancel="endDrag($event)" x-on:pointerleave="endDrag($event)" x-on:wheel.prevent="onWheel($event)">
                                         <img x-ref="cropImg" :src="rawImage" x-on:load="onImgLoad($event)" draggable="false" class="absolute left-0 top-0 max-w-none origin-top-left select-none" :style="`width:${natW * scale}px; height:${natH * scale}px; transform: translate(${posX}px, ${posY}px);`">
                                     </div>
                                     <div class="mt-4 flex items-center gap-3">
@@ -3887,6 +4795,175 @@ new #[Layout('layouts::admin-panel')] #[Title('Edit Web')] class extends Compone
                                 <i class="fa-solid fa-floppy-disk text-xs"></i> Simpan
                             </span>
                             <span wire:loading wire:target="saveNilaiKami" class="flex items-center gap-2">
+                                <i class="fa-solid fa-circle-notch animate-spin"></i> Menyimpan...
+                            </span>
+                        </button>
+                    </div>
+                </form>
+            @elseif ($activeSection === 'why-choose-us')
+                <form wire:submit="saveWhyChooseUs" class="space-y-6">
+
+                    <div>
+                        <h3 class="mb-1 flex items-center gap-2 text-sm font-semibold text-admin-ink">
+                            <i class="fa-solid fa-leaf text-admin-accent"></i>
+                            Why Choose Us (section di halaman Tentang Kami)
+                        </h3>
+                        <p class="text-xs text-admin-ink-soft">
+                            Section gelap "Why Choose Us" di bagian paling bawah halaman "Tentang Kami" -- teks di kiri
+                            dan 5 kartu poin di kanan. Yang bisa diubah: warna frame, isi teks, dan ikon tiap kartu.
+                        </p>
+                    </div>
+
+                    {{-- 1. WARNA FRAME --}}
+                    <div class="space-y-4 rounded-xl border border-admin-border p-4">
+                        <p class="text-xs font-semibold uppercase tracking-wide text-admin-ink-soft">Warna Frame (Latar Section)</p>
+
+                        <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                            <label class="flex items-center gap-2 text-sm text-admin-ink">
+                                <input type="checkbox" wire:model.live="whyChooseUsUseCustomBg" class="h-4 w-4 rounded border-admin-border text-admin-accent focus:ring-admin-accent">
+                                Pakai warna latar khusus
+                            </label>
+                            <input
+                                type="color" wire:model="whyChooseUsBgColor"
+                                @disabled(! $whyChooseUsUseCustomBg)
+                                class="h-10 w-16 cursor-pointer rounded-lg border border-admin-border disabled:cursor-not-allowed disabled:opacity-40"
+                            >
+                        </div>
+
+                        <div>
+                            <p class="mb-2 text-[11px] font-medium uppercase tracking-wide text-admin-ink-soft">Atau pilih dari rekomendasi</p>
+                            <div class="flex flex-wrap gap-2.5">
+                                @foreach ($whyChooseUsBgPresets as $preset)
+                                    <button
+                                        type="button"
+                                        wire:click="selectWhyChooseUsBgPreset('{{ $preset['value'] }}')"
+                                        title="{{ $preset['label'] }}"
+                                        class="group flex flex-col items-center gap-1"
+                                    >
+                                        <span
+                                            class="flex h-9 w-9 items-center justify-center rounded-full shadow-sm ring-1 ring-inset ring-white/40 transition duration-200 group-hover:scale-110 group-hover:shadow-md
+                                            {{ $whyChooseUsUseCustomBg && strtoupper($whyChooseUsBgColor) === $preset['value']
+                                                ? 'border-2 border-admin-accent ring-2 ring-admin-accent ring-offset-2 ring-offset-admin-surface'
+                                                : 'border border-admin-border group-hover:border-admin-accent/60' }}"
+                                            style="background: linear-gradient(135deg, color-mix(in oklab, {{ $preset['value'] }} 100%, white 30%), {{ $preset['value'] }} 55%, color-mix(in oklab, {{ $preset['value'] }} 100%, black 16%));"
+                                        >
+                                            @if ($whyChooseUsUseCustomBg && strtoupper($whyChooseUsBgColor) === $preset['value'])
+                                                <i class="fa-solid fa-check text-xs drop-shadow-sm" style="color: {{ $preset['check'] }};"></i>
+                                            @endif
+                                        </span>
+                                        <span class="max-w-14 truncate text-[10px] text-admin-ink-soft">{{ $preset['label'] }}</span>
+                                    </button>
+                                @endforeach
+                            </div>
+                        </div>
+
+                        <p class="text-xs text-admin-ink-soft">
+                            Kalau tidak dicentang, section ini tetap cokelat gelap seperti bawaan. Warna teks dan kartu
+                            otomatis menyesuaikan terang/gelap mengikuti warna latar supaya tetap kebaca.
+                        </p>
+                    </div>
+
+                    @include('partials.admin.frame-gradient', [
+                        'key' => 'whyChooseUs',
+                        'gradient' => $whyChooseUsGradient,
+                    ])
+
+                    {{-- 2. ISI TEKS --}}
+                    <div class="space-y-4 rounded-xl border border-admin-border p-4">
+                        <p class="text-xs font-semibold uppercase tracking-wide text-admin-ink-soft">Isi Teks</p>
+
+                        <div class="grid gap-4 sm:grid-cols-2">
+                            <div>
+                                <label class="mb-1.5 block text-sm font-medium text-admin-ink">Label kecil (di atas judul)</label>
+                                <input
+                                    type="text" maxlength="40" wire:model="whyChooseUsEyebrow"
+                                    class="w-full rounded-lg border border-admin-border bg-admin-surface px-3 py-2.5 text-sm text-admin-ink transition focus:border-admin-accent focus:outline-none focus:ring-2 focus:ring-admin-accent/20"
+                                >
+                                @error('whyChooseUsEyebrow')<p class="mt-1.5 text-xs font-medium text-red-600">{{ $message }}</p>@enderror
+                            </div>
+                            <div>
+                                <label class="mb-1.5 block text-sm font-medium text-admin-ink">Judul</label>
+                                <input
+                                    type="text" maxlength="100" wire:model="whyChooseUsHeading"
+                                    class="w-full rounded-lg border border-admin-border bg-admin-surface px-3 py-2.5 text-sm text-admin-ink transition focus:border-admin-accent focus:outline-none focus:ring-2 focus:ring-admin-accent/20"
+                                >
+                                @error('whyChooseUsHeading')<p class="mt-1.5 text-xs font-medium text-red-600">{{ $message }}</p>@enderror
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="mb-1.5 block text-sm font-medium text-admin-ink">Paragraf (di bawah judul)</label>
+                            <textarea
+                                rows="3" maxlength="300" wire:model="whyChooseUsDescription"
+                                class="w-full rounded-lg border border-admin-border bg-admin-surface px-3 py-2.5 text-sm text-admin-ink transition focus:border-admin-accent focus:outline-none focus:ring-2 focus:ring-admin-accent/20 resize-none"
+                            ></textarea>
+                            @error('whyChooseUsDescription')<p class="mt-1.5 text-xs font-medium text-red-600">{{ $message }}</p>@enderror
+                        </div>
+
+                        <div class="grid gap-4 sm:grid-cols-2">
+                            @foreach ([0, 1, 2, 3, 4] as $i)
+                                <div>
+                                    <label class="mb-1.5 block text-sm font-medium text-admin-ink">Teks kartu {{ $i + 1 }}</label>
+                                    <input
+                                        type="text" maxlength="60" wire:model="whyChooseUsItems.{{ $i }}.text"
+                                        class="w-full rounded-lg border border-admin-border bg-admin-surface px-3 py-2.5 text-sm text-admin-ink transition focus:border-admin-accent focus:outline-none focus:ring-2 focus:ring-admin-accent/20"
+                                    >
+                                    @error('whyChooseUsItems.'.$i.'.text')<p class="mt-1.5 text-xs font-medium text-red-600">{{ $message }}</p>@enderror
+                                </div>
+                            @endforeach
+                        </div>
+                    </div>
+
+                    {{-- 3. IKON (satu ikon per kartu) --}}
+                    <div class="space-y-4 rounded-xl border border-admin-border p-4">
+                        <p class="text-xs font-semibold uppercase tracking-wide text-admin-ink-soft">Ikon Kartu</p>
+
+                        <div class="grid gap-4 sm:grid-cols-2">
+                            @foreach ($whyChooseUsItems as $i => $item)
+                                <div class="space-y-3 rounded-xl border border-admin-border p-3">
+                                    <div class="flex items-center gap-2">
+                                        <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-admin-cream">
+                                            <i class="fa-solid {{ $item['icon'] }} text-sm text-admin-ink"></i>
+                                        </span>
+                                        <p class="truncate text-sm font-medium text-admin-ink">
+                                            Kartu {{ $i + 1 }}@if (filled($item['text'])): {{ $item['text'] }}@endif
+                                        </p>
+                                    </div>
+
+                                    <div class="flex flex-wrap gap-2">
+                                        @foreach ($whyChooseUsIconOptions as $iconOption)
+                                            <button
+                                                type="button"
+                                                wire:click="selectWhyChooseUsIcon({{ $i }}, '{{ $iconOption }}')"
+                                                title="{{ $iconOption }}"
+                                                aria-label="Pakai ikon {{ $iconOption }}"
+                                                aria-pressed="{{ $item['icon'] === $iconOption ? 'true' : 'false' }}"
+                                                class="flex h-9 w-9 items-center justify-center rounded-lg border text-xs transition {{ $item['icon'] === $iconOption ? 'border-admin-accent bg-admin-accent text-white' : 'border-admin-border text-admin-ink hover:border-admin-accent/60' }}"
+                                            >
+                                                <i class="fa-solid {{ $iconOption }}"></i>
+                                            </button>
+                                        @endforeach
+                                    </div>
+                                    @error('whyChooseUsItems.'.$i.'.icon')<p class="text-[11px] font-medium text-red-600">{{ $message }}</p>@enderror
+                                </div>
+                            @endforeach
+                        </div>
+
+                        <p class="text-xs text-admin-ink-soft">
+                            Klik salah satu ikon untuk memilihnya. Ikon baru tampil di halaman setelah klik Simpan.
+                        </p>
+                    </div>
+
+                    <div class="flex justify-end">
+                        <button
+                            type="submit"
+                            wire:loading.attr="disabled" wire:target="saveWhyChooseUs"
+                            class="flex items-center gap-2 rounded-full bg-admin-panel px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-admin-panel/20 transition-all duration-200 hover:bg-admin-accent-strong active:scale-[0.99] disabled:opacity-60"
+                        >
+                            <span wire:loading.remove wire:target="saveWhyChooseUs" class="flex items-center gap-2">
+                                <i class="fa-solid fa-floppy-disk text-xs"></i> Simpan
+                            </span>
+                            <span wire:loading wire:target="saveWhyChooseUs" class="flex items-center gap-2">
                                 <i class="fa-solid fa-circle-notch animate-spin"></i> Menyimpan...
                             </span>
                         </button>
@@ -4019,6 +5096,88 @@ new #[Layout('layouts::admin-panel')] #[Title('Edit Web')] class extends Compone
                     @endif
                     </div>
 
+                    {{-- GALERI DOKUMENTASI (kartu baru) -- foto & video "jejak karya" yang
+                         tampil DI BAWAH hero di halaman /dokumentasi, lihat
+                         resources/views/pages/frontend/booking.blade.php bagian
+                         "GALERI DOKUMENTASI". 6 slot tetap, tiap slot bisa dipilih
+                         Foto atau Video. Kalau admin belum pernah mengisi galeri sama
+                         sekali, 6 slot ini otomatis terisi dari foto produk & video
+                         "Kenapa Pilih Kami" yang sudah ada (lihat dokumentasiGaleriDefaults()) --
+                         cukup diganti/dirapikan di sini kalau mau, bukan wajib diisi ulang semua. --}}
+                    <div class="space-y-4 rounded-xl border border-admin-border p-4">
+                        <div>
+                            <p class="text-xs font-semibold uppercase tracking-wide text-admin-ink-soft">Galeri Dokumentasi</p>
+                            <p class="mt-1 text-xs text-admin-ink-soft">
+                                Kumpulan foto/video "jejak karya" yang tampil di bawah hero halaman
+                                Dokumentasi, bergaya galeri -- muncul menyamping & memudar saat
+                                digulir. Maksimal {{ $this->dokumentasiGaleriSlots }} slot, boleh
+                                dikosongkan sebagian (slot kosong otomatis tidak ikut tampil).
+                            </p>
+                        </div>
+
+                        <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                            @foreach (range(0, $this->dokumentasiGaleriSlots - 1) as $slot)
+                                <div class="space-y-2.5 rounded-lg border border-admin-border bg-admin-surface p-3">
+                                    <div class="flex items-center justify-between gap-2">
+                                        <div class="inline-flex gap-1 rounded-lg bg-admin-cream p-1">
+                                            @foreach (['foto' => 'fa-image', 'video' => 'fa-video'] as $tipeKey => $tipeIcon)
+                                                <button
+                                                    type="button"
+                                                    wire:click="$set('dokumentasiGaleriTipe.{{ $slot }}', '{{ $tipeKey }}')"
+                                                    class="flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-[11px] font-semibold transition {{ $dokumentasiGaleriTipe[$slot] === $tipeKey ? 'bg-admin-panel text-white shadow-sm' : 'text-admin-ink-soft hover:bg-white' }}"
+                                                >
+                                                    <i class="fa-solid {{ $tipeIcon }} text-[10px]"></i>
+                                                    {{ ucfirst($tipeKey) }}
+                                                </button>
+                                            @endforeach
+                                        </div>
+
+                                        @if ($this->dokumentasiGaleriPreviewUrls[$slot] ?? null)
+                                            <button
+                                                type="button"
+                                                wire:click="removeDokumentasiGaleriSlot({{ $slot }})"
+                                                class="flex h-7 w-7 items-center justify-center rounded-full text-admin-danger transition hover:bg-admin-danger/10"
+                                                title="Hapus isi slot ini"
+                                            >
+                                                <i class="fa-solid fa-trash text-xs"></i>
+                                            </button>
+                                        @endif
+                                    </div>
+
+                                    {{-- Preview: file lama yang sudah tersimpan --}}
+                                    @if ($this->dokumentasiGaleriPreviewUrls[$slot] ?? null)
+                                        <div class="aspect-square overflow-hidden rounded-lg bg-admin-cream">
+                                            @if ($dokumentasiGaleriTipe[$slot] === 'video')
+                                                <video src="{{ $this->dokumentasiGaleriPreviewUrls[$slot] }}" class="h-full w-full object-cover" muted></video>
+                                            @else
+                                                <img src="{{ $this->dokumentasiGaleriPreviewUrls[$slot] }}" alt="Galeri {{ $slot + 1 }}" class="h-full w-full object-cover">
+                                            @endif
+                                        </div>
+                                    @endif
+
+                                    <input
+                                        type="file"
+                                        wire:model="dokumentasiGaleriUploadBaru.{{ $slot }}"
+                                        accept="{{ $dokumentasiGaleriTipe[$slot] === 'video' ? 'video/mp4,video/webm,video/ogg,video/quicktime' : 'image/*' }}"
+                                        class="block w-full text-xs text-admin-ink file:mr-2 file:rounded-full file:border-0 file:bg-admin-accent file:px-3 file:py-1.5 file:text-[11px] file:font-semibold file:text-white hover:file:bg-admin-accent-strong"
+                                    >
+                                    <div wire:loading wire:target="dokumentasiGaleriUploadBaru.{{ $slot }}" class="text-[11px] text-admin-ink-soft">
+                                        <i class="fa-solid fa-circle-notch animate-spin"></i> Mengunggah...
+                                    </div>
+                                    @error("dokumentasiGaleriUploadBaru.$slot")<p class="text-[11px] font-medium text-red-600">{{ $message }}</p>@enderror
+
+                                    <input
+                                        type="text" maxlength="80"
+                                        wire:model="dokumentasiGaleriKeterangan.{{ $slot }}"
+                                        placeholder="Keterangan singkat (opsional)"
+                                        class="w-full rounded-md border border-admin-border bg-admin-surface px-2.5 py-1.5 text-xs text-admin-ink transition focus:border-admin-accent focus:outline-none focus:ring-2 focus:ring-admin-accent/20"
+                                    >
+                                    @error("dokumentasiGaleriKeterangan.$slot")<p class="text-[11px] font-medium text-red-600">{{ $message }}</p>@enderror
+                                </div>
+                            @endforeach
+                        </div>
+                    </div>
+
                     <div class="flex justify-end">
                         <button
                             type="submit"
@@ -4029,6 +5188,630 @@ new #[Layout('layouts::admin-panel')] #[Title('Edit Web')] class extends Compone
                                 <i class="fa-solid fa-floppy-disk text-xs"></i> Simpan
                             </span>
                             <span wire:loading wire:target="saveDokumentasi" class="flex items-center gap-2">
+                                <i class="fa-solid fa-circle-notch animate-spin"></i> Menyimpan...
+                            </span>
+                        </button>
+                    </div>
+                </form>
+            @elseif ($activeSection === 'dokumentasi-1')
+                <form wire:submit="saveDokumentasi1" class="space-y-6">
+
+                    <div>
+                        <h3 class="mb-1 flex items-center gap-2 text-sm font-semibold text-admin-ink">
+                            <i class="fa-solid fa-arrows-left-right text-admin-accent"></i>
+                            Dokumentasi 1 &mdash; Pita Berjalan
+                        </h3>
+                        <p class="text-xs text-admin-ink-soft">
+                            Teks di sebelah KANAN, dan di sebelah KIRI ada pita foto &amp; video yang berjalan terus dari kanan ke kiri (seperti pita tulisan "FURNITUR TOKO MEBEL &bull; KARYA IDE-EDI" di atas footer, tapi isinya media). Section ini TAMBAHAN di bawah hero &amp; galeri
+                            halaman Dokumentasi &mdash; hero dan galeri di atasnya tidak
+                            ikut berubah. Video di halaman Dokumentasi langsung
+                            <strong>autoplay &amp; mute permanen</strong> (tidak perlu diklik
+                            untuk main, dan tidak ada tombol suara) karena ini galeri, bukan
+                            pemutar video.
+                        </p>
+                    </div>
+
+                    <div class="space-y-4 rounded-xl border border-admin-border p-4">
+                        <p class="text-xs font-semibold uppercase tracking-wide text-admin-ink-soft">Isi Teks</p>
+
+                        <div class="grid gap-4 sm:grid-cols-2">
+                            <div class="sm:col-span-2">
+                                <label class="mb-1.5 block text-sm font-medium text-admin-ink">Judul</label>
+                                <input
+                                    type="text" maxlength="60" wire:model="dok1Judul"
+                                    class="w-full rounded-lg border border-admin-border bg-admin-surface px-3 py-2.5 text-sm text-admin-ink transition focus:border-admin-accent focus:outline-none focus:ring-2 focus:ring-admin-accent/20"
+                                >
+                                @error('dok1Judul')<p class="mt-1.5 text-xs font-medium text-red-600">{{ $message }}</p>@enderror
+                            </div>
+                            <div class="sm:col-span-2">
+                                <label class="mb-1.5 block text-sm font-medium text-admin-ink">Subjudul (teks kecil di atas judul)</label>
+                                <input
+                                    type="text" maxlength="100" wire:model="dok1Subjudul"
+                                    class="w-full rounded-lg border border-admin-border bg-admin-surface px-3 py-2.5 text-sm text-admin-ink transition focus:border-admin-accent focus:outline-none focus:ring-2 focus:ring-admin-accent/20"
+                                >
+                                @error('dok1Subjudul')<p class="mt-1.5 text-xs font-medium text-red-600">{{ $message }}</p>@enderror
+                            </div>
+                            <div class="sm:col-span-2">
+                                <label class="mb-1.5 block text-sm font-medium text-admin-ink">Deskripsi</label>
+                                <textarea
+                                    rows="4" maxlength="500" wire:model="dok1Deskripsi"
+                                    class="w-full resize-none rounded-lg border border-admin-border bg-admin-surface px-3 py-2.5 text-sm text-admin-ink transition focus:border-admin-accent focus:outline-none focus:ring-2 focus:ring-admin-accent/20"
+                                ></textarea>
+                                @error('dok1Deskripsi')<p class="mt-1.5 text-xs font-medium text-red-600">{{ $message }}</p>@enderror
+                            </div>
+                        </div>
+                    </div>
+
+                    {{-- KECEPATAN PITA BERJALAN --}}
+                    <div class="space-y-3 rounded-xl border border-admin-border p-4">
+                        <div>
+                            <p class="text-xs font-semibold uppercase tracking-wide text-admin-ink-soft">Kecepatan Pita</p>
+                            <p class="mt-1 text-xs text-admin-ink-soft">
+                                Lama satu putaran penuh pita, dalam detik. Makin besar angkanya,
+                                makin PELAN jalannya. Bawaan: 45 detik.
+                            </p>
+                        </div>
+
+                        <div class="sm:max-w-xs">
+                            <input
+                                type="number" min="15" max="180" step="1" wire:model="dok1MarqueeSpeed"
+                                class="w-full rounded-lg border border-admin-border bg-admin-surface px-3 py-2.5 text-sm text-admin-ink transition focus:border-admin-accent focus:outline-none focus:ring-2 focus:ring-admin-accent/20"
+                            >
+                            @error('dok1MarqueeSpeed')<p class="mt-1.5 text-xs font-medium text-red-600">{{ $message }}</p>@enderror
+                        </div>
+                    </div>
+
+                    <div class="space-y-4 rounded-xl border border-admin-border p-4">
+                        <div class="flex flex-wrap items-start justify-between gap-3">
+                            <div>
+                                <p class="text-xs font-semibold uppercase tracking-wide text-admin-ink-soft">Isi Pita Berjalan</p>
+                                <p class="mt-1 text-xs text-admin-ink-soft">
+                                    Foto &amp; video yang berjalan di sebelah kiri teks. Jumlahnya BEBAS, tidak ada batas maksimal --
+                                    klik "Tambah" untuk menambah sebanyak yang dibutuhkan, atau
+                                    hapus yang tidak dipakai. Kalau belum ada satu pun yang diisi,
+                                    halaman Dokumentasi memakai isi dummy sementara dari internet.
+                                </p>
+                            </div>
+
+                            <button
+                                type="button"
+                                wire:click="addDok1Item"
+                                class="flex shrink-0 items-center gap-2 rounded-full border border-admin-accent px-3.5 py-2 text-xs font-semibold text-admin-accent transition hover:bg-admin-accent hover:text-white"
+                            >
+                                <i class="fa-solid fa-plus text-[10px]"></i> Tambah Slot
+                            </button>
+                        </div>
+
+                        @if (count($dok1Keys) === 0)
+                            <p class="rounded-lg border border-dashed border-admin-border bg-admin-cream/60 px-3 py-6 text-center text-xs text-admin-ink-soft">
+                                Belum ada slot yang ditambahkan. Klik "Tambah Slot" di atas untuk mulai mengisi.
+                            </p>
+                        @endif
+
+                        <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                            @foreach ($dok1Keys as $urutan => $key)
+                                <div wire:key="dok1-item-{{ $key }}" class="space-y-2.5 rounded-lg border border-admin-border bg-admin-surface p-3">
+                                    <div class="flex items-center justify-between gap-2">
+                                        <span class="rounded-full bg-admin-cream px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-admin-ink-soft">
+                                            Slot {{ $urutan + 1 }}
+                                        </span>
+
+                                        <button
+                                            type="button"
+                                            wire:click="removeDok1Item('{{ $key }}')"
+                                            class="flex h-7 w-7 items-center justify-center rounded-full text-admin-danger transition hover:bg-admin-danger/10"
+                                            title="Hapus slot ini"
+                                        >
+                                            <i class="fa-solid fa-trash text-xs"></i>
+                                        </button>
+                                    </div>
+
+                                    <div class="inline-flex gap-1 rounded-lg bg-admin-cream p-1">
+                                        @foreach (['foto' => 'fa-image', 'video' => 'fa-video'] as $tipeKey => $tipeIcon)
+                                            <button
+                                                type="button"
+                                                wire:click="$set('dok1Tipe.{{ $key }}', '{{ $tipeKey }}')"
+                                                class="flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-[11px] font-semibold transition {{ ($dok1Tipe[$key] ?? 'foto') === $tipeKey ? 'bg-admin-panel text-white shadow-sm' : 'text-admin-ink-soft hover:bg-white' }}"
+                                            >
+                                                <i class="fa-solid {{ $tipeIcon }} text-[10px]"></i>
+                                                {{ ucfirst($tipeKey) }}
+                                            </button>
+                                        @endforeach
+                                    </div>
+
+                                    @if ($this->dok1PreviewUrls[$key] ?? null)
+                                        <div class="aspect-square overflow-hidden rounded-lg bg-admin-cream">
+                                            @if (($dok1Tipe[$key] ?? 'foto') === 'video')
+                                                {{-- Autoplay + loop di preview juga, supaya admin langsung lihat
+                                                     videonya jalan tanpa perlu klik -- sama seperti di frontend. --}}
+                                                <video src="{{ $this->dok1PreviewUrls[$key] }}" class="h-full w-full object-cover" autoplay muted loop playsinline></video>
+                                            @else
+                                                <img src="{{ $this->dok1PreviewUrls[$key] }}" alt="Slot {{ $urutan + 1 }}" class="h-full w-full object-cover">
+                                            @endif
+                                        </div>
+                                    @endif
+
+                                    <input
+                                        type="file"
+                                        wire:model="dok1UploadBaru.{{ $key }}"
+                                        accept="{{ ($dok1Tipe[$key] ?? 'foto') === 'video' ? 'video/mp4,video/webm,video/ogg,video/quicktime' : 'image/*' }}"
+                                        class="block w-full text-xs text-admin-ink file:mr-2 file:rounded-full file:border-0 file:bg-admin-accent file:px-3 file:py-1.5 file:text-[11px] file:font-semibold file:text-white hover:file:bg-admin-accent-strong"
+                                    >
+                                    <div wire:loading wire:target="dok1UploadBaru.{{ $key }}" class="text-[11px] text-admin-ink-soft">
+                                        <i class="fa-solid fa-circle-notch animate-spin"></i> Mengunggah...
+                                    </div>
+                                    @error("dok1UploadBaru.$key")<p class="text-[11px] font-medium text-red-600">{{ $message }}</p>@enderror
+
+                                    <input
+                                        type="text" maxlength="80"
+                                        wire:model="dok1Keterangan.{{ $key }}"
+                                        placeholder="Keterangan singkat (opsional)"
+                                        class="w-full rounded-md border border-admin-border bg-admin-surface px-2.5 py-1.5 text-xs text-admin-ink transition focus:border-admin-accent focus:outline-none focus:ring-2 focus:ring-admin-accent/20"
+                                    >
+                                    @error("dok1Keterangan.$key")<p class="text-[11px] font-medium text-red-600">{{ $message }}</p>@enderror
+                                </div>
+                            @endforeach
+                        </div>
+                    </div>
+
+                    <div class="flex justify-end">
+                        <button
+                            type="submit"
+                            wire:loading.attr="disabled" wire:target="saveDokumentasi1"
+                            class="flex items-center gap-2 rounded-full bg-admin-panel px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-admin-panel/20 transition-all duration-200 hover:bg-admin-accent-strong active:scale-[0.99] disabled:opacity-60"
+                        >
+                            <span wire:loading.remove wire:target="saveDokumentasi1" class="flex items-center gap-2">
+                                <i class="fa-solid fa-floppy-disk text-xs"></i> Simpan
+                            </span>
+                            <span wire:loading wire:target="saveDokumentasi1" class="flex items-center gap-2">
+                                <i class="fa-solid fa-circle-notch animate-spin"></i> Menyimpan...
+                            </span>
+                        </button>
+                    </div>
+                </form>
+            @elseif ($activeSection === 'dokumentasi-2')
+                <form wire:submit="saveDokumentasi2" class="space-y-6">
+
+                    <div>
+                        <h3 class="mb-1 flex items-center gap-2 text-sm font-semibold text-admin-ink">
+                            <i class="fa-solid fa-table-cells-large text-admin-accent"></i>
+                            Dokumentasi 2 &mdash; Video Wall Mosaic
+                        </h3>
+                        <p class="text-xs text-admin-ink-soft">
+                            Dinding media bernuansa gelap ala ruang pamer: ubin besar-kecil berisi foto/video yang berputar terus, dan bisa diklik pengunjung untuk diperbesar. Section ini TAMBAHAN di bawah hero &amp; galeri
+                            halaman Dokumentasi &mdash; hero dan galeri di atasnya tidak
+                            ikut berubah. Video di halaman Dokumentasi langsung
+                            <strong>autoplay &amp; mute permanen</strong> (tidak perlu diklik
+                            untuk main, dan tidak ada tombol suara) karena ini galeri, bukan
+                            pemutar video.
+                        </p>
+                    </div>
+
+                    <div class="space-y-4 rounded-xl border border-admin-border p-4">
+                        <p class="text-xs font-semibold uppercase tracking-wide text-admin-ink-soft">Isi Teks</p>
+
+                        <div class="grid gap-4 sm:grid-cols-2">
+                            <div class="sm:col-span-2">
+                                <label class="mb-1.5 block text-sm font-medium text-admin-ink">Judul</label>
+                                <input
+                                    type="text" maxlength="60" wire:model="dok2Judul"
+                                    class="w-full rounded-lg border border-admin-border bg-admin-surface px-3 py-2.5 text-sm text-admin-ink transition focus:border-admin-accent focus:outline-none focus:ring-2 focus:ring-admin-accent/20"
+                                >
+                                @error('dok2Judul')<p class="mt-1.5 text-xs font-medium text-red-600">{{ $message }}</p>@enderror
+                            </div>
+                            <div class="sm:col-span-2">
+                                <label class="mb-1.5 block text-sm font-medium text-admin-ink">Subjudul (teks kecil di atas judul)</label>
+                                <input
+                                    type="text" maxlength="100" wire:model="dok2Subjudul"
+                                    class="w-full rounded-lg border border-admin-border bg-admin-surface px-3 py-2.5 text-sm text-admin-ink transition focus:border-admin-accent focus:outline-none focus:ring-2 focus:ring-admin-accent/20"
+                                >
+                                @error('dok2Subjudul')<p class="mt-1.5 text-xs font-medium text-red-600">{{ $message }}</p>@enderror
+                            </div>
+                            <div class="sm:col-span-2">
+                                <label class="mb-1.5 block text-sm font-medium text-admin-ink">Deskripsi</label>
+                                <textarea
+                                    rows="4" maxlength="500" wire:model="dok2Deskripsi"
+                                    class="w-full resize-none rounded-lg border border-admin-border bg-admin-surface px-3 py-2.5 text-sm text-admin-ink transition focus:border-admin-accent focus:outline-none focus:ring-2 focus:ring-admin-accent/20"
+                                ></textarea>
+                                @error('dok2Deskripsi')<p class="mt-1.5 text-xs font-medium text-red-600">{{ $message }}</p>@enderror
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="space-y-4 rounded-xl border border-admin-border p-4">
+                        <div class="flex flex-wrap items-start justify-between gap-3">
+                            <div>
+                                <p class="text-xs font-semibold uppercase tracking-wide text-admin-ink-soft">Isi Ubin Mosaic</p>
+                                <p class="mt-1 text-xs text-admin-ink-soft">
+                                    Urutan ubin menentukan ukurannya: ubin ke-1 &amp; ke-4 dalam tiap kelompok 7 tampil paling besar, sisanya mengisi di sekelilingnya -- polanya berulang tiap 7 ubin kalau diisi lebih dari 7. Jumlahnya BEBAS, tidak ada batas maksimal --
+                                    klik "Tambah" untuk menambah sebanyak yang dibutuhkan, atau
+                                    hapus yang tidak dipakai. Kalau belum ada satu pun yang diisi,
+                                    halaman Dokumentasi memakai isi dummy sementara dari internet.
+                                </p>
+                            </div>
+
+                            <button
+                                type="button"
+                                wire:click="addDok2Item"
+                                class="flex shrink-0 items-center gap-2 rounded-full border border-admin-accent px-3.5 py-2 text-xs font-semibold text-admin-accent transition hover:bg-admin-accent hover:text-white"
+                            >
+                                <i class="fa-solid fa-plus text-[10px]"></i> Tambah Ubin
+                            </button>
+                        </div>
+
+                        @if (count($dok2Keys) === 0)
+                            <p class="rounded-lg border border-dashed border-admin-border bg-admin-cream/60 px-3 py-6 text-center text-xs text-admin-ink-soft">
+                                Belum ada ubin yang ditambahkan. Klik "Tambah Ubin" di atas untuk mulai mengisi.
+                            </p>
+                        @endif
+
+                        <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                            @foreach ($dok2Keys as $urutan => $key)
+                                <div wire:key="dok2-item-{{ $key }}" class="space-y-2.5 rounded-lg border border-admin-border bg-admin-surface p-3">
+                                    <div class="flex items-center justify-between gap-2">
+                                        <span class="rounded-full bg-admin-cream px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-admin-ink-soft">
+                                            Ubin {{ $urutan + 1 }}{{ in_array($urutan % 7, [0, 3]) ? ' (besar)' : '' }}
+                                        </span>
+
+                                        <button
+                                            type="button"
+                                            wire:click="removeDok2Item('{{ $key }}')"
+                                            class="flex h-7 w-7 items-center justify-center rounded-full text-admin-danger transition hover:bg-admin-danger/10"
+                                            title="Hapus ubin ini"
+                                        >
+                                            <i class="fa-solid fa-trash text-xs"></i>
+                                        </button>
+                                    </div>
+
+                                    <div class="inline-flex gap-1 rounded-lg bg-admin-cream p-1">
+                                        @foreach (['foto' => 'fa-image', 'video' => 'fa-video'] as $tipeKey => $tipeIcon)
+                                            <button
+                                                type="button"
+                                                wire:click="$set('dok2Tipe.{{ $key }}', '{{ $tipeKey }}')"
+                                                class="flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-[11px] font-semibold transition {{ ($dok2Tipe[$key] ?? 'foto') === $tipeKey ? 'bg-admin-panel text-white shadow-sm' : 'text-admin-ink-soft hover:bg-white' }}"
+                                            >
+                                                <i class="fa-solid {{ $tipeIcon }} text-[10px]"></i>
+                                                {{ ucfirst($tipeKey) }}
+                                            </button>
+                                        @endforeach
+                                    </div>
+
+                                    @if ($this->dok2PreviewUrls[$key] ?? null)
+                                        <div class="aspect-square overflow-hidden rounded-lg bg-admin-cream">
+                                            @if (($dok2Tipe[$key] ?? 'foto') === 'video')
+                                                {{-- Autoplay + loop di preview juga, supaya admin langsung lihat
+                                                     videonya jalan tanpa perlu klik -- sama seperti di frontend. --}}
+                                                <video src="{{ $this->dok2PreviewUrls[$key] }}" class="h-full w-full object-cover" autoplay muted loop playsinline></video>
+                                            @else
+                                                <img src="{{ $this->dok2PreviewUrls[$key] }}" alt="Ubin {{ $urutan + 1 }}" class="h-full w-full object-cover">
+                                            @endif
+                                        </div>
+                                    @endif
+
+                                    <input
+                                        type="file"
+                                        wire:model="dok2UploadBaru.{{ $key }}"
+                                        accept="{{ ($dok2Tipe[$key] ?? 'foto') === 'video' ? 'video/mp4,video/webm,video/ogg,video/quicktime' : 'image/*' }}"
+                                        class="block w-full text-xs text-admin-ink file:mr-2 file:rounded-full file:border-0 file:bg-admin-accent file:px-3 file:py-1.5 file:text-[11px] file:font-semibold file:text-white hover:file:bg-admin-accent-strong"
+                                    >
+                                    <div wire:loading wire:target="dok2UploadBaru.{{ $key }}" class="text-[11px] text-admin-ink-soft">
+                                        <i class="fa-solid fa-circle-notch animate-spin"></i> Mengunggah...
+                                    </div>
+                                    @error("dok2UploadBaru.$key")<p class="text-[11px] font-medium text-red-600">{{ $message }}</p>@enderror
+
+                                    <input
+                                        type="text" maxlength="80"
+                                        wire:model="dok2Keterangan.{{ $key }}"
+                                        placeholder="Keterangan singkat (opsional)"
+                                        class="w-full rounded-md border border-admin-border bg-admin-surface px-2.5 py-1.5 text-xs text-admin-ink transition focus:border-admin-accent focus:outline-none focus:ring-2 focus:ring-admin-accent/20"
+                                    >
+                                    @error("dok2Keterangan.$key")<p class="text-[11px] font-medium text-red-600">{{ $message }}</p>@enderror
+                                </div>
+                            @endforeach
+                        </div>
+                    </div>
+
+                    <div class="flex justify-end">
+                        <button
+                            type="submit"
+                            wire:loading.attr="disabled" wire:target="saveDokumentasi2"
+                            class="flex items-center gap-2 rounded-full bg-admin-panel px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-admin-panel/20 transition-all duration-200 hover:bg-admin-accent-strong active:scale-[0.99] disabled:opacity-60"
+                        >
+                            <span wire:loading.remove wire:target="saveDokumentasi2" class="flex items-center gap-2">
+                                <i class="fa-solid fa-floppy-disk text-xs"></i> Simpan
+                            </span>
+                            <span wire:loading wire:target="saveDokumentasi2" class="flex items-center gap-2">
+                                <i class="fa-solid fa-circle-notch animate-spin"></i> Menyimpan...
+                            </span>
+                        </button>
+                    </div>
+                </form>
+            @elseif ($activeSection === 'dokumentasi-3')
+                <form wire:submit="saveDokumentasi3" class="space-y-6">
+
+                    <div>
+                        <h3 class="mb-1 flex items-center gap-2 text-sm font-semibold text-admin-ink">
+                            <i class="fa-solid fa-layer-group text-admin-accent"></i>
+                            Dokumentasi 3 &mdash; Kartu 3D Bertumpuk
+                        </h3>
+                        <p class="text-xs text-admin-ink-soft">
+                            Kartu foto/video bertumpuk yang "mengipas" miring 3D begitu masuk layar, lalu menegak &amp; terangkat saat disentuh kursor. Section ini TAMBAHAN di bawah hero &amp; galeri
+                            halaman Dokumentasi &mdash; hero dan galeri di atasnya tidak
+                            ikut berubah. Video di halaman Dokumentasi langsung
+                            <strong>autoplay &amp; mute permanen</strong> (tidak perlu diklik
+                            untuk main, dan tidak ada tombol suara) karena ini galeri, bukan
+                            pemutar video.
+                        </p>
+                    </div>
+
+                    <div class="space-y-4 rounded-xl border border-admin-border p-4">
+                        <p class="text-xs font-semibold uppercase tracking-wide text-admin-ink-soft">Isi Teks</p>
+
+                        <div class="grid gap-4 sm:grid-cols-2">
+                            <div class="sm:col-span-2">
+                                <label class="mb-1.5 block text-sm font-medium text-admin-ink">Judul</label>
+                                <input
+                                    type="text" maxlength="60" wire:model="dok3Judul"
+                                    class="w-full rounded-lg border border-admin-border bg-admin-surface px-3 py-2.5 text-sm text-admin-ink transition focus:border-admin-accent focus:outline-none focus:ring-2 focus:ring-admin-accent/20"
+                                >
+                                @error('dok3Judul')<p class="mt-1.5 text-xs font-medium text-red-600">{{ $message }}</p>@enderror
+                            </div>
+                            <div class="sm:col-span-2">
+                                <label class="mb-1.5 block text-sm font-medium text-admin-ink">Subjudul (teks kecil di atas judul)</label>
+                                <input
+                                    type="text" maxlength="100" wire:model="dok3Subjudul"
+                                    class="w-full rounded-lg border border-admin-border bg-admin-surface px-3 py-2.5 text-sm text-admin-ink transition focus:border-admin-accent focus:outline-none focus:ring-2 focus:ring-admin-accent/20"
+                                >
+                                @error('dok3Subjudul')<p class="mt-1.5 text-xs font-medium text-red-600">{{ $message }}</p>@enderror
+                            </div>
+                            <div class="sm:col-span-2">
+                                <label class="mb-1.5 block text-sm font-medium text-admin-ink">Deskripsi</label>
+                                <textarea
+                                    rows="4" maxlength="500" wire:model="dok3Deskripsi"
+                                    class="w-full resize-none rounded-lg border border-admin-border bg-admin-surface px-3 py-2.5 text-sm text-admin-ink transition focus:border-admin-accent focus:outline-none focus:ring-2 focus:ring-admin-accent/20"
+                                ></textarea>
+                                @error('dok3Deskripsi')<p class="mt-1.5 text-xs font-medium text-red-600">{{ $message }}</p>@enderror
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="space-y-4 rounded-xl border border-admin-border p-4">
+                        <div class="flex flex-wrap items-start justify-between gap-3">
+                            <div>
+                                <p class="text-xs font-semibold uppercase tracking-wide text-admin-ink-soft">Isi Kartu</p>
+                                <p class="mt-1 text-xs text-admin-ink-soft">
+                                    Urutan kartu = urutan tumpukannya dari kiri ke kanan. Jumlahnya BEBAS, tidak ada batas maksimal --
+                                    klik "Tambah" untuk menambah sebanyak yang dibutuhkan, atau
+                                    hapus yang tidak dipakai. Kalau belum ada satu pun yang diisi,
+                                    halaman Dokumentasi memakai isi dummy sementara dari internet.
+                                </p>
+                            </div>
+
+                            <button
+                                type="button"
+                                wire:click="addDok3Item"
+                                class="flex shrink-0 items-center gap-2 rounded-full border border-admin-accent px-3.5 py-2 text-xs font-semibold text-admin-accent transition hover:bg-admin-accent hover:text-white"
+                            >
+                                <i class="fa-solid fa-plus text-[10px]"></i> Tambah Kartu
+                            </button>
+                        </div>
+
+                        @if (count($dok3Keys) === 0)
+                            <p class="rounded-lg border border-dashed border-admin-border bg-admin-cream/60 px-3 py-6 text-center text-xs text-admin-ink-soft">
+                                Belum ada kartu yang ditambahkan. Klik "Tambah Kartu" di atas untuk mulai mengisi.
+                            </p>
+                        @endif
+
+                        <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                            @foreach ($dok3Keys as $urutan => $key)
+                                <div wire:key="dok3-item-{{ $key }}" class="space-y-2.5 rounded-lg border border-admin-border bg-admin-surface p-3">
+                                    <div class="flex items-center justify-between gap-2">
+                                        <span class="rounded-full bg-admin-cream px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-admin-ink-soft">
+                                            Kartu {{ $urutan + 1 }}
+                                        </span>
+
+                                        <button
+                                            type="button"
+                                            wire:click="removeDok3Item('{{ $key }}')"
+                                            class="flex h-7 w-7 items-center justify-center rounded-full text-admin-danger transition hover:bg-admin-danger/10"
+                                            title="Hapus kartu ini"
+                                        >
+                                            <i class="fa-solid fa-trash text-xs"></i>
+                                        </button>
+                                    </div>
+
+                                    <div class="inline-flex gap-1 rounded-lg bg-admin-cream p-1">
+                                        @foreach (['foto' => 'fa-image', 'video' => 'fa-video'] as $tipeKey => $tipeIcon)
+                                            <button
+                                                type="button"
+                                                wire:click="$set('dok3Tipe.{{ $key }}', '{{ $tipeKey }}')"
+                                                class="flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-[11px] font-semibold transition {{ ($dok3Tipe[$key] ?? 'foto') === $tipeKey ? 'bg-admin-panel text-white shadow-sm' : 'text-admin-ink-soft hover:bg-white' }}"
+                                            >
+                                                <i class="fa-solid {{ $tipeIcon }} text-[10px]"></i>
+                                                {{ ucfirst($tipeKey) }}
+                                            </button>
+                                        @endforeach
+                                    </div>
+
+                                    @if ($this->dok3PreviewUrls[$key] ?? null)
+                                        <div class="aspect-square overflow-hidden rounded-lg bg-admin-cream">
+                                            @if (($dok3Tipe[$key] ?? 'foto') === 'video')
+                                                {{-- Autoplay + loop di preview juga, supaya admin langsung lihat
+                                                     videonya jalan tanpa perlu klik -- sama seperti di frontend. --}}
+                                                <video src="{{ $this->dok3PreviewUrls[$key] }}" class="h-full w-full object-cover" autoplay muted loop playsinline></video>
+                                            @else
+                                                <img src="{{ $this->dok3PreviewUrls[$key] }}" alt="Kartu {{ $urutan + 1 }}" class="h-full w-full object-cover">
+                                            @endif
+                                        </div>
+                                    @endif
+
+                                    <input
+                                        type="file"
+                                        wire:model="dok3UploadBaru.{{ $key }}"
+                                        accept="{{ ($dok3Tipe[$key] ?? 'foto') === 'video' ? 'video/mp4,video/webm,video/ogg,video/quicktime' : 'image/*' }}"
+                                        class="block w-full text-xs text-admin-ink file:mr-2 file:rounded-full file:border-0 file:bg-admin-accent file:px-3 file:py-1.5 file:text-[11px] file:font-semibold file:text-white hover:file:bg-admin-accent-strong"
+                                    >
+                                    <div wire:loading wire:target="dok3UploadBaru.{{ $key }}" class="text-[11px] text-admin-ink-soft">
+                                        <i class="fa-solid fa-circle-notch animate-spin"></i> Mengunggah...
+                                    </div>
+                                    @error("dok3UploadBaru.$key")<p class="text-[11px] font-medium text-red-600">{{ $message }}</p>@enderror
+
+                                    <input
+                                        type="text" maxlength="80"
+                                        wire:model="dok3Keterangan.{{ $key }}"
+                                        placeholder="Keterangan singkat (opsional)"
+                                        class="w-full rounded-md border border-admin-border bg-admin-surface px-2.5 py-1.5 text-xs text-admin-ink transition focus:border-admin-accent focus:outline-none focus:ring-2 focus:ring-admin-accent/20"
+                                    >
+                                    @error("dok3Keterangan.$key")<p class="text-[11px] font-medium text-red-600">{{ $message }}</p>@enderror
+                                </div>
+                            @endforeach
+                        </div>
+                    </div>
+
+                    <div class="flex justify-end">
+                        <button
+                            type="submit"
+                            wire:loading.attr="disabled" wire:target="saveDokumentasi3"
+                            class="flex items-center gap-2 rounded-full bg-admin-panel px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-admin-panel/20 transition-all duration-200 hover:bg-admin-accent-strong active:scale-[0.99] disabled:opacity-60"
+                        >
+                            <span wire:loading.remove wire:target="saveDokumentasi3" class="flex items-center gap-2">
+                                <i class="fa-solid fa-floppy-disk text-xs"></i> Simpan
+                            </span>
+                            <span wire:loading wire:target="saveDokumentasi3" class="flex items-center gap-2">
+                                <i class="fa-solid fa-circle-notch animate-spin"></i> Menyimpan...
+                            </span>
+                        </button>
+                    </div>
+                </form>
+            @elseif ($activeSection === 'warna')
+                <form wire:submit="saveProdukWarna" class="space-y-6">
+
+                    <div>
+                        <h3 class="mb-1 flex items-center gap-2 text-sm font-semibold text-admin-ink">
+                            <i class="fa-solid fa-palette text-admin-accent"></i>
+                            Warna (halaman katalog Produk)
+                        </h3>
+                        <p class="text-xs text-admin-ink-soft">
+                            Halaman "Produk" punya 2 section warna terpisah: bagian judul besar "Produk" +
+                            breadcrumb (paling atas, tepat di bawah navbar), dan bagian Filter Options +
+                            daftar kartu produk (di bawahnya). Navbar sendiri tidak ikut berubah dari sini.
+                        </p>
+                    </div>
+
+                    <div class="space-y-4 rounded-xl border border-admin-border p-4">
+                        <p class="text-xs font-semibold uppercase tracking-wide text-admin-ink-soft">
+                            Warna 1 -- Judul &amp; Breadcrumb (paling atas)
+                        </p>
+
+                        <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                            <label class="flex items-center gap-2 text-sm text-admin-ink">
+                                <input type="checkbox" wire:model.live="produkWarnaHeroUseCustomBg" class="h-4 w-4 rounded border-admin-border text-admin-accent focus:ring-admin-accent">
+                                Pakai warna latar khusus
+                            </label>
+                            <input
+                                type="color" wire:model="produkWarnaHeroBgColor"
+                                @disabled(! $produkWarnaHeroUseCustomBg)
+                                class="h-10 w-16 cursor-pointer rounded-lg border border-admin-border disabled:cursor-not-allowed disabled:opacity-40"
+                            >
+                        </div>
+
+                        {{-- Preset warna rekomendasi -- klik langsung pakai warnanya + otomatis centang checkbox di atas. --}}
+                        <div>
+                            <p class="mb-2 text-[11px] font-medium uppercase tracking-wide text-admin-ink-soft">Atau pilih dari rekomendasi</p>
+                            <div class="flex flex-wrap gap-2.5">
+                                @foreach ($produkWarnaHeroBgPresets as $preset)
+                                    <button
+                                        type="button"
+                                        wire:click="selectProdukWarnaHeroBgPreset('{{ $preset['value'] }}')"
+                                        title="{{ $preset['label'] }}"
+                                        class="group flex flex-col items-center gap-1"
+                                    >
+                                        <span
+                                            class="flex h-9 w-9 items-center justify-center rounded-full shadow-sm ring-1 ring-inset ring-white/40 transition duration-200 group-hover:scale-110 group-hover:shadow-md
+                                            {{ $produkWarnaHeroUseCustomBg && strtoupper($produkWarnaHeroBgColor) === $preset['value']
+                                                ? 'border-2 border-admin-accent ring-2 ring-admin-accent ring-offset-2 ring-offset-admin-surface'
+                                                : 'border border-admin-border group-hover:border-admin-accent/60' }}"
+                                            style="background: linear-gradient(135deg, color-mix(in oklab, {{ $preset['value'] }} 100%, white 30%), {{ $preset['value'] }} 55%, color-mix(in oklab, {{ $preset['value'] }} 100%, black 16%));"
+                                        >
+                                            @if ($produkWarnaHeroUseCustomBg && strtoupper($produkWarnaHeroBgColor) === $preset['value'])
+                                                <i class="fa-solid fa-check text-xs drop-shadow-sm" style="color: {{ $preset['check'] }};"></i>
+                                            @endif
+                                        </span>
+                                        <span class="max-w-14 truncate text-[10px] text-admin-ink-soft">{{ $preset['label'] }}</span>
+                                    </button>
+                                @endforeach
+                            </div>
+                        </div>
+
+                        <p class="text-xs text-admin-ink-soft">
+                            Kalau tidak dicentang, section ini pakai warna bawaan (putih kehijauan #F6F9F6)
+                            seperti sebelumnya. Judul "Produk" berwarna gelap dan TIDAK otomatis menyesuaikan
+                            -- pilih warna terang supaya tetap kebaca.
+                        </p>
+                    </div>
+
+                    <div class="space-y-4 rounded-xl border border-admin-border p-4">
+                        <p class="text-xs font-semibold uppercase tracking-wide text-admin-ink-soft">
+                            Warna 2 -- Filter Options &amp; Daftar Produk
+                        </p>
+
+                        <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                            <label class="flex items-center gap-2 text-sm text-admin-ink">
+                                <input type="checkbox" wire:model.live="produkWarnaUseCustomBg" class="h-4 w-4 rounded border-admin-border text-admin-accent focus:ring-admin-accent">
+                                Pakai warna latar khusus
+                            </label>
+                            <input
+                                type="color" wire:model="produkWarnaBgColor"
+                                @disabled(! $produkWarnaUseCustomBg)
+                                class="h-10 w-16 cursor-pointer rounded-lg border border-admin-border disabled:cursor-not-allowed disabled:opacity-40"
+                            >
+                        </div>
+
+                        {{-- Preset warna rekomendasi -- klik langsung pakai warnanya + otomatis centang checkbox di atas. --}}
+                        <div>
+                            <p class="mb-2 text-[11px] font-medium uppercase tracking-wide text-admin-ink-soft">Atau pilih dari rekomendasi</p>
+                            <div class="flex flex-wrap gap-2.5">
+                                @foreach ($produkWarnaBgPresets as $preset)
+                                    <button
+                                        type="button"
+                                        wire:click="selectProdukWarnaBgPreset('{{ $preset['value'] }}')"
+                                        title="{{ $preset['label'] }}"
+                                        class="group flex flex-col items-center gap-1"
+                                    >
+                                        <span
+                                            class="flex h-9 w-9 items-center justify-center rounded-full shadow-sm ring-1 ring-inset ring-white/40 transition duration-200 group-hover:scale-110 group-hover:shadow-md
+                                            {{ $produkWarnaUseCustomBg && strtoupper($produkWarnaBgColor) === $preset['value']
+                                                ? 'border-2 border-admin-accent ring-2 ring-admin-accent ring-offset-2 ring-offset-admin-surface'
+                                                : 'border border-admin-border group-hover:border-admin-accent/60' }}"
+                                            style="background: linear-gradient(135deg, color-mix(in oklab, {{ $preset['value'] }} 100%, white 30%), {{ $preset['value'] }} 55%, color-mix(in oklab, {{ $preset['value'] }} 100%, black 16%));"
+                                        >
+                                            @if ($produkWarnaUseCustomBg && strtoupper($produkWarnaBgColor) === $preset['value'])
+                                                <i class="fa-solid fa-check text-xs drop-shadow-sm" style="color: {{ $preset['check'] }};"></i>
+                                            @endif
+                                        </span>
+                                        <span class="max-w-14 truncate text-[10px] text-admin-ink-soft">{{ $preset['label'] }}</span>
+                                    </button>
+                                @endforeach
+                            </div>
+                        </div>
+
+                        <p class="text-xs text-admin-ink-soft">
+                            Kalau tidak dicentang, section ini pakai warna bawaan (krem #FEEDD8) seperti
+                            sebelumnya. Teks &amp; tombol di section ini berwarna gelap dan TIDAK otomatis
+                            menyesuaikan -- pilih warna terang supaya tetap kebaca.
+                        </p>
+                    </div>
+
+                    <div class="flex justify-end">
+                        <button
+                            type="submit"
+                            wire:loading.attr="disabled" wire:target="saveProdukWarna"
+                            class="flex items-center gap-2 rounded-full bg-admin-panel px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-admin-panel/20 transition-all duration-200 hover:bg-admin-accent-strong active:scale-[0.99] disabled:opacity-60"
+                        >
+                            <span wire:loading.remove wire:target="saveProdukWarna" class="flex items-center gap-2">
+                                <i class="fa-solid fa-floppy-disk text-xs"></i> Simpan
+                            </span>
+                            <span wire:loading wire:target="saveProdukWarna" class="flex items-center gap-2">
                                 <i class="fa-solid fa-circle-notch animate-spin"></i> Menyimpan...
                             </span>
                         </button>
@@ -4079,8 +5862,10 @@ new #[Layout('layouts::admin-panel')] #[Title('Edit Web')] class extends Compone
                     class="relative mx-auto w-full cursor-move touch-none overflow-hidden rounded-2xl border-2 border-admin-accent bg-admin-cream select-none" style="aspect-ratio: 19 / 10;"
                     x-on:pointerdown="startDrag($event)"
                     x-on:pointermove="onDrag($event)"
-                    x-on:pointerup="endDrag()"
-                    x-on:pointerleave="endDrag()"
+                    x-on:pointerup="endDrag($event)"
+                    x-on:pointercancel="endDrag($event)"
+                    x-on:pointerleave="endDrag($event)"
+                    x-on:wheel.prevent="onWheel($event)"
                 >
                     <img
                         x-ref="cropImg"
@@ -4139,6 +5924,13 @@ new #[Layout('layouts::admin-panel')] #[Title('Edit Web')] class extends Compone
         dragStartY: 0,
         startPosX: 0,
         startPosY: 0,
+
+        // Gestur 2 jari: pointer aktif (id -> {x, y}) untuk cubit di layar sentuh.
+        pointers: {},
+        pinchStartDist: 0,
+        pinchStartScale: 1,
+        pinchLastMidX: 0,
+        pinchLastMidY: 0,
 
         ASPECT_W: 19,
         ASPECT_H: 10,
@@ -4205,7 +5997,52 @@ new #[Layout('layouts::admin-panel')] #[Title('Edit Web')] class extends Compone
             this.clampPos();
         },
 
+        // Ubah zoom dengan titik (cx, cy) di dalam viewport tetap di tempatnya
+        // (dipakai gestur cubit / Ctrl + scroll; slider tetap lewat applyZoom).
+        zoomTo(newScale, cx, cy) {
+            newScale = Math.min(this.maxScale, Math.max(this.minScale, newScale));
+            const ratio = newScale / this.scale;
+
+            this.posX = cx - (cx - this.posX) * ratio;
+            this.posY = cy - (cy - this.posY) * ratio;
+            this.scale = newScale;
+            this.zoomPercent = this.maxScale > this.minScale
+                ? ((newScale - this.minScale) / (this.maxScale - this.minScale)) * 100
+                : 0;
+            this.clampPos();
+        },
+
+        // Touchpad: geser 2 jari = wheel biasa (geser foto), cubit 2 jari = wheel + Ctrl (zoom).
+        onWheel(e) {
+            if (this.natW === 0) return;
+
+            if (e.ctrlKey) {
+                const rect = this.$refs.viewport.getBoundingClientRect();
+                this.zoomTo(this.scale * Math.exp(-e.deltaY * 0.01), e.clientX - rect.left, e.clientY - rect.top);
+                return;
+            }
+
+            this.posX -= e.deltaX;
+            this.posY -= e.deltaY;
+            this.clampPos();
+        },
+
         startDrag(e) {
+            this.pointers[e.pointerId] = { x: e.clientX, y: e.clientY };
+
+            const points = Object.values(this.pointers);
+
+            if (points.length >= 2) {
+                // Dua jari menyentuh layar: mulai cubit.
+                const rect = this.$refs.viewport.getBoundingClientRect();
+                this.dragging = false;
+                this.pinchStartDist = Math.hypot(points[0].x - points[1].x, points[0].y - points[1].y);
+                this.pinchStartScale = this.scale;
+                this.pinchLastMidX = (points[0].x + points[1].x) / 2 - rect.left;
+                this.pinchLastMidY = (points[0].y + points[1].y) / 2 - rect.top;
+                return;
+            }
+
             this.dragging = true;
             this.dragStartX = e.clientX;
             this.dragStartY = e.clientY;
@@ -4214,14 +6051,56 @@ new #[Layout('layouts::admin-panel')] #[Title('Edit Web')] class extends Compone
         },
 
         onDrag(e) {
+            if (!(e.pointerId in this.pointers)) return;
+            this.pointers[e.pointerId] = { x: e.clientX, y: e.clientY };
+
+            const points = Object.values(this.pointers);
+
+            if (points.length >= 2) {
+                const rect = this.$refs.viewport.getBoundingClientRect();
+                const midX = (points[0].x + points[1].x) / 2 - rect.left;
+                const midY = (points[0].y + points[1].y) / 2 - rect.top;
+                const dist = Math.hypot(points[0].x - points[1].x, points[0].y - points[1].y);
+
+                // Geser mengikuti titik tengah kedua jari, lalu zoom sesuai jarak antar jari.
+                this.posX += midX - this.pinchLastMidX;
+                this.posY += midY - this.pinchLastMidY;
+                this.pinchLastMidX = midX;
+                this.pinchLastMidY = midY;
+
+                if (this.pinchStartDist > 0) {
+                    this.zoomTo(this.pinchStartScale * (dist / this.pinchStartDist), midX, midY);
+                } else {
+                    this.clampPos();
+                }
+                return;
+            }
+
             if (!this.dragging) return;
             this.posX = this.startPosX + (e.clientX - this.dragStartX);
             this.posY = this.startPosY + (e.clientY - this.dragStartY);
             this.clampPos();
         },
 
-        endDrag() {
-            this.dragging = false;
+        endDrag(e) {
+            if (e && e.pointerId !== undefined) {
+                delete this.pointers[e.pointerId];
+            } else {
+                this.pointers = {};
+            }
+
+            const rest = Object.values(this.pointers);
+
+            if (rest.length === 1) {
+                // Tinggal satu jari: lanjut geser dari posisi sekarang (tanpa lompatan).
+                this.dragging = true;
+                this.dragStartX = rest[0].x;
+                this.dragStartY = rest[0].y;
+                this.startPosX = this.posX;
+                this.startPosY = this.posY;
+            } else {
+                this.dragging = false;
+            }
         },
 
         confirmCrop() {
@@ -4251,6 +6130,8 @@ new #[Layout('layouts::admin-panel')] #[Title('Edit Web')] class extends Compone
         closeModal() {
             this.open = false;
             this.rawImage = null;
+            this.pointers = {};
+            this.dragging = false;
             if (this.$refs.fileInput) this.$refs.fileInput.value = '';
         },
     }));
@@ -4275,6 +6156,13 @@ new #[Layout('layouts::admin-panel')] #[Title('Edit Web')] class extends Compone
         dragStartY: 0,
         startPosX: 0,
         startPosY: 0,
+
+        // Gestur 2 jari: pointer aktif (id -> {x, y}) untuk cubit di layar sentuh.
+        pointers: {},
+        pinchStartDist: 0,
+        pinchStartScale: 1,
+        pinchLastMidX: 0,
+        pinchLastMidY: 0,
 
         ASPECT_W: 3,
         ASPECT_H: 4,
@@ -4341,7 +6229,52 @@ new #[Layout('layouts::admin-panel')] #[Title('Edit Web')] class extends Compone
             this.clampPos();
         },
 
+        // Ubah zoom dengan titik (cx, cy) di dalam viewport tetap di tempatnya
+        // (dipakai gestur cubit / Ctrl + scroll; slider tetap lewat applyZoom).
+        zoomTo(newScale, cx, cy) {
+            newScale = Math.min(this.maxScale, Math.max(this.minScale, newScale));
+            const ratio = newScale / this.scale;
+
+            this.posX = cx - (cx - this.posX) * ratio;
+            this.posY = cy - (cy - this.posY) * ratio;
+            this.scale = newScale;
+            this.zoomPercent = this.maxScale > this.minScale
+                ? ((newScale - this.minScale) / (this.maxScale - this.minScale)) * 100
+                : 0;
+            this.clampPos();
+        },
+
+        // Touchpad: geser 2 jari = wheel biasa (geser foto), cubit 2 jari = wheel + Ctrl (zoom).
+        onWheel(e) {
+            if (this.natW === 0) return;
+
+            if (e.ctrlKey) {
+                const rect = this.$refs.viewport.getBoundingClientRect();
+                this.zoomTo(this.scale * Math.exp(-e.deltaY * 0.01), e.clientX - rect.left, e.clientY - rect.top);
+                return;
+            }
+
+            this.posX -= e.deltaX;
+            this.posY -= e.deltaY;
+            this.clampPos();
+        },
+
         startDrag(e) {
+            this.pointers[e.pointerId] = { x: e.clientX, y: e.clientY };
+
+            const points = Object.values(this.pointers);
+
+            if (points.length >= 2) {
+                // Dua jari menyentuh layar: mulai cubit.
+                const rect = this.$refs.viewport.getBoundingClientRect();
+                this.dragging = false;
+                this.pinchStartDist = Math.hypot(points[0].x - points[1].x, points[0].y - points[1].y);
+                this.pinchStartScale = this.scale;
+                this.pinchLastMidX = (points[0].x + points[1].x) / 2 - rect.left;
+                this.pinchLastMidY = (points[0].y + points[1].y) / 2 - rect.top;
+                return;
+            }
+
             this.dragging = true;
             this.dragStartX = e.clientX;
             this.dragStartY = e.clientY;
@@ -4350,14 +6283,56 @@ new #[Layout('layouts::admin-panel')] #[Title('Edit Web')] class extends Compone
         },
 
         onDrag(e) {
+            if (!(e.pointerId in this.pointers)) return;
+            this.pointers[e.pointerId] = { x: e.clientX, y: e.clientY };
+
+            const points = Object.values(this.pointers);
+
+            if (points.length >= 2) {
+                const rect = this.$refs.viewport.getBoundingClientRect();
+                const midX = (points[0].x + points[1].x) / 2 - rect.left;
+                const midY = (points[0].y + points[1].y) / 2 - rect.top;
+                const dist = Math.hypot(points[0].x - points[1].x, points[0].y - points[1].y);
+
+                // Geser mengikuti titik tengah kedua jari, lalu zoom sesuai jarak antar jari.
+                this.posX += midX - this.pinchLastMidX;
+                this.posY += midY - this.pinchLastMidY;
+                this.pinchLastMidX = midX;
+                this.pinchLastMidY = midY;
+
+                if (this.pinchStartDist > 0) {
+                    this.zoomTo(this.pinchStartScale * (dist / this.pinchStartDist), midX, midY);
+                } else {
+                    this.clampPos();
+                }
+                return;
+            }
+
             if (!this.dragging) return;
             this.posX = this.startPosX + (e.clientX - this.dragStartX);
             this.posY = this.startPosY + (e.clientY - this.dragStartY);
             this.clampPos();
         },
 
-        endDrag() {
-            this.dragging = false;
+        endDrag(e) {
+            if (e && e.pointerId !== undefined) {
+                delete this.pointers[e.pointerId];
+            } else {
+                this.pointers = {};
+            }
+
+            const rest = Object.values(this.pointers);
+
+            if (rest.length === 1) {
+                // Tinggal satu jari: lanjut geser dari posisi sekarang (tanpa lompatan).
+                this.dragging = true;
+                this.dragStartX = rest[0].x;
+                this.dragStartY = rest[0].y;
+                this.startPosX = this.posX;
+                this.startPosY = this.posY;
+            } else {
+                this.dragging = false;
+            }
         },
 
         confirmCrop() {
@@ -4387,6 +6362,8 @@ new #[Layout('layouts::admin-panel')] #[Title('Edit Web')] class extends Compone
         closeModal() {
             this.open = false;
             this.rawImage = null;
+            this.pointers = {};
+            this.dragging = false;
             if (this.$refs.fileInput) this.$refs.fileInput.value = '';
         },
     }));
@@ -4410,6 +6387,13 @@ new #[Layout('layouts::admin-panel')] #[Title('Edit Web')] class extends Compone
         dragStartY: 0,
         startPosX: 0,
         startPosY: 0,
+
+        // Gestur 2 jari: pointer aktif (id -> {x, y}) untuk cubit di layar sentuh.
+        pointers: {},
+        pinchStartDist: 0,
+        pinchStartScale: 1,
+        pinchLastMidX: 0,
+        pinchLastMidY: 0,
 
         ASPECT_W: 1,
         ASPECT_H: 1,
@@ -4476,7 +6460,52 @@ new #[Layout('layouts::admin-panel')] #[Title('Edit Web')] class extends Compone
             this.clampPos();
         },
 
+        // Ubah zoom dengan titik (cx, cy) di dalam viewport tetap di tempatnya
+        // (dipakai gestur cubit / Ctrl + scroll; slider tetap lewat applyZoom).
+        zoomTo(newScale, cx, cy) {
+            newScale = Math.min(this.maxScale, Math.max(this.minScale, newScale));
+            const ratio = newScale / this.scale;
+
+            this.posX = cx - (cx - this.posX) * ratio;
+            this.posY = cy - (cy - this.posY) * ratio;
+            this.scale = newScale;
+            this.zoomPercent = this.maxScale > this.minScale
+                ? ((newScale - this.minScale) / (this.maxScale - this.minScale)) * 100
+                : 0;
+            this.clampPos();
+        },
+
+        // Touchpad: geser 2 jari = wheel biasa (geser foto), cubit 2 jari = wheel + Ctrl (zoom).
+        onWheel(e) {
+            if (this.natW === 0) return;
+
+            if (e.ctrlKey) {
+                const rect = this.$refs.viewport.getBoundingClientRect();
+                this.zoomTo(this.scale * Math.exp(-e.deltaY * 0.01), e.clientX - rect.left, e.clientY - rect.top);
+                return;
+            }
+
+            this.posX -= e.deltaX;
+            this.posY -= e.deltaY;
+            this.clampPos();
+        },
+
         startDrag(e) {
+            this.pointers[e.pointerId] = { x: e.clientX, y: e.clientY };
+
+            const points = Object.values(this.pointers);
+
+            if (points.length >= 2) {
+                // Dua jari menyentuh layar: mulai cubit.
+                const rect = this.$refs.viewport.getBoundingClientRect();
+                this.dragging = false;
+                this.pinchStartDist = Math.hypot(points[0].x - points[1].x, points[0].y - points[1].y);
+                this.pinchStartScale = this.scale;
+                this.pinchLastMidX = (points[0].x + points[1].x) / 2 - rect.left;
+                this.pinchLastMidY = (points[0].y + points[1].y) / 2 - rect.top;
+                return;
+            }
+
             this.dragging = true;
             this.dragStartX = e.clientX;
             this.dragStartY = e.clientY;
@@ -4485,14 +6514,56 @@ new #[Layout('layouts::admin-panel')] #[Title('Edit Web')] class extends Compone
         },
 
         onDrag(e) {
+            if (!(e.pointerId in this.pointers)) return;
+            this.pointers[e.pointerId] = { x: e.clientX, y: e.clientY };
+
+            const points = Object.values(this.pointers);
+
+            if (points.length >= 2) {
+                const rect = this.$refs.viewport.getBoundingClientRect();
+                const midX = (points[0].x + points[1].x) / 2 - rect.left;
+                const midY = (points[0].y + points[1].y) / 2 - rect.top;
+                const dist = Math.hypot(points[0].x - points[1].x, points[0].y - points[1].y);
+
+                // Geser mengikuti titik tengah kedua jari, lalu zoom sesuai jarak antar jari.
+                this.posX += midX - this.pinchLastMidX;
+                this.posY += midY - this.pinchLastMidY;
+                this.pinchLastMidX = midX;
+                this.pinchLastMidY = midY;
+
+                if (this.pinchStartDist > 0) {
+                    this.zoomTo(this.pinchStartScale * (dist / this.pinchStartDist), midX, midY);
+                } else {
+                    this.clampPos();
+                }
+                return;
+            }
+
             if (!this.dragging) return;
             this.posX = this.startPosX + (e.clientX - this.dragStartX);
             this.posY = this.startPosY + (e.clientY - this.dragStartY);
             this.clampPos();
         },
 
-        endDrag() {
-            this.dragging = false;
+        endDrag(e) {
+            if (e && e.pointerId !== undefined) {
+                delete this.pointers[e.pointerId];
+            } else {
+                this.pointers = {};
+            }
+
+            const rest = Object.values(this.pointers);
+
+            if (rest.length === 1) {
+                // Tinggal satu jari: lanjut geser dari posisi sekarang (tanpa lompatan).
+                this.dragging = true;
+                this.dragStartX = rest[0].x;
+                this.dragStartY = rest[0].y;
+                this.startPosX = this.posX;
+                this.startPosY = this.posY;
+            } else {
+                this.dragging = false;
+            }
         },
 
         confirmCrop() {
@@ -4522,6 +6593,8 @@ new #[Layout('layouts::admin-panel')] #[Title('Edit Web')] class extends Compone
         closeModal() {
             this.open = false;
             this.rawImage = null;
+            this.pointers = {};
+            this.dragging = false;
             if (this.$refs.fileInput) this.$refs.fileInput.value = '';
         },
     }));
@@ -4543,6 +6616,13 @@ new #[Layout('layouts::admin-panel')] #[Title('Edit Web')] class extends Compone
         dragStartY: 0,
         startPosX: 0,
         startPosY: 0,
+
+        // Gestur 2 jari: pointer aktif (id -> {x, y}) untuk cubit di layar sentuh.
+        pointers: {},
+        pinchStartDist: 0,
+        pinchStartScale: 1,
+        pinchLastMidX: 0,
+        pinchLastMidY: 0,
 
         ASPECT_W: 3,
         ASPECT_H: 5,
@@ -4609,7 +6689,52 @@ new #[Layout('layouts::admin-panel')] #[Title('Edit Web')] class extends Compone
             this.clampPos();
         },
 
+        // Ubah zoom dengan titik (cx, cy) di dalam viewport tetap di tempatnya
+        // (dipakai gestur cubit / Ctrl + scroll; slider tetap lewat applyZoom).
+        zoomTo(newScale, cx, cy) {
+            newScale = Math.min(this.maxScale, Math.max(this.minScale, newScale));
+            const ratio = newScale / this.scale;
+
+            this.posX = cx - (cx - this.posX) * ratio;
+            this.posY = cy - (cy - this.posY) * ratio;
+            this.scale = newScale;
+            this.zoomPercent = this.maxScale > this.minScale
+                ? ((newScale - this.minScale) / (this.maxScale - this.minScale)) * 100
+                : 0;
+            this.clampPos();
+        },
+
+        // Touchpad: geser 2 jari = wheel biasa (geser foto), cubit 2 jari = wheel + Ctrl (zoom).
+        onWheel(e) {
+            if (this.natW === 0) return;
+
+            if (e.ctrlKey) {
+                const rect = this.$refs.viewport.getBoundingClientRect();
+                this.zoomTo(this.scale * Math.exp(-e.deltaY * 0.01), e.clientX - rect.left, e.clientY - rect.top);
+                return;
+            }
+
+            this.posX -= e.deltaX;
+            this.posY -= e.deltaY;
+            this.clampPos();
+        },
+
         startDrag(e) {
+            this.pointers[e.pointerId] = { x: e.clientX, y: e.clientY };
+
+            const points = Object.values(this.pointers);
+
+            if (points.length >= 2) {
+                // Dua jari menyentuh layar: mulai cubit.
+                const rect = this.$refs.viewport.getBoundingClientRect();
+                this.dragging = false;
+                this.pinchStartDist = Math.hypot(points[0].x - points[1].x, points[0].y - points[1].y);
+                this.pinchStartScale = this.scale;
+                this.pinchLastMidX = (points[0].x + points[1].x) / 2 - rect.left;
+                this.pinchLastMidY = (points[0].y + points[1].y) / 2 - rect.top;
+                return;
+            }
+
             this.dragging = true;
             this.dragStartX = e.clientX;
             this.dragStartY = e.clientY;
@@ -4618,14 +6743,56 @@ new #[Layout('layouts::admin-panel')] #[Title('Edit Web')] class extends Compone
         },
 
         onDrag(e) {
+            if (!(e.pointerId in this.pointers)) return;
+            this.pointers[e.pointerId] = { x: e.clientX, y: e.clientY };
+
+            const points = Object.values(this.pointers);
+
+            if (points.length >= 2) {
+                const rect = this.$refs.viewport.getBoundingClientRect();
+                const midX = (points[0].x + points[1].x) / 2 - rect.left;
+                const midY = (points[0].y + points[1].y) / 2 - rect.top;
+                const dist = Math.hypot(points[0].x - points[1].x, points[0].y - points[1].y);
+
+                // Geser mengikuti titik tengah kedua jari, lalu zoom sesuai jarak antar jari.
+                this.posX += midX - this.pinchLastMidX;
+                this.posY += midY - this.pinchLastMidY;
+                this.pinchLastMidX = midX;
+                this.pinchLastMidY = midY;
+
+                if (this.pinchStartDist > 0) {
+                    this.zoomTo(this.pinchStartScale * (dist / this.pinchStartDist), midX, midY);
+                } else {
+                    this.clampPos();
+                }
+                return;
+            }
+
             if (!this.dragging) return;
             this.posX = this.startPosX + (e.clientX - this.dragStartX);
             this.posY = this.startPosY + (e.clientY - this.dragStartY);
             this.clampPos();
         },
 
-        endDrag() {
-            this.dragging = false;
+        endDrag(e) {
+            if (e && e.pointerId !== undefined) {
+                delete this.pointers[e.pointerId];
+            } else {
+                this.pointers = {};
+            }
+
+            const rest = Object.values(this.pointers);
+
+            if (rest.length === 1) {
+                // Tinggal satu jari: lanjut geser dari posisi sekarang (tanpa lompatan).
+                this.dragging = true;
+                this.dragStartX = rest[0].x;
+                this.dragStartY = rest[0].y;
+                this.startPosX = this.posX;
+                this.startPosY = this.posY;
+            } else {
+                this.dragging = false;
+            }
         },
 
         confirmCrop() {
@@ -4655,6 +6822,8 @@ new #[Layout('layouts::admin-panel')] #[Title('Edit Web')] class extends Compone
         closeModal() {
             this.open = false;
             this.rawImage = null;
+            this.pointers = {};
+            this.dragging = false;
             if (this.$refs.fileInput) this.$refs.fileInput.value = '';
         },
     }));
@@ -4679,6 +6848,13 @@ new #[Layout('layouts::admin-panel')] #[Title('Edit Web')] class extends Compone
         dragStartY: 0,
         startPosX: 0,
         startPosY: 0,
+
+        // Gestur 2 jari: pointer aktif (id -> {x, y}) untuk cubit di layar sentuh.
+        pointers: {},
+        pinchStartDist: 0,
+        pinchStartScale: 1,
+        pinchLastMidX: 0,
+        pinchLastMidY: 0,
 
         ASPECT_W: 10,
         ASPECT_H: 9,
@@ -4745,7 +6921,52 @@ new #[Layout('layouts::admin-panel')] #[Title('Edit Web')] class extends Compone
             this.clampPos();
         },
 
+        // Ubah zoom dengan titik (cx, cy) di dalam viewport tetap di tempatnya
+        // (dipakai gestur cubit / Ctrl + scroll; slider tetap lewat applyZoom).
+        zoomTo(newScale, cx, cy) {
+            newScale = Math.min(this.maxScale, Math.max(this.minScale, newScale));
+            const ratio = newScale / this.scale;
+
+            this.posX = cx - (cx - this.posX) * ratio;
+            this.posY = cy - (cy - this.posY) * ratio;
+            this.scale = newScale;
+            this.zoomPercent = this.maxScale > this.minScale
+                ? ((newScale - this.minScale) / (this.maxScale - this.minScale)) * 100
+                : 0;
+            this.clampPos();
+        },
+
+        // Touchpad: geser 2 jari = wheel biasa (geser foto), cubit 2 jari = wheel + Ctrl (zoom).
+        onWheel(e) {
+            if (this.natW === 0) return;
+
+            if (e.ctrlKey) {
+                const rect = this.$refs.viewport.getBoundingClientRect();
+                this.zoomTo(this.scale * Math.exp(-e.deltaY * 0.01), e.clientX - rect.left, e.clientY - rect.top);
+                return;
+            }
+
+            this.posX -= e.deltaX;
+            this.posY -= e.deltaY;
+            this.clampPos();
+        },
+
         startDrag(e) {
+            this.pointers[e.pointerId] = { x: e.clientX, y: e.clientY };
+
+            const points = Object.values(this.pointers);
+
+            if (points.length >= 2) {
+                // Dua jari menyentuh layar: mulai cubit.
+                const rect = this.$refs.viewport.getBoundingClientRect();
+                this.dragging = false;
+                this.pinchStartDist = Math.hypot(points[0].x - points[1].x, points[0].y - points[1].y);
+                this.pinchStartScale = this.scale;
+                this.pinchLastMidX = (points[0].x + points[1].x) / 2 - rect.left;
+                this.pinchLastMidY = (points[0].y + points[1].y) / 2 - rect.top;
+                return;
+            }
+
             this.dragging = true;
             this.dragStartX = e.clientX;
             this.dragStartY = e.clientY;
@@ -4754,14 +6975,56 @@ new #[Layout('layouts::admin-panel')] #[Title('Edit Web')] class extends Compone
         },
 
         onDrag(e) {
+            if (!(e.pointerId in this.pointers)) return;
+            this.pointers[e.pointerId] = { x: e.clientX, y: e.clientY };
+
+            const points = Object.values(this.pointers);
+
+            if (points.length >= 2) {
+                const rect = this.$refs.viewport.getBoundingClientRect();
+                const midX = (points[0].x + points[1].x) / 2 - rect.left;
+                const midY = (points[0].y + points[1].y) / 2 - rect.top;
+                const dist = Math.hypot(points[0].x - points[1].x, points[0].y - points[1].y);
+
+                // Geser mengikuti titik tengah kedua jari, lalu zoom sesuai jarak antar jari.
+                this.posX += midX - this.pinchLastMidX;
+                this.posY += midY - this.pinchLastMidY;
+                this.pinchLastMidX = midX;
+                this.pinchLastMidY = midY;
+
+                if (this.pinchStartDist > 0) {
+                    this.zoomTo(this.pinchStartScale * (dist / this.pinchStartDist), midX, midY);
+                } else {
+                    this.clampPos();
+                }
+                return;
+            }
+
             if (!this.dragging) return;
             this.posX = this.startPosX + (e.clientX - this.dragStartX);
             this.posY = this.startPosY + (e.clientY - this.dragStartY);
             this.clampPos();
         },
 
-        endDrag() {
-            this.dragging = false;
+        endDrag(e) {
+            if (e && e.pointerId !== undefined) {
+                delete this.pointers[e.pointerId];
+            } else {
+                this.pointers = {};
+            }
+
+            const rest = Object.values(this.pointers);
+
+            if (rest.length === 1) {
+                // Tinggal satu jari: lanjut geser dari posisi sekarang (tanpa lompatan).
+                this.dragging = true;
+                this.dragStartX = rest[0].x;
+                this.dragStartY = rest[0].y;
+                this.startPosX = this.posX;
+                this.startPosY = this.posY;
+            } else {
+                this.dragging = false;
+            }
         },
 
         confirmCrop() {
@@ -4791,6 +7054,8 @@ new #[Layout('layouts::admin-panel')] #[Title('Edit Web')] class extends Compone
         closeModal() {
             this.open = false;
             this.rawImage = null;
+            this.pointers = {};
+            this.dragging = false;
             if (this.$refs.fileInput) this.$refs.fileInput.value = '';
         },
     }));
@@ -4814,6 +7079,13 @@ new #[Layout('layouts::admin-panel')] #[Title('Edit Web')] class extends Compone
         dragStartY: 0,
         startPosX: 0,
         startPosY: 0,
+
+        // Gestur 2 jari: pointer aktif (id -> {x, y}) untuk cubit di layar sentuh.
+        pointers: {},
+        pinchStartDist: 0,
+        pinchStartScale: 1,
+        pinchLastMidX: 0,
+        pinchLastMidY: 0,
 
         ASPECT_W: 4,
         ASPECT_H: 5,
@@ -4880,7 +7152,52 @@ new #[Layout('layouts::admin-panel')] #[Title('Edit Web')] class extends Compone
             this.clampPos();
         },
 
+        // Ubah zoom dengan titik (cx, cy) di dalam viewport tetap di tempatnya
+        // (dipakai gestur cubit / Ctrl + scroll; slider tetap lewat applyZoom).
+        zoomTo(newScale, cx, cy) {
+            newScale = Math.min(this.maxScale, Math.max(this.minScale, newScale));
+            const ratio = newScale / this.scale;
+
+            this.posX = cx - (cx - this.posX) * ratio;
+            this.posY = cy - (cy - this.posY) * ratio;
+            this.scale = newScale;
+            this.zoomPercent = this.maxScale > this.minScale
+                ? ((newScale - this.minScale) / (this.maxScale - this.minScale)) * 100
+                : 0;
+            this.clampPos();
+        },
+
+        // Touchpad: geser 2 jari = wheel biasa (geser foto), cubit 2 jari = wheel + Ctrl (zoom).
+        onWheel(e) {
+            if (this.natW === 0) return;
+
+            if (e.ctrlKey) {
+                const rect = this.$refs.viewport.getBoundingClientRect();
+                this.zoomTo(this.scale * Math.exp(-e.deltaY * 0.01), e.clientX - rect.left, e.clientY - rect.top);
+                return;
+            }
+
+            this.posX -= e.deltaX;
+            this.posY -= e.deltaY;
+            this.clampPos();
+        },
+
         startDrag(e) {
+            this.pointers[e.pointerId] = { x: e.clientX, y: e.clientY };
+
+            const points = Object.values(this.pointers);
+
+            if (points.length >= 2) {
+                // Dua jari menyentuh layar: mulai cubit.
+                const rect = this.$refs.viewport.getBoundingClientRect();
+                this.dragging = false;
+                this.pinchStartDist = Math.hypot(points[0].x - points[1].x, points[0].y - points[1].y);
+                this.pinchStartScale = this.scale;
+                this.pinchLastMidX = (points[0].x + points[1].x) / 2 - rect.left;
+                this.pinchLastMidY = (points[0].y + points[1].y) / 2 - rect.top;
+                return;
+            }
+
             this.dragging = true;
             this.dragStartX = e.clientX;
             this.dragStartY = e.clientY;
@@ -4889,14 +7206,56 @@ new #[Layout('layouts::admin-panel')] #[Title('Edit Web')] class extends Compone
         },
 
         onDrag(e) {
+            if (!(e.pointerId in this.pointers)) return;
+            this.pointers[e.pointerId] = { x: e.clientX, y: e.clientY };
+
+            const points = Object.values(this.pointers);
+
+            if (points.length >= 2) {
+                const rect = this.$refs.viewport.getBoundingClientRect();
+                const midX = (points[0].x + points[1].x) / 2 - rect.left;
+                const midY = (points[0].y + points[1].y) / 2 - rect.top;
+                const dist = Math.hypot(points[0].x - points[1].x, points[0].y - points[1].y);
+
+                // Geser mengikuti titik tengah kedua jari, lalu zoom sesuai jarak antar jari.
+                this.posX += midX - this.pinchLastMidX;
+                this.posY += midY - this.pinchLastMidY;
+                this.pinchLastMidX = midX;
+                this.pinchLastMidY = midY;
+
+                if (this.pinchStartDist > 0) {
+                    this.zoomTo(this.pinchStartScale * (dist / this.pinchStartDist), midX, midY);
+                } else {
+                    this.clampPos();
+                }
+                return;
+            }
+
             if (!this.dragging) return;
             this.posX = this.startPosX + (e.clientX - this.dragStartX);
             this.posY = this.startPosY + (e.clientY - this.dragStartY);
             this.clampPos();
         },
 
-        endDrag() {
-            this.dragging = false;
+        endDrag(e) {
+            if (e && e.pointerId !== undefined) {
+                delete this.pointers[e.pointerId];
+            } else {
+                this.pointers = {};
+            }
+
+            const rest = Object.values(this.pointers);
+
+            if (rest.length === 1) {
+                // Tinggal satu jari: lanjut geser dari posisi sekarang (tanpa lompatan).
+                this.dragging = true;
+                this.dragStartX = rest[0].x;
+                this.dragStartY = rest[0].y;
+                this.startPosX = this.posX;
+                this.startPosY = this.posY;
+            } else {
+                this.dragging = false;
+            }
         },
 
         confirmCrop() {
@@ -4926,6 +7285,8 @@ new #[Layout('layouts::admin-panel')] #[Title('Edit Web')] class extends Compone
         closeModal() {
             this.open = false;
             this.rawImage = null;
+            this.pointers = {};
+            this.dragging = false;
             if (this.$refs.fileInput) this.$refs.fileInput.value = '';
         },
     }));
@@ -4949,6 +7310,13 @@ new #[Layout('layouts::admin-panel')] #[Title('Edit Web')] class extends Compone
         dragStartY: 0,
         startPosX: 0,
         startPosY: 0,
+
+        // Gestur 2 jari: pointer aktif (id -> {x, y}) untuk cubit di layar sentuh.
+        pointers: {},
+        pinchStartDist: 0,
+        pinchStartScale: 1,
+        pinchLastMidX: 0,
+        pinchLastMidY: 0,
 
         ASPECT_W: 4,
         ASPECT_H: 5,
@@ -5015,7 +7383,52 @@ new #[Layout('layouts::admin-panel')] #[Title('Edit Web')] class extends Compone
             this.clampPos();
         },
 
+        // Ubah zoom dengan titik (cx, cy) di dalam viewport tetap di tempatnya
+        // (dipakai gestur cubit / Ctrl + scroll; slider tetap lewat applyZoom).
+        zoomTo(newScale, cx, cy) {
+            newScale = Math.min(this.maxScale, Math.max(this.minScale, newScale));
+            const ratio = newScale / this.scale;
+
+            this.posX = cx - (cx - this.posX) * ratio;
+            this.posY = cy - (cy - this.posY) * ratio;
+            this.scale = newScale;
+            this.zoomPercent = this.maxScale > this.minScale
+                ? ((newScale - this.minScale) / (this.maxScale - this.minScale)) * 100
+                : 0;
+            this.clampPos();
+        },
+
+        // Touchpad: geser 2 jari = wheel biasa (geser foto), cubit 2 jari = wheel + Ctrl (zoom).
+        onWheel(e) {
+            if (this.natW === 0) return;
+
+            if (e.ctrlKey) {
+                const rect = this.$refs.viewport.getBoundingClientRect();
+                this.zoomTo(this.scale * Math.exp(-e.deltaY * 0.01), e.clientX - rect.left, e.clientY - rect.top);
+                return;
+            }
+
+            this.posX -= e.deltaX;
+            this.posY -= e.deltaY;
+            this.clampPos();
+        },
+
         startDrag(e) {
+            this.pointers[e.pointerId] = { x: e.clientX, y: e.clientY };
+
+            const points = Object.values(this.pointers);
+
+            if (points.length >= 2) {
+                // Dua jari menyentuh layar: mulai cubit.
+                const rect = this.$refs.viewport.getBoundingClientRect();
+                this.dragging = false;
+                this.pinchStartDist = Math.hypot(points[0].x - points[1].x, points[0].y - points[1].y);
+                this.pinchStartScale = this.scale;
+                this.pinchLastMidX = (points[0].x + points[1].x) / 2 - rect.left;
+                this.pinchLastMidY = (points[0].y + points[1].y) / 2 - rect.top;
+                return;
+            }
+
             this.dragging = true;
             this.dragStartX = e.clientX;
             this.dragStartY = e.clientY;
@@ -5024,14 +7437,56 @@ new #[Layout('layouts::admin-panel')] #[Title('Edit Web')] class extends Compone
         },
 
         onDrag(e) {
+            if (!(e.pointerId in this.pointers)) return;
+            this.pointers[e.pointerId] = { x: e.clientX, y: e.clientY };
+
+            const points = Object.values(this.pointers);
+
+            if (points.length >= 2) {
+                const rect = this.$refs.viewport.getBoundingClientRect();
+                const midX = (points[0].x + points[1].x) / 2 - rect.left;
+                const midY = (points[0].y + points[1].y) / 2 - rect.top;
+                const dist = Math.hypot(points[0].x - points[1].x, points[0].y - points[1].y);
+
+                // Geser mengikuti titik tengah kedua jari, lalu zoom sesuai jarak antar jari.
+                this.posX += midX - this.pinchLastMidX;
+                this.posY += midY - this.pinchLastMidY;
+                this.pinchLastMidX = midX;
+                this.pinchLastMidY = midY;
+
+                if (this.pinchStartDist > 0) {
+                    this.zoomTo(this.pinchStartScale * (dist / this.pinchStartDist), midX, midY);
+                } else {
+                    this.clampPos();
+                }
+                return;
+            }
+
             if (!this.dragging) return;
             this.posX = this.startPosX + (e.clientX - this.dragStartX);
             this.posY = this.startPosY + (e.clientY - this.dragStartY);
             this.clampPos();
         },
 
-        endDrag() {
-            this.dragging = false;
+        endDrag(e) {
+            if (e && e.pointerId !== undefined) {
+                delete this.pointers[e.pointerId];
+            } else {
+                this.pointers = {};
+            }
+
+            const rest = Object.values(this.pointers);
+
+            if (rest.length === 1) {
+                // Tinggal satu jari: lanjut geser dari posisi sekarang (tanpa lompatan).
+                this.dragging = true;
+                this.dragStartX = rest[0].x;
+                this.dragStartY = rest[0].y;
+                this.startPosX = this.posX;
+                this.startPosY = this.posY;
+            } else {
+                this.dragging = false;
+            }
         },
 
         confirmCrop() {
@@ -5061,18 +7516,22 @@ new #[Layout('layouts::admin-panel')] #[Title('Edit Web')] class extends Compone
         closeModal() {
             this.open = false;
             this.rawImage = null;
+            this.pointers = {};
+            this.dragging = false;
             if (this.$refs.fileInput) this.$refs.fileInput.value = '';
         },
     }));
 
     // Cropper foto kartu section Nilai Kami: satu modal dipakai bersama 4 kartu
     // (indeks kartu dikirim lewat onFileChange). Strukturnya sama dengan
-    // sejarahFotoCropper -- bedanya rasio 4:3 (mengikuti bingkai foto kartu)
-    // dan hasilnya dikirim ke nilaiKamiFotoCropped.{indeks}.
+    // sejarahFotoCropper -- bedanya rasio 4:3 (mengikuti bingkai foto kartu),
+    // hasilnya dikirim ke nilaiKamiFotoCropped.{indeks}, dan gestur lebih lengkap:
+    // geser 1 jari/mouse, geser 2 jari di touchpad (wheel), cubit 2 jari di layar
+    // sentuh / touchpad (Ctrl + wheel), serta slider zoom.
     Alpine.data('nilaiKamiFotoCropper', (existingPreviewUrls) => ({
         open: false,
         rawImage: null,
-        previews: existingPreviewUrls || [],
+        previews: [...(existingPreviewUrls || [])],
         activeIndex: 0,
         activeInput: null,
         natW: 0,
@@ -5088,6 +7547,13 @@ new #[Layout('layouts::admin-panel')] #[Title('Edit Web')] class extends Compone
         dragStartY: 0,
         startPosX: 0,
         startPosY: 0,
+
+        // Pointer aktif (id -> {x, y}) untuk deteksi cubit 2 jari.
+        pointers: {},
+        pinchStartDist: 0,
+        pinchStartScale: 1,
+        pinchLastMidX: 0,
+        pinchLastMidY: 0,
 
         ASPECT_W: 4,
         ASPECT_H: 3,
@@ -5152,12 +7618,56 @@ new #[Layout('layouts::admin-panel')] #[Title('Edit Web')] class extends Compone
             this.posY = Math.min(0, Math.max(this.viewH - h, this.posY));
         },
 
+        // Ubah zoom dengan titik (cx, cy) di dalam viewport tetap di tempatnya.
+        zoomTo(newScale, cx, cy) {
+            newScale = Math.min(this.maxScale, Math.max(this.minScale, newScale));
+            const ratio = newScale / this.scale;
+
+            this.posX = cx - (cx - this.posX) * ratio;
+            this.posY = cy - (cy - this.posY) * ratio;
+            this.scale = newScale;
+            this.zoomPercent = this.maxScale > this.minScale
+                ? ((newScale - this.minScale) / (this.maxScale - this.minScale)) * 100
+                : 0;
+            this.clampPos();
+        },
+
         applyZoom() {
-            this.scale = this.minScale + (this.maxScale - this.minScale) * (this.zoomPercent / 100);
+            const target = this.minScale + (this.maxScale - this.minScale) * (this.zoomPercent / 100);
+            this.zoomTo(target, this.viewW / 2, this.viewH / 2);
+        },
+
+        // Touchpad: geser 2 jari = wheel biasa (geser foto), cubit 2 jari = wheel + Ctrl (zoom).
+        onWheel(e) {
+            if (this.natW === 0) return;
+
+            if (e.ctrlKey) {
+                const rect = this.$refs.viewport.getBoundingClientRect();
+                this.zoomTo(this.scale * Math.exp(-e.deltaY * 0.01), e.clientX - rect.left, e.clientY - rect.top);
+                return;
+            }
+
+            this.posX -= e.deltaX;
+            this.posY -= e.deltaY;
             this.clampPos();
         },
 
         startDrag(e) {
+            this.pointers[e.pointerId] = { x: e.clientX, y: e.clientY };
+
+            const points = Object.values(this.pointers);
+
+            if (points.length >= 2) {
+                // Dua jari menyentuh: mulai cubit.
+                const rect = this.$refs.viewport.getBoundingClientRect();
+                this.dragging = false;
+                this.pinchStartDist = Math.hypot(points[0].x - points[1].x, points[0].y - points[1].y);
+                this.pinchStartScale = this.scale;
+                this.pinchLastMidX = (points[0].x + points[1].x) / 2 - rect.left;
+                this.pinchLastMidY = (points[0].y + points[1].y) / 2 - rect.top;
+                return;
+            }
+
             this.dragging = true;
             this.dragStartX = e.clientX;
             this.dragStartY = e.clientY;
@@ -5166,14 +7676,56 @@ new #[Layout('layouts::admin-panel')] #[Title('Edit Web')] class extends Compone
         },
 
         onDrag(e) {
+            if (!(e.pointerId in this.pointers)) return;
+            this.pointers[e.pointerId] = { x: e.clientX, y: e.clientY };
+
+            const points = Object.values(this.pointers);
+
+            if (points.length >= 2) {
+                const rect = this.$refs.viewport.getBoundingClientRect();
+                const midX = (points[0].x + points[1].x) / 2 - rect.left;
+                const midY = (points[0].y + points[1].y) / 2 - rect.top;
+                const dist = Math.hypot(points[0].x - points[1].x, points[0].y - points[1].y);
+
+                // Geser mengikuti titik tengah kedua jari, lalu zoom sesuai jarak antar jari.
+                this.posX += midX - this.pinchLastMidX;
+                this.posY += midY - this.pinchLastMidY;
+                this.pinchLastMidX = midX;
+                this.pinchLastMidY = midY;
+
+                if (this.pinchStartDist > 0) {
+                    this.zoomTo(this.pinchStartScale * (dist / this.pinchStartDist), midX, midY);
+                } else {
+                    this.clampPos();
+                }
+                return;
+            }
+
             if (!this.dragging) return;
             this.posX = this.startPosX + (e.clientX - this.dragStartX);
             this.posY = this.startPosY + (e.clientY - this.dragStartY);
             this.clampPos();
         },
 
-        endDrag() {
-            this.dragging = false;
+        endDrag(e) {
+            if (e && e.pointerId !== undefined) {
+                delete this.pointers[e.pointerId];
+            } else {
+                this.pointers = {};
+            }
+
+            const rest = Object.values(this.pointers);
+
+            if (rest.length === 1) {
+                // Tinggal satu jari: lanjut geser dari posisi sekarang (tanpa lompatan).
+                this.dragging = true;
+                this.dragStartX = rest[0].x;
+                this.dragStartY = rest[0].y;
+                this.startPosX = this.posX;
+                this.startPosY = this.posY;
+            } else {
+                this.dragging = false;
+            }
         },
 
         confirmCrop() {
@@ -5191,7 +7743,12 @@ new #[Layout('layouts::admin-panel')] #[Title('Edit Web')] class extends Compone
             ctx.drawImage(this.$refs.cropImg, sx, sy, sWidth, sHeight, 0, 0, this.OUT_W, this.OUT_H);
 
             const dataUrl = canvas.toDataURL('image/jpeg', 0.9);
-            this.previews[this.activeIndex] = dataUrl;
+
+            // Ganti seluruh array (bukan cuma satu indeks) supaya pratinjau pasti ter-update.
+            const next = [...this.previews];
+            next[this.activeIndex] = dataUrl;
+            this.previews = next;
+
             this.$wire.set('nilaiKamiFotoCropped.' + this.activeIndex, dataUrl);
             this.closeModal();
         },
@@ -5203,6 +7760,8 @@ new #[Layout('layouts::admin-panel')] #[Title('Edit Web')] class extends Compone
         closeModal() {
             this.open = false;
             this.rawImage = null;
+            this.pointers = {};
+            this.dragging = false;
             if (this.activeInput) this.activeInput.value = '';
         },
     }));
