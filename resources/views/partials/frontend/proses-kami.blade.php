@@ -83,17 +83,23 @@
                     </li>
                 </ul>
 
-                {{-- Ikon sosial — 4 ikon sesuai Figma. WhatsApp pakai data asli (Setting), 3 lainnya '#' (pola sama dengan tombol CTA lain di project yang belum ada route-nya). --}}
+                {{-- Ikon sosial — 4 ikon sesuai Figma. Semua link (Instagram, TikTok, Facebook, WhatsApp) dari App\Models\Setting (Pengaturan admin), hanya tampil kalau link-nya diisi. --}}
                 <div class="mt-6 flex items-center gap-3">
-                    <a href="#" aria-label="Instagram" class="flex h-9 w-9 items-center justify-center rounded-full border border-admin-ink/15 text-admin-ink transition-colors duration-300 hover:bg-[#1A1A1A] hover:text-white">
-                        <i class="fa-brands fa-instagram text-sm"></i>
-                    </a>
-                    <a href="#" aria-label="TikTok" class="flex h-9 w-9 items-center justify-center rounded-full border border-admin-ink/15 text-admin-ink transition-colors duration-300 hover:bg-[#1A1A1A] hover:text-white">
-                        <i class="fa-brands fa-tiktok text-sm"></i>
-                    </a>
-                    <a href="#" aria-label="Facebook" class="flex h-9 w-9 items-center justify-center rounded-full border border-admin-ink/15 text-admin-ink transition-colors duration-300 hover:bg-[#1A1A1A] hover:text-white">
-                        <i class="fa-brands fa-facebook-f text-sm"></i>
-                    </a>
+                    @if ($prosesSetting->instagram_url)
+                        <a href="{{ $prosesSetting->instagram_url }}" target="_blank" rel="noopener" aria-label="Instagram" class="flex h-9 w-9 items-center justify-center rounded-full border border-admin-ink/15 text-admin-ink transition-colors duration-300 hover:bg-[#1A1A1A] hover:text-white">
+                            <i class="fa-brands fa-instagram text-sm"></i>
+                        </a>
+                    @endif
+                    @if ($prosesSetting->tiktok_url)
+                        <a href="{{ $prosesSetting->tiktok_url }}" target="_blank" rel="noopener" aria-label="TikTok" class="flex h-9 w-9 items-center justify-center rounded-full border border-admin-ink/15 text-admin-ink transition-colors duration-300 hover:bg-[#1A1A1A] hover:text-white">
+                            <i class="fa-brands fa-tiktok text-sm"></i>
+                        </a>
+                    @endif
+                    @if ($prosesSetting->facebook_url)
+                        <a href="{{ $prosesSetting->facebook_url }}" target="_blank" rel="noopener" aria-label="Facebook" class="flex h-9 w-9 items-center justify-center rounded-full border border-admin-ink/15 text-admin-ink transition-colors duration-300 hover:bg-[#1A1A1A] hover:text-white">
+                            <i class="fa-brands fa-facebook-f text-sm"></i>
+                        </a>
+                    @endif
                     <a
                         href="{{ $prosesSetting->whatsappDigits() ? 'https://wa.me/'.$prosesSetting->whatsappDigits() : '#' }}"
                         target="{{ $prosesSetting->whatsappDigits() ? '_blank' : '_self' }}"

@@ -13,9 +13,12 @@ use Illuminate\Support\Facades\Storage;
  * @property string|null $logo_path
  * @property string|null $email
  * @property string|null $whatsapp
+ * @property string|null $instagram_url
+ * @property string|null $tiktok_url
+ * @property string|null $facebook_url
  * @property string|null $alamat
  */
-#[Fillable(['site_name', 'tagline', 'logo_path', 'email', 'whatsapp', 'alamat'])]
+#[Fillable(['site_name', 'tagline', 'logo_path', 'email', 'whatsapp', 'instagram_url', 'tiktok_url', 'facebook_url', 'alamat'])]
 class Setting extends Model
 {
     /**
@@ -63,6 +66,61 @@ class Setting extends Model
     {
         return $this->logo_path
             ? Storage::disk('public')->url($this->logo_path)
+            : null;
+    }
+
+    /**
+     * Kolom link sosial media yang didukung, beserta label tampilan dan
+     * domain resmi masing-masing platform. Dipakai untuk mendeteksi kalau
+     * admin salah menaruh link di kolom yang salah (mis. link TikTok
+     * dimasukkan ke kolom Instagram) — lihat detectSocialPlatform().
+     *
+     * @return array<string, array{label: string, hosts: array<int, string>}>
+     */
+    public static function socialPlatforms(): array
+    {
+        return [
+            'instagram_url' => ['label' => 'Instagram', 'hosts' => ['instagram.com', 'instagr.am']],
+            'tiktok_url' => ['label' => 'TikTok', 'hosts' => ['tiktok.com']],
+            'facebook_url' => ['label' => 'Facebook', 'hosts' => ['facebook.com', 'fb.com', 'fb.watch']],
+        ];
+    }
+
+    /**
+     * Cocokkan host dari sebuah URL dengan daftar domain di socialPlatforms().
+     * Mengembalikan nama kolom platform yang cocok (mis. 'tiktok_url'), atau
+     * null kalau URL tidak dikenali sebagai domain sosial media manapun yang
+     * didukung.
+     */
+    public static function detectSocialPlatform(string $url): ?string
+    {
+        $host = strtolower((string) parse_url($url, PHP_URL_HOST));
+        $host = preg_replace('/^www\./', '', $host);
+
+        if ($host === '' || $host === null) {
+            return null;
+        }
+
+        foreach (static::socialPlatforms() as $field => $platform) {
+            foreach ($platform['hosts'] as $knownHost) {
+                if ($host === $knownHost || str_ends_with($host, '.'.$knownHost)) {
+                    return $field;
+                }
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Link Gmail compose (bukan mailto biasa) yang langsung membuka jendela
+     * "Kirim Pesan" Gmail dengan alamat tujuan sudah terisi, atau null kalau
+     * email belum diisi di Pengaturan.
+     */
+    public function gmailComposeUrl(): ?string
+    {
+        return $this->email
+            ? 'https://mail.google.com/mail/?view=cm&fs=1&to='.urlencode($this->email)
             : null;
     }
 }

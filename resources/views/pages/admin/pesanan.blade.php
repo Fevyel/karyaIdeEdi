@@ -56,6 +56,15 @@ new #[Layout('layouts::admin-panel')] #[Title('Pesanan')] class extends Componen
     /** Harga satuan hasil negosiasi dengan customer - hanya dipakai saat order_type = 'custom'. */
     public ?float $custom_harga_satuan = null;
 
+    /**
+     * Deskripsi bebas untuk pesanan custom - bahan, warna, finishing, dll
+     * yang sudah didiskusikan dengan customer. Muncul di bawah pilihan
+     * Produk saat order_type = 'custom', karena untuk pesanan custom
+     * produk itu sendiri sifatnya opsional (hanya sebagai referensi jenis
+     * mebel jika memang mirip salah satu produk yang ada).
+     */
+    public string $custom_deskripsi = '';
+
     public ?int $quantity = 1;
 
     public string $catatan = '';
@@ -101,7 +110,7 @@ new #[Layout('layouts::admin-panel')] #[Title('Pesanan')] class extends Componen
 
     private function resetForm(): void
     {
-        $this->reset(['customer_name', 'whatsapp', 'nama_penerima', 'alamat_lengkap', 'kecamatan', 'kota', 'provinsi', 'kode_pos', 'product_id', 'quantity', 'catatan', 'order_type', 'custom_tinggi', 'custom_lebar', 'custom_panjang', 'custom_harga_satuan']);
+        $this->reset(['customer_name', 'whatsapp', 'nama_penerima', 'alamat_lengkap', 'kecamatan', 'kota', 'provinsi', 'kode_pos', 'product_id', 'quantity', 'catatan', 'order_type', 'custom_tinggi', 'custom_lebar', 'custom_panjang', 'custom_harga_satuan', 'custom_deskripsi']);
         $this->quantity = 1;
         $this->order_type = 'tetap';
         $this->resetErrorBag();
@@ -117,10 +126,10 @@ new #[Layout('layouts::admin-panel')] #[Title('Pesanan')] class extends Componen
     public function updatedOrderType(): void
     {
         if ($this->order_type === 'tetap') {
-            $this->reset(['custom_tinggi', 'custom_lebar', 'custom_panjang', 'custom_harga_satuan']);
+            $this->reset(['custom_tinggi', 'custom_lebar', 'custom_panjang', 'custom_harga_satuan', 'custom_deskripsi']);
         }
 
-        $this->resetErrorBag(['custom_tinggi', 'custom_lebar', 'custom_panjang', 'custom_harga_satuan']);
+        $this->resetErrorBag(['custom_tinggi', 'custom_lebar', 'custom_panjang', 'custom_harga_satuan', 'custom_deskripsi', 'product_id']);
     }
 
     /**
@@ -134,7 +143,20 @@ new #[Layout('layouts::admin-panel')] #[Title('Pesanan')] class extends Componen
             ? Product::query()->where('status', 'aktif')->find($this->product_id)
             : null;
 
-        $stok = $product ? (int) $product->stok : 0;
+        // Pesanan custom boleh tidak merujuk produk manapun (lihat
+        // updatedOrderType()/rules()) - tanpa produk, tidak ada batas stok
+        // untuk dicek, jadi cukup pastikan jumlah tetap minimal 1.
+        if (! $product) {
+            if ($this->quantity === null || $this->quantity < 1) {
+                $this->quantity = 1;
+            }
+
+            $this->resetErrorBag('quantity');
+
+            return;
+        }
+
+        $stok = (int) $product->stok;
 
         if ($stok <= 0) {
             // Stok habis: jangan pura-pura kasih quantity 1. Tombol submit
@@ -169,7 +191,17 @@ new #[Layout('layouts::admin-panel')] #[Title('Pesanan')] class extends Componen
             ? Product::query()->where('status', 'aktif')->find($this->product_id)
             : null;
 
-        $stok = $product ? (int) $product->stok : 0;
+        if (! $product) {
+            if ($this->quantity < 1) {
+                $this->quantity = 1;
+            }
+
+            $this->resetErrorBag('quantity');
+
+            return;
+        }
+
+        $stok = (int) $product->stok;
 
         if ($stok <= 0) {
             $this->quantity = 0;
@@ -299,12 +331,18 @@ new #[Layout('layouts::admin-panel')] #[Title('Pesanan')] class extends Componen
             'kota' => ['required', 'string', 'max:100'],
             'provinsi' => ['required', 'string', 'max:100'],
             'kode_pos' => ['required', 'digits:5'],
-            'product_id' => ['required', Rule::exists('products', 'id')->where('status', 'aktif')],
+            // Produk wajib diisi untuk pesanan 'tetap' (harga & stok diambil
+            // dari sana). Untuk pesanan 'custom', produk sifatnya opsional -
+            // admin bisa memilihnya sekadar sebagai referensi jenis mebel,
+            // atau mengosongkannya dan menjelaskan detailnya lewat
+            // custom_deskripsi di bawah.
+            'product_id' => ['nullable', 'required_if:order_type,tetap', Rule::exists('products', 'id')->where('status', 'aktif')],
             'order_type' => ['required', Rule::in(Transaction::ORDER_TYPES)],
             'custom_tinggi' => ['required_if:order_type,custom', 'nullable', 'numeric', 'min:0.01', 'max:9999.99'],
             'custom_lebar' => ['required_if:order_type,custom', 'nullable', 'numeric', 'min:0.01', 'max:9999.99'],
             'custom_panjang' => ['required_if:order_type,custom', 'nullable', 'numeric', 'min:0.01', 'max:9999.99'],
             'custom_harga_satuan' => ['required_if:order_type,custom', 'nullable', 'numeric', 'min:1'],
+            'custom_deskripsi' => ['required_if:order_type,custom', 'nullable', 'string', 'max:2000'],
             'quantity' => [
                 'required',
                 'integer',
@@ -344,7 +382,7 @@ new #[Layout('layouts::admin-panel')] #[Title('Pesanan')] class extends Componen
             'kode_pos.required' => 'Kode pos wajib diisi.',
             'kode_pos.digits' => 'Kode pos harus 5 digit.',
             'whatsapp.digits_between' => 'Nomor WhatsApp harus berupa angka saja (tanpa spasi/simbol), 10-15 digit.',
-            'product_id.required' => 'Produk wajib dipilih.',
+            'product_id.required_if' => 'Produk wajib dipilih untuk pesanan tetap.',
             'product_id.exists' => 'Produk yang dipilih tidak valid atau sudah tidak aktif.',
             'custom_tinggi.required_if' => 'Tinggi wajib diisi untuk pesanan custom.',
             'custom_tinggi.numeric' => 'Tinggi harus berupa angka.',
@@ -355,6 +393,8 @@ new #[Layout('layouts::admin-panel')] #[Title('Pesanan')] class extends Componen
             'custom_harga_satuan.required_if' => 'Harga hasil diskusi dengan customer wajib diisi untuk pesanan custom.',
             'custom_harga_satuan.numeric' => 'Harga harus berupa angka.',
             'custom_harga_satuan.min' => 'Harga harus lebih besar dari 0.',
+            'custom_deskripsi.required_if' => 'Deskripsi custom wajib diisi untuk pesanan custom.',
+            'custom_deskripsi.max' => 'Deskripsi maksimal 2000 karakter.',
             'quantity.required' => 'Jumlah wajib diisi.',
             'quantity.integer' => 'Jumlah harus berupa angka bulat.',
             'quantity.min' => 'Jumlah minimal 1.',
@@ -387,27 +427,40 @@ new #[Layout('layouts::admin-panel')] #[Title('Pesanan')] class extends Componen
 
         try {
             $transaction = DB::transaction(function () {
-                $product = Product::query()
-                    ->where('status', 'aktif')
-                    ->lockForUpdate()
-                    ->find($this->product_id);
+                // Produk hanya wajib ada untuk pesanan 'tetap' (sudah
+                // ditegakkan di rules()). Untuk pesanan 'custom', admin
+                // boleh tidak memilih produk sama sekali - $product tetap
+                // null dan tidak ada pengecekan/pengurangan stok.
+                $product = $this->product_id
+                    ? Product::query()->where('status', 'aktif')->lockForUpdate()->find($this->product_id)
+                    : null;
 
-                if (! $product) {
+                if ($this->order_type === 'tetap' && ! $product) {
                     throw ValidationException::withMessages([
                         'product_id' => 'Produk yang dipilih tidak valid atau sudah tidak aktif.',
                     ]);
                 }
 
-                if ((int) $product->stok <= 0) {
+                if ($this->product_id && ! $product) {
+                    // Custom, tapi produk referensi yang tadinya dipilih
+                    // ternyata sudah tidak valid/aktif lagi.
                     throw ValidationException::withMessages([
-                        'quantity' => 'Produk ini sedang tidak memiliki stok.',
+                        'product_id' => 'Produk yang dipilih tidak valid atau sudah tidak aktif.',
                     ]);
                 }
 
-                if ((int) $this->quantity > (int) $product->stok) {
-                    throw ValidationException::withMessages([
-                        'quantity' => "Jumlah pesanan tidak boleh melebihi stok tersedia. Stok saat ini: {$product->stok}.",
-                    ]);
+                if ($product) {
+                    if ((int) $product->stok <= 0) {
+                        throw ValidationException::withMessages([
+                            'quantity' => 'Produk ini sedang tidak memiliki stok.',
+                        ]);
+                    }
+
+                    if ((int) $this->quantity > (int) $product->stok) {
+                        throw ValidationException::withMessages([
+                            'quantity' => "Jumlah pesanan tidak boleh melebihi stok tersedia. Stok saat ini: {$product->stok}.",
+                        ]);
+                    }
                 }
 
                 // Harga satuan: untuk 'tetap', selalu diambil ulang dari
@@ -422,12 +475,15 @@ new #[Layout('layouts::admin-panel')] #[Title('Pesanan')] class extends Componen
                         : $product->harga);
 
                 $newTransaction = Transaction::create([
-                    'product_id' => $product->id,
+                    'product_id' => $product?->id,
                     'order_type' => $this->order_type,
                     'custom_tinggi' => $this->order_type === 'custom' ? $this->custom_tinggi : null,
                     'custom_lebar' => $this->order_type === 'custom' ? $this->custom_lebar : null,
                     'custom_panjang' => $this->order_type === 'custom' ? $this->custom_panjang : null,
                     'custom_harga_satuan' => $this->order_type === 'custom' ? $this->custom_harga_satuan : null,
+                    'custom_deskripsi' => $this->order_type === 'custom' && trim($this->custom_deskripsi) !== ''
+                        ? $this->custom_deskripsi
+                        : null,
                     'customer_name' => $this->customer_name,
                     'whatsapp' => $this->whatsapp,
                     'nama_penerima' => $this->nama_penerima,
@@ -450,8 +506,10 @@ new #[Layout('layouts::admin-panel')] #[Title('Pesanan')] class extends Componen
                 ]);
 
                 // Baris produk sudah dikunci (lockForUpdate) di atas, jadi
-                // pengurangan stok ini aman dari race condition.
-                $product->decrement('stok', $this->quantity);
+                // pengurangan stok ini aman dari race condition. Kalau
+                // pesanan custom tidak merujuk produk manapun, tidak ada
+                // stok yang perlu dikurangi.
+                $product?->decrement('stok', $this->quantity);
 
                 // Kalau antrean aktif sebelumnya kosong, pesanan ini otomatis jadi
                 // #1 dan langsung berstatus 'processing'. Kalau sudah ada antrean
@@ -717,7 +775,8 @@ new #[Layout('layouts::admin-panel')] #[Title('Pesanan')] class extends Componen
         <div class="fixed inset-0 z-[9999] flex items-center justify-center p-4">
             <div wire:click="closeDetail" class="absolute inset-0 bg-black/50 backdrop-blur-sm"></div>
 
-            <div class="admin-scroll relative max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-2xl bg-admin-surface shadow-2xl">
+            <div class="relative w-full max-w-lg overflow-hidden rounded-2xl bg-admin-surface shadow-2xl">
+            <div class="modal-scroll max-h-[90vh] overflow-y-auto">
                 <div class="sticky top-0 z-10 flex items-center justify-between border-b border-admin-border bg-admin-surface px-6 py-4">
                     <h3 class="font-display text-lg font-semibold text-admin-ink">Detail Pesanan</h3>
                     <button type="button" wire:click="closeDetail" class="flex h-8 w-8 items-center justify-center rounded-lg text-admin-ink-soft transition-colors duration-200 hover:bg-admin-cream">
@@ -777,6 +836,12 @@ new #[Layout('layouts::admin-panel')] #[Title('Pesanan')] class extends Componen
                                     &times;
                                     {{ rtrim(rtrim(number_format((float) $detailItem->custom_panjang, 2, ',', '.'), '0'), ',') }} cm
                                 </p>
+                            </div>
+                        @endif
+                        @if ($detailItem->order_type === 'custom' && filled($detailItem->custom_deskripsi))
+                            <div class="col-span-2">
+                                <p class="text-[11px] uppercase tracking-wide text-admin-ink-soft">Deskripsi Custom</p>
+                                <p class="mt-1 whitespace-pre-line text-sm font-semibold text-admin-ink">{{ $detailItem->custom_deskripsi }}</p>
                             </div>
                         @endif
                         <div>
@@ -911,6 +976,7 @@ new #[Layout('layouts::admin-panel')] #[Title('Pesanan')] class extends Componen
                     </button>
                 </div>
             </div>
+            </div>
         </div>
     @endif
 
@@ -919,7 +985,8 @@ new #[Layout('layouts::admin-panel')] #[Title('Pesanan')] class extends Componen
         <div class="fixed inset-0 z-[9999] flex items-center justify-center p-4">
             <div wire:click="closeAddModal" class="absolute inset-0 bg-black/50 backdrop-blur-sm"></div>
 
-            <div class="admin-scroll relative max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-2xl bg-admin-surface shadow-2xl">
+            <div class="relative w-full max-w-lg overflow-hidden rounded-2xl bg-admin-surface shadow-2xl">
+            <div class="modal-scroll max-h-[90vh] overflow-y-auto">
                 <div class="sticky top-0 z-10 flex items-center justify-between border-b border-admin-border bg-admin-surface px-6 py-4">
                     <h3 class="font-display text-lg font-semibold text-admin-ink">Tambah Pesanan</h3>
                     <button type="button" wire:click="closeAddModal" class="flex h-8 w-8 items-center justify-center rounded-lg text-admin-ink-soft transition-colors duration-200 hover:bg-admin-cream">
@@ -1015,7 +1082,12 @@ new #[Layout('layouts::admin-panel')] #[Title('Pesanan')] class extends Componen
                     </div>
 
                     <div>
-                        <label class="mb-1.5 block text-xs font-semibold text-admin-ink">Produk</label>
+                        <label class="mb-1.5 block text-xs font-semibold text-admin-ink">
+                            Produk
+                            @if ($order_type === 'custom')
+                                <span class="font-normal text-admin-ink-soft">(opsional untuk pesanan custom)</span>
+                            @endif
+                        </label>
                         <div class="relative">
                             <select
                                 wire:model.live="product_id"
@@ -1029,6 +1101,22 @@ new #[Layout('layouts::admin-panel')] #[Title('Pesanan')] class extends Componen
                             <x-icon-arrow direction="chevron-down" size="text-[10px]" class="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-admin-ink-soft" />
                         </div>
                         @error('product_id')<p class="mt-1.5 flex items-center gap-1 text-xs font-medium text-red-600"><i class="fa-solid fa-circle-exclamation"></i> {{ $message }}</p>@enderror
+
+                        {{-- Khusus pesanan custom: produk boleh dikosongkan, jadi admin
+                             menjelaskan sendiri bahan/warna/finishing/dll yang sudah
+                             didiskusikan dengan customer di sini. --}}
+                        @if ($order_type === 'custom')
+                            <div class="mt-3">
+                                <label class="mb-1.5 block text-xs font-semibold text-admin-ink">Deskripsi Custom</label>
+                                <textarea
+                                    wire:model="custom_deskripsi"
+                                    rows="3"
+                                    placeholder="Mis. bahan kayu jati, warna natural, finishing doff, dll sesuai hasil diskusi dengan customer"
+                                    class="w-full rounded-xl border border-admin-border bg-admin-canvas px-4 py-2.5 text-sm text-admin-ink placeholder:text-admin-ink-soft focus:border-admin-accent focus:outline-none focus:ring-2 focus:ring-admin-accent/15"
+                                ></textarea>
+                                @error('custom_deskripsi')<p class="mt-1.5 flex items-center gap-1 text-xs font-medium text-red-600"><i class="fa-solid fa-circle-exclamation"></i> {{ $message }}</p>@enderror
+                            </div>
+                        @endif
                     </div>
 
                     {{-- Tetap / Custom: pesanan sesuai harga produk yang sudah ditetapkan,
@@ -1091,14 +1179,22 @@ new #[Layout('layouts::admin-panel')] #[Title('Pesanan')] class extends Componen
                         </div>
                     @endif
 
+                    {{-- Harga satuan dihitung di sini (bukan di dalam @if selectedProduct)
+                         supaya kolom Total di bawah tetap benar untuk pesanan custom
+                         yang tidak merujuk produk manapun. --}}
+                    @php
+                        $hargaSatuanPreview = $order_type === 'custom'
+                            ? (float) ($custom_harga_satuan ?? 0)
+                            : (float) ($selectedProduct
+                                ? (($selectedProduct->harga_diskon && (float) $selectedProduct->harga_diskon > 0)
+                                    ? $selectedProduct->harga_diskon
+                                    : $selectedProduct->harga)
+                                : 0);
+                    @endphp
+
                     {{-- Kartu ringkasan produk terpilih: foto, harga otomatis dari database (admin TIDAK mengetik harga manual) --}}
                     @if ($selectedProduct)
                         @php
-                            $hargaSatuanPreview = $order_type === 'custom'
-                                ? (float) ($custom_harga_satuan ?? 0)
-                                : (float) (($selectedProduct->harga_diskon && (float) $selectedProduct->harga_diskon > 0)
-                                ? $selectedProduct->harga_diskon
-                                : $selectedProduct->harga);
                             $thumbnailPreviewUrl = ($selectedProduct->thumbnail && \Illuminate\Support\Facades\Storage::disk('public')->exists($selectedProduct->thumbnail))
                                 ? \Illuminate\Support\Facades\Storage::disk('public')->url($selectedProduct->thumbnail)
                                 : null;
@@ -1135,7 +1231,7 @@ new #[Layout('layouts::admin-panel')] #[Title('Pesanan')] class extends Componen
                                 type="number"
                                 wire:model.live="quantity"
                                 min="1"
-                                max="{{ $selectedProduct->stok ?? 1 }}"
+                                max="{{ $selectedProduct->stok ?? 9999 }}"
                                 placeholder="1"
                                 @disabled($stokHabis)
                                 class="w-full rounded-xl border border-admin-border bg-admin-canvas px-4 py-2.5 text-sm text-admin-ink placeholder:text-admin-ink-soft focus:border-admin-accent focus:outline-none focus:ring-2 focus:ring-admin-accent/15 disabled:cursor-not-allowed disabled:opacity-60"
@@ -1145,7 +1241,7 @@ new #[Layout('layouts::admin-panel')] #[Title('Pesanan')] class extends Componen
                         <div>
                             <label class="mb-1.5 block text-xs font-semibold text-admin-ink">Total</label>
                             <div class="flex h-10.5 items-center rounded-xl border border-admin-border bg-admin-cream px-4 text-sm font-semibold text-admin-ink">
-                                Rp{{ number_format($selectedProduct ? $hargaSatuanPreview * (int) $quantity : 0, 0, ',', '.') }}
+                                Rp{{ number_format($hargaSatuanPreview * (int) ($quantity ?? 0), 0, ',', '.') }}
                             </div>
                         </div>
                     </div>
@@ -1177,6 +1273,7 @@ new #[Layout('layouts::admin-panel')] #[Title('Pesanan')] class extends Componen
                         </button>
                     </div>
                 </form>
+            </div>
             </div>
         </div>
     @endif

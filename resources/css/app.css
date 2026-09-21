@@ -4,6 +4,8 @@
    atas/bawah halaman. Tanpa ini, sticky header bisa terlihat "lepas" sesaat
    dari posisi top-0 dan menampilkan warna latar body di baliknya. */
 html, body {
+    margin: 0;
+    padding: 0;
     overscroll-behavior-y: none;
 }
 
@@ -42,6 +44,34 @@ html {
      berdasarkan viewport versi "sudah di-zoom", persis seperti kalau kamu
      pencet Ctrl -- di keyboard. Makanya ini tidak merusak wrap navbar. */
 html[data-site='frontend'] {
+    zoom: 80%;
+}
+
+/* Admin Panel: <html> juga dipasang `zoom: 80%` (lihat style di
+   resources/views/layouts/admin-panel.blade.php). Efek sampingnya --
+   SEMUA elemen `position: fixed` di dalamnya (dipakai di SETIAP modal
+   admin: class="fixed inset-0 ...", ada di 12 file berbeda -- Pesanan,
+   Produk, Kategori, Testimoni, Pelanggan, History, Interaksi,
+   Pengaturan, Profil, Edit Web, Reset Data) IKUT ter-scale 80% juga.
+   Akibatnya modal itu cuma nutup 80% tinggi & lebar layar ASLI, sisa
+   20% di bawah/kanan kelihatan kosong (nembus ke warna halaman di
+   baliknya, kelihatan kayak "rectangle" aneh).
+
+   FIX: kasih box-nya ukuran 125% (= 100 / 80%) dari ukuran yang
+   dihitung SEBELUM zoom, supaya HASIL akhirnya (setelah di-scale 80%)
+   balik jadi pas 100% menutupi layar asli. Posisinya tetap dianggap
+   "nempel" di pojok kiri-atas (top:0; left:0; dari `inset-0`), jadi
+   perhitungan `flex items-center justify-center` di dalamnya TETAP pas
+   di tengah screen asli (proporsi tengah ikut ter-scale sama rata).
+
+   Scope ke `html[data-theme]` -- atribut ini SELALU ada di <html> admin
+   (lihat data-theme="{{ auth()->user()->theme ?? 'glow' }}" di
+   admin-panel.blade.php) dan TIDAK ADA di halaman frontend, jadi rule
+   ini otomatis hanya berlaku di Admin Panel. */
+html[data-theme] .fixed.inset-0 {
+    zoom: 125%;
+}
+html[data-theme] .fixed.inset-0 > :not(.inset-0) {
     zoom: 80%;
 }
 
@@ -175,4 +205,25 @@ html[data-theme] * {
 }
 .admin-scroll::-webkit-scrollbar-thumb:hover {
     background-color: var(--color-admin-accent);
+}
+.admin-scroll::-webkit-scrollbar-button {
+    display: none;
+    width: 0;
+    height: 0;
+}
+
+/* Panel modal bersudut membulat: scrollbar disembunyikan total (bukan cuma
+   diberi warna) -- konten tetap bisa di-scroll normal, cuma garis/thumb-nya
+   saja yang tidak ditampilkan. Dipakai khusus di sini karena scrollbar custom
+   (.admin-scroll) di sebagian browser dirender sebagai lapisan tersendiri yang
+   TIDAK ikut ter-clip oleh sudut membulat induknya walau sudah dibungkus
+   overflow-hidden -- jadi satu-satunya cara yang pasti aman dari kebocoran
+   visual di modal adalah menyembunyikannya sepenuhnya. */
+.modal-scroll {
+    scrollbar-width: none;
+}
+.modal-scroll::-webkit-scrollbar {
+    display: none;
+    width: 0;
+    height: 0;
 }

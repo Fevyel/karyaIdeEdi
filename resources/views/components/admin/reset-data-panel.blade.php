@@ -202,7 +202,7 @@ new class extends Component
     @if ($mode)
         <template x-teleport="body">
         <div class="fixed inset-0 z-100 flex items-center justify-center bg-black/50 p-4" wire:key="reset-confirm-modal">
-            <div class="w-full max-w-sm rounded-2xl bg-white p-6 shadow-2xl">
+            <div class="w-full max-w-sm rounded-2xl bg-admin-surface p-6 shadow-2xl">
                 <div class="flex items-center gap-2.5">
                     <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full {{ $mode === 'pabrik' ? 'bg-red-100 text-red-600' : 'bg-amber-100 text-amber-600' }}">
                         <i class="fa-solid fa-triangle-exclamation text-sm"></i>

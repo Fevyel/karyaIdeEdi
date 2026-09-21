@@ -32,10 +32,10 @@
 
     CATATAN SOAL SOCIAL ICON:
     Referensi Figma menampilkan 4 ikon (Instagram, TikTok, Facebook,
-    WhatsApp). App\Models\Setting HANYA punya kolom `whatsapp` -- tidak
-    ada kolom instagram/tiktok/facebook. Jadi HANYA ikon WhatsApp yang
-    ditampilkan (dan hanya kalau kolomnya terisi), sesuai instruksi
-    "jangan mengarang link sosial".
+    WhatsApp). App\Models\Setting sekarang punya kolom instagram_url,
+    tiktok_url, facebook_url, dan whatsapp (diisi lewat menu Pengaturan
+    admin) -- tiap ikon hanya tampil kalau link-nya sudah diisi, tidak
+    ada link yang dikarang.
 
     Pemakaian:
         @include('partials.frontend.showcase')
@@ -107,17 +107,34 @@
                 </li>
             </ul>
 
-            @if ($showcaseWaLink)
+            @if ($showcaseWaLink || $showcaseSetting->instagram_url || $showcaseSetting->tiktok_url || $showcaseSetting->facebook_url)
                 <div class="mt-8 flex items-center gap-3">
-                    <a
-                        href="{{ $showcaseWaLink }}"
-                        target="_blank"
-                        rel="noopener"
-                        aria-label="Hubungi kami lewat WhatsApp"
-                        class="flex h-10 w-10 items-center justify-center rounded-full border border-[#3D2B1F]/15 text-[#3D2B1F] transition-colors duration-300 hover:border-admin-accent hover:text-admin-accent"
-                    >
-                        <i class="fa-brands fa-whatsapp text-base"></i>
-                    </a>
+                    @if ($showcaseSetting->instagram_url)
+                        <a href="{{ $showcaseSetting->instagram_url }}" target="_blank" rel="noopener" aria-label="Instagram" class="flex h-10 w-10 items-center justify-center rounded-full border border-[#3D2B1F]/15 text-[#3D2B1F] transition-colors duration-300 hover:border-admin-accent hover:text-admin-accent">
+                            <i class="fa-brands fa-instagram text-base"></i>
+                        </a>
+                    @endif
+                    @if ($showcaseSetting->tiktok_url)
+                        <a href="{{ $showcaseSetting->tiktok_url }}" target="_blank" rel="noopener" aria-label="TikTok" class="flex h-10 w-10 items-center justify-center rounded-full border border-[#3D2B1F]/15 text-[#3D2B1F] transition-colors duration-300 hover:border-admin-accent hover:text-admin-accent">
+                            <i class="fa-brands fa-tiktok text-base"></i>
+                        </a>
+                    @endif
+                    @if ($showcaseSetting->facebook_url)
+                        <a href="{{ $showcaseSetting->facebook_url }}" target="_blank" rel="noopener" aria-label="Facebook" class="flex h-10 w-10 items-center justify-center rounded-full border border-[#3D2B1F]/15 text-[#3D2B1F] transition-colors duration-300 hover:border-admin-accent hover:text-admin-accent">
+                            <i class="fa-brands fa-facebook-f text-base"></i>
+                        </a>
+                    @endif
+                    @if ($showcaseWaLink)
+                        <a
+                            href="{{ $showcaseWaLink }}"
+                            target="_blank"
+                            rel="noopener"
+                            aria-label="Hubungi kami lewat WhatsApp"
+                            class="flex h-10 w-10 items-center justify-center rounded-full border border-[#3D2B1F]/15 text-[#3D2B1F] transition-colors duration-300 hover:border-admin-accent hover:text-admin-accent"
+                        >
+                            <i class="fa-brands fa-whatsapp text-base"></i>
+                        </a>
+                    @endif
                 </div>
             @endif
         </div>

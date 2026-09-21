@@ -34,8 +34,14 @@
         {{-- ================= KEUNGGULAN KAMI ================= --}}
         @include('partials.frontend.expertise')
 
+        {{-- ================= ALUR BOOKING ================= --}}
+        @include('partials.frontend.alur-booking')
+
         {{-- ================= FAQ ================= --}}
         @include('partials.frontend.faq')
+
+        {{-- ================= LOKASI / ALAMAT ================= --}}
+        @include('partials.frontend.lokasi')
 
         {{-- ================= FOOTER ================= --}}
         @include('partials.frontend.footer')

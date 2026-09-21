@@ -14,6 +14,7 @@
         $legalSetting = \App\Models\Setting::current();
         $legalUpdatedAt = \Illuminate\Support\Facades\Date::parse('2026-08-01')->translatedFormat('d F Y');
         $legalContactEmail = $legalSetting->email ?: 'info@karyaideedi.com';
+        $legalGmailLink = $legalSetting->gmailComposeUrl();
         $legalWaLink = $legalSetting->whatsappDigits() ? 'https://wa.me/'.$legalSetting->whatsappDigits() : null;
 
         // Situs ini TIDAK memakai cookie tracking/analitik/iklan pihak ketiga.
@@ -171,7 +172,11 @@
                     bekerja.
                 </p>
                 <div class="mt-5 flex items-center justify-center gap-2 text-sm text-white/70">
-                    <i class="fa-solid fa-envelope text-admin-accent-strong"></i> {{ $legalContactEmail }}
+                    @if ($legalGmailLink)
+                        <a href="{{ $legalGmailLink }}" target="_blank" rel="noopener" class="flex items-center gap-2 transition-colors duration-300 hover:text-white"><i class="fa-solid fa-envelope text-admin-accent-strong"></i> {{ $legalContactEmail }}</a>
+                    @else
+                        <i class="fa-solid fa-envelope text-admin-accent-strong"></i> {{ $legalContactEmail }}
+                    @endif
                 </div>
                 @if ($legalWaLink)
                     <a href="{{ $legalWaLink }}" target="_blank" rel="noopener" class="mt-6 inline-flex items-center gap-2 rounded-full bg-admin-accent px-6 py-2.5 text-sm font-semibold text-white transition-colors duration-300 hover:bg-admin-accent-strong">

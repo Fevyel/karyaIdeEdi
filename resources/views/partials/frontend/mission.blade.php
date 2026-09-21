@@ -55,7 +55,12 @@
         'stat_bg_image' => null,
     ]);
 
-    $missionBgColor = $missionSection['bg_color'] ?: '#FEEDD8';
+    // Latar: warna POLOS secara bawaan; gradasi hanya kalau admin menyalakannya di
+    // Edit Web > Sejak Berdiri > Gradasi (lihat App\Support\FrameBackground).
+    // $missionBgColor = warna dasar (warna polos, atau rata-rata gradasi) untuk
+    // perhitungan kontras teks di bawah.
+    $missionFrame = \App\Support\FrameBackground::resolve($missionSection['bg_color'] ?? null, $missionSection['bg_gradient'] ?? null, '#FEEDD8');
+    $missionBgColor = $missionFrame['base'];
 
     /**
      * Warna judul/paragraf/ikon/kartu angka TIDAK diatur manual -- dihitung
@@ -119,7 +124,7 @@
 
 <section
     class="relative overflow-hidden"
-    style="background: linear-gradient(135deg, color-mix(in oklab, {{ $missionBgColor }} 100%, white 10%) 0%, {{ $missionBgColor }} 55%, color-mix(in oklab, {{ $missionBgColor }} 100%, black 14%) 100%);"
+    style="background: {{ $missionFrame['css'] }};"
 >
     <div class="mx-auto grid max-w-7xl grid-cols-1 items-center gap-12 px-6 py-14 sm:px-8 lg:grid-cols-2 lg:gap-16 lg:px-10 lg:py-20">
 

@@ -52,8 +52,16 @@
                     Furniture yang dibuat dengan perhatian pada detail, material, dan kenyamanan untuk ruang yang terasa benar-benar milik Anda.
                 </p>
                 <div class="mt-6 flex items-center gap-3">
-                    <a href="#" aria-label="Instagram" class="text-white/50 transition hover:text-white"><i class="fa-brands fa-instagram"></i></a>
-                    <a href="#" aria-label="Facebook" class="text-white/50 transition hover:text-white"><i class="fa-brands fa-facebook-f"></i></a>
+                    {{-- Instagram, TikTok & Facebook: dari App\Models\Setting (Pengaturan admin), hanya tampil kalau link-nya diisi. --}}
+                    @if ($shopFooterSetting->instagram_url)
+                        <a href="{{ $shopFooterSetting->instagram_url }}" target="_blank" rel="noopener" aria-label="Instagram" class="text-white/50 transition hover:text-white"><i class="fa-brands fa-instagram"></i></a>
+                    @endif
+                    @if ($shopFooterSetting->tiktok_url)
+                        <a href="{{ $shopFooterSetting->tiktok_url }}" target="_blank" rel="noopener" aria-label="TikTok" class="text-white/50 transition hover:text-white"><i class="fa-brands fa-tiktok"></i></a>
+                    @endif
+                    @if ($shopFooterSetting->facebook_url)
+                        <a href="{{ $shopFooterSetting->facebook_url }}" target="_blank" rel="noopener" aria-label="Facebook" class="text-white/50 transition hover:text-white"><i class="fa-brands fa-facebook-f"></i></a>
+                    @endif
                     <a href="{{ $shopFooterWa }}" target="_blank" rel="noopener" aria-label="WhatsApp" class="text-white/50 transition hover:text-white"><i class="fa-brands fa-whatsapp"></i></a>
                 </div>
             </div>

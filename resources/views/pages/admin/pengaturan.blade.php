@@ -14,6 +14,16 @@ new #[Layout('layouts::admin-panel')] #[Title('Pengaturan')] class extends Compo
 
     public string $whatsapp = '';
 
+    public string $alamat = '';
+
+    public string $email = '';
+
+    public string $instagram_url = '';
+
+    public string $tiktok_url = '';
+
+    public string $facebook_url = '';
+
     /** Hasil crop dari kanvas JS, dikirim sebagai data URL base64 PNG. Null = logo tidak diganti. */
     public ?string $logoBase64 = null;
 
@@ -27,7 +37,32 @@ new #[Layout('layouts::admin-panel')] #[Title('Pengaturan')] class extends Compo
         $this->site_name = $setting->site_name;
         $this->tagline = (string) $setting->tagline;
         $this->whatsapp = (string) $setting->whatsapp;
+        $this->alamat = (string) $setting->alamat;
+        $this->email = (string) $setting->email;
+        $this->instagram_url = (string) $setting->instagram_url;
+        $this->tiktok_url = (string) $setting->tiktok_url;
+        $this->facebook_url = (string) $setting->facebook_url;
         $this->existingLogoUrl = $setting->logoUrl();
+    }
+
+    /**
+     * Rule tambahan untuk kolom link sosial media: kalau URL yang diisi
+     * ternyata cocok dengan domain platform LAIN (mis. link tiktok.com
+     * dimasukkan ke kolom Instagram), tolak dengan pesan yang menyebutkan
+     * platform mana yang sebenarnya terdeteksi.
+     */
+    protected function socialPlatformMismatchRule(string $field): \Closure
+    {
+        return function (string $attribute, mixed $value, \Closure $fail) use ($field): void {
+            $detected = Setting::detectSocialPlatform($value);
+
+            if ($detected !== null && $detected !== $field) {
+                $expectedLabel = Setting::socialPlatforms()[$field]['label'];
+                $detectedLabel = Setting::socialPlatforms()[$detected]['label'];
+
+                $fail("Link ini terdeteksi sebagai tautan {$detectedLabel}, bukan {$expectedLabel}. Periksa kembali link yang dimasukkan.");
+            }
+        };
     }
 
     public function save()
@@ -36,6 +71,11 @@ new #[Layout('layouts::admin-panel')] #[Title('Pengaturan')] class extends Compo
             'site_name' => ['required', 'string', 'max:100'],
             'tagline' => ['nullable', 'string', 'max:150'],
             'whatsapp' => ['nullable', 'string', 'max:20'],
+            'alamat' => ['nullable', 'string', 'max:300'],
+            'email' => ['nullable', 'email', 'max:150'],
+            'instagram_url' => ['nullable', 'url', 'max:255', $this->socialPlatformMismatchRule('instagram_url')],
+            'tiktok_url' => ['nullable', 'url', 'max:255', $this->socialPlatformMismatchRule('tiktok_url')],
+            'facebook_url' => ['nullable', 'url', 'max:255', $this->socialPlatformMismatchRule('facebook_url')],
         ]);
 
         $setting = Setting::current();
@@ -190,6 +230,118 @@ new #[Layout('layouts::admin-panel')] #[Title('Pengaturan')] class extends Compo
                             class="w-full rounded-lg border border-[var(--color-admin-border)] bg-admin-surface py-2.5 pl-10 pr-3 text-sm text-[var(--color-admin-ink)] transition focus:border-[var(--color-admin-accent)] focus:outline-none focus:ring-2 focus:ring-[var(--color-admin-accent)]/20"
                         >
                     </div>
+                </div>
+
+                <div>
+                    <label for="setting_alamat" class="mb-1.5 block text-sm font-medium text-[var(--color-admin-ink)]">
+                        Alamat
+                    </label>
+                    <p class="mb-1.5 text-xs text-[var(--color-admin-ink-soft)]">
+                        Alamat ini otomatis dipakai di section "Kunjungi Kami" pada Beranda (tepat sebelum
+                        Footer). Tautan tombol "Lihat di Google Maps" diatur terpisah di Admin &gt; Edit Web
+                        &gt; Beranda &gt; Lokasi.
+                    </p>
+                    <div class="relative">
+                        <i class="fa-solid fa-location-dot pointer-events-none absolute left-3.5 top-3 text-sm text-[var(--color-admin-ink-soft)]"></i>
+                        <textarea
+                            id="setting_alamat" rows="2" wire:model="alamat" placeholder="Jl. Contoh No. 1, Kecamatan, Kota"
+                            class="w-full resize-none rounded-lg border border-[var(--color-admin-border)] bg-admin-surface py-2.5 pl-10 pr-3 text-sm text-[var(--color-admin-ink)] transition focus:border-[var(--color-admin-accent)] focus:outline-none focus:ring-2 focus:ring-[var(--color-admin-accent)]/20"
+                        ></textarea>
+                    </div>
+                    @error('alamat')
+                        <p class="mt-1.5 flex items-center gap-1 text-xs font-medium text-red-600">
+                            <i class="fa-solid fa-circle-exclamation"></i> {{ $message }}
+                        </p>
+                    @enderror
+                </div>
+            </div>
+        </div>
+
+        {{-- ================= SECTION 2: MEDIA SOSIAL & KONTAK ================= --}}
+        <div class="flex flex-col rounded-2xl border border-[var(--color-admin-border)] bg-admin-surface p-5 shadow-sm sm:p-6">
+            <h3 class="mb-1 flex items-center gap-2 text-sm font-semibold text-[var(--color-admin-ink)]">
+                <i class="fa-solid fa-share-nodes text-[var(--color-admin-accent)]"></i>
+                Media Sosial &amp; Kontak
+            </h3>
+            <p class="mb-5 text-xs text-[var(--color-admin-ink-soft)]">
+                Link ini otomatis dipakai di semua ikon sosial media dan tombol kontak di seluruh website.
+                Tombol hanya muncul kalau link-nya diisi.
+            </p>
+
+            <div class="space-y-5">
+                <div>
+                    <label for="setting_instagram" class="mb-1.5 block text-sm font-medium text-[var(--color-admin-ink)]">
+                        Instagram
+                    </label>
+                    <div class="relative">
+                        <i class="fa-brands fa-instagram pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-sm text-[var(--color-admin-ink-soft)]"></i>
+                        <input
+                            id="setting_instagram" type="url" wire:model="instagram_url" placeholder="https://instagram.com/namatoko"
+                            class="w-full rounded-lg border border-[var(--color-admin-border)] bg-admin-surface py-2.5 pl-10 pr-3 text-sm text-[var(--color-admin-ink)] transition focus:border-[var(--color-admin-accent)] focus:outline-none focus:ring-2 focus:ring-[var(--color-admin-accent)]/20"
+                        >
+                    </div>
+                    @error('instagram_url')
+                        <p class="mt-1.5 flex items-center gap-1 text-xs font-medium text-red-600">
+                            <i class="fa-solid fa-circle-exclamation"></i> {{ $message }}
+                        </p>
+                    @enderror
+                </div>
+
+                <div>
+                    <label for="setting_tiktok" class="mb-1.5 block text-sm font-medium text-[var(--color-admin-ink)]">
+                        TikTok
+                    </label>
+                    <div class="relative">
+                        <i class="fa-brands fa-tiktok pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-sm text-[var(--color-admin-ink-soft)]"></i>
+                        <input
+                            id="setting_tiktok" type="url" wire:model="tiktok_url" placeholder="https://tiktok.com/@namatoko"
+                            class="w-full rounded-lg border border-[var(--color-admin-border)] bg-admin-surface py-2.5 pl-10 pr-3 text-sm text-[var(--color-admin-ink)] transition focus:border-[var(--color-admin-accent)] focus:outline-none focus:ring-2 focus:ring-[var(--color-admin-accent)]/20"
+                        >
+                    </div>
+                    @error('tiktok_url')
+                        <p class="mt-1.5 flex items-center gap-1 text-xs font-medium text-red-600">
+                            <i class="fa-solid fa-circle-exclamation"></i> {{ $message }}
+                        </p>
+                    @enderror
+                </div>
+
+                <div>
+                    <label for="setting_facebook" class="mb-1.5 block text-sm font-medium text-[var(--color-admin-ink)]">
+                        Facebook
+                    </label>
+                    <div class="relative">
+                        <i class="fa-brands fa-facebook-f pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-sm text-[var(--color-admin-ink-soft)]"></i>
+                        <input
+                            id="setting_facebook" type="url" wire:model="facebook_url" placeholder="https://facebook.com/namatoko"
+                            class="w-full rounded-lg border border-[var(--color-admin-border)] bg-admin-surface py-2.5 pl-10 pr-3 text-sm text-[var(--color-admin-ink)] transition focus:border-[var(--color-admin-accent)] focus:outline-none focus:ring-2 focus:ring-[var(--color-admin-accent)]/20"
+                        >
+                    </div>
+                    @error('facebook_url')
+                        <p class="mt-1.5 flex items-center gap-1 text-xs font-medium text-red-600">
+                            <i class="fa-solid fa-circle-exclamation"></i> {{ $message }}
+                        </p>
+                    @enderror
+                </div>
+
+                <div>
+                    <label for="setting_email" class="mb-1.5 block text-sm font-medium text-[var(--color-admin-ink)]">
+                        Email (Gmail)
+                    </label>
+                    <p class="mb-1.5 text-xs text-[var(--color-admin-ink-soft)]">
+                        Kalau pelanggan klik tombol Gmail di website, mereka langsung diarahkan ke halaman kirim pesan Gmail dengan alamat ini sebagai tujuan.
+                    </p>
+                    <div class="relative">
+                        <i class="fa-solid fa-envelope pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-sm text-[var(--color-admin-ink-soft)]"></i>
+                        <input
+                            id="setting_email" type="email" wire:model="email" placeholder="tokoanda@gmail.com"
+                            class="w-full rounded-lg border border-[var(--color-admin-border)] bg-admin-surface py-2.5 pl-10 pr-3 text-sm text-[var(--color-admin-ink)] transition focus:border-[var(--color-admin-accent)] focus:outline-none focus:ring-2 focus:ring-[var(--color-admin-accent)]/20"
+                        >
+                    </div>
+                    @error('email')
+                        <p class="mt-1.5 flex items-center gap-1 text-xs font-medium text-red-600">
+                            <i class="fa-solid fa-circle-exclamation"></i> {{ $message }}
+                        </p>
+                    @enderror
                 </div>
             </div>
         </div>

@@ -383,9 +383,8 @@ new #[Layout('layouts::admin-panel')] class extends Component
             window.addEventListener('resize', () => {
                 if (!this.open || !this.$refs.viewport || this.natW === 0) return;
 
-                const rect = this.$refs.viewport.getBoundingClientRect();
-                this.viewW = rect.width;
-                this.viewH = rect.height;
+                this.viewW = this.$refs.viewport.offsetWidth;
+                this.viewH = this.$refs.viewport.offsetHeight;
                 this.clampPos();
             });
         },
@@ -409,9 +408,8 @@ new #[Layout('layouts::admin-panel')] class extends Component
             // Tunggu satu tick supaya modal (x-show) sudah selesai dirender
             // sebelum mengukur ukuran viewport sesungguhnya di layar.
             this.$nextTick(() => {
-                const rect = this.$refs.viewport.getBoundingClientRect();
-                this.viewW = rect.width;
-                this.viewH = rect.height;
+                this.viewW = this.$refs.viewport.offsetWidth;
+                this.viewH = this.$refs.viewport.offsetHeight;
 
                 // "Cover fit": skala minimum yang membuat gambar menutupi
                 // SELURUH area crop persegi panjang, apa pun orientasi foto

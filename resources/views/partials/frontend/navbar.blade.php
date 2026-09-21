@@ -6,7 +6,7 @@
         ['label' => 'Tentang Kami', 'route' => 'profile.index',     'icon' => 'fa-couch'],
         ['label' => 'Produk',    'route' => 'products.index',    'icon' => 'fa-layer-group'],
         ['label' => 'Testimoni', 'route' => 'testimonials.index','icon' => 'fa-star'],
-        ['label' => 'Booking',   'route' => 'booking.index',     'icon' => 'fa-calendar-check'],
+        ['label' => 'Dokumentasi',   'route' => 'booking.index',     'icon' => 'fa-calendar-check'],
     ];
 
     $navCategories = \App\Models\Category::query()
@@ -18,7 +18,7 @@
     $currentCategory = trim((string) request('category', ''));
 @endphp
 
-<header class="sticky top-0 z-100 border-b border-admin-border/80 bg-admin-surface/95 shadow-[0_4px_20px_-10px_rgba(34,26,20,0.22)] backdrop-blur-md">
+<header class="sticky top-0 z-100 border-b border-admin-border/80 bg-admin-surface/95 backdrop-blur-md">
 
     <div class="mx-auto flex h-17 max-w-360 items-center gap-4 px-5 sm:px-7 lg:gap-7 lg:px-10">
 
@@ -79,7 +79,7 @@
         {{-- =========================================================
              AREA KANAN
         ========================================================== --}}
-        <div class="ml-auto flex min-w-0 items-center gap-2.5 lg:gap-3">
+        <div class="ml-auto flex min-w-0 items-center gap-2.5 max-md:flex-1 lg:gap-3">
 
 
             {{-- =====================================================
@@ -88,7 +88,7 @@
             <form
                 action="{{ route('products.index') }}"
                 method="GET"
-                class="hidden h-10 min-w-0 overflow-hidden rounded-xl border border-admin-border bg-admin-canvas transition-all duration-200 focus-within:border-admin-accent focus-within:ring-4 focus-within:ring-admin-accent/10 md:flex lg:w-97.5"
+                class="flex h-10 min-w-0 overflow-hidden rounded-xl max-md:flex-1 border border-admin-border bg-admin-canvas transition-all duration-200 focus-within:border-admin-accent focus-within:ring-4 focus-within:ring-admin-accent/10 lg:w-97.5"
             >
 
                 <div class="flex min-w-0 flex-1 items-center">
@@ -185,110 +185,43 @@
 
             </div>
 
-
-            {{-- =====================================================
-                 MOBILE MENU BUTTON
-            ====================================================== --}}
-            <button
-                type="button"
-                aria-label="Buka menu navigasi"
-                aria-controls="navbar-mobile-menu"
-                aria-expanded="false"
-                onclick="
-                    const menu = document.getElementById('navbar-mobile-menu');
-                    const expanded = this.getAttribute('aria-expanded') === 'true';
-                    menu.classList.toggle('hidden');
-                    this.setAttribute('aria-expanded', String(!expanded));
-                "
-                class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-admin-ink-soft transition-colors hover:bg-admin-canvas hover:text-admin-ink lg:hidden"
-            >
-                <i class="fa-solid fa-bars text-[16px]"></i>
-            </button>
-
         </div>
     </div>
 
 
     {{-- =============================================================
-         MOBILE MENU
+         NAVIGASI HP & TABLET (< lg)
+         Semua menu langsung tampak di bawah baris logo/pencarian,
+         tanpa tombol garis 3. Kalau layar terlalu sempit, baris ini
+         bisa digeser samping (scrollbar disembunyikan).
     ============================================================== --}}
-    <div
-        id="navbar-mobile-menu"
-        class="hidden border-t border-admin-border bg-admin-surface lg:hidden"
-    >
+    <nav aria-label="Navigasi utama" class="lg:hidden">
+        <div class="mx-auto flex max-w-360 items-center justify-between overflow-x-auto px-2.5 [scrollbar-width:none] sm:px-5 [&::-webkit-scrollbar]:hidden">
 
-        <div class="mx-auto max-w-360 space-y-2 px-5 py-4 sm:px-7">
-
-            {{-- Search mobile --}}
-            <form
-                action="{{ route('products.index') }}"
-                method="GET"
-                class="flex h-11 overflow-hidden rounded-xl border border-admin-border bg-admin-canvas"
-            >
-                <input
-                    type="search"
-                    name="search"
-                    value="{{ $currentSearch }}"
-                    placeholder="Cari produk..."
-                    class="min-w-0 flex-1 bg-transparent px-4 text-sm text-admin-ink placeholder:text-admin-ink-soft focus:outline-none"
-                >
-
-                <button
-                    type="submit"
-                    aria-label="Cari"
-                    class="flex w-12 items-center justify-center bg-admin-panel text-white"
-                >
-                    <i class="fa-solid fa-magnifying-glass text-xs"></i>
-                </button>
-            </form>
-
-
-            {{-- Menu --}}
-            <div class="grid gap-1 sm:grid-cols-2">
-
-                @foreach ($navMenu as $item)
-                    @php
-                        $isActive = $item['route'] && request()->routeIs($item['route']);
-                        $href = $item['route'] ? route($item['route']) : '#';
-                    @endphp
-
-                    <a
-                        href="{{ $href }}"
-                        class="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-semibold transition-colors
-                        {{ $isActive
-                            ? 'bg-admin-canvas text-admin-panel'
-                            : 'text-admin-ink-soft hover:bg-admin-canvas hover:text-admin-ink' }}"
-                    >
-                        <i class="fa-solid {{ $item['icon'] }} w-5 text-center text-xs"></i>
-                        <span>{{ $item['label'] }}</span>
-                    </a>
-                @endforeach
-
-            </div>
-
-
-            {{-- Koleksi pembeli --}}
-            <div class="grid grid-cols-2 gap-2 pt-1">
+            @foreach ($navMenu as $item)
+                @php
+                    $isActive = $item['route'] && request()->routeIs($item['route']);
+                    $href = $item['route'] ? route($item['route']) : '#';
+                @endphp
 
                 <a
-                    href="{{ route('favorites.index') }}"
-                    class="flex items-center justify-center gap-2 rounded-xl border border-admin-border px-4 py-3 text-xs font-semibold text-admin-ink-soft transition-colors hover:bg-admin-canvas hover:text-admin-ink"
+                    href="{{ $href }}"
+                    class="group relative flex h-10 shrink-0 items-center px-2.5 text-[13px] font-semibold tracking-[-0.01em] transition-colors duration-200
+                    {{ $isActive
+                        ? 'text-admin-panel'
+                        : 'text-admin-ink-soft hover:text-admin-ink' }}"
                 >
-                    <i class="fa-regular fa-heart"></i>
-                    Favorit
-                </a>
+                    {{ $item['label'] }}
 
-                <a
-                    href="{{ route('cart.index') }}"
-                    class="flex items-center justify-center gap-2 rounded-xl border border-admin-border px-4 py-3 text-xs font-semibold text-admin-ink-soft transition-colors hover:bg-admin-canvas hover:text-admin-ink"
-                >
-                    <i class="fa-solid fa-bag-shopping"></i>
-                    Keranjang
+                    <span
+                        class="absolute bottom-0.5 left-2.5 right-2.5 h-0.5 origin-center rounded-full bg-admin-gold transition-transform duration-200
+                        {{ $isActive ? 'scale-x-100' : 'scale-x-0' }}"
+                    ></span>
                 </a>
-
-            </div>
+            @endforeach
 
         </div>
-    </div>
+    </nav>
 
 </header>
+

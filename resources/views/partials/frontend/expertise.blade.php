@@ -33,6 +33,9 @@
             'Dikerjakan pengrajin berpengalaman dengan standar rapi dan presisi.',
         ],
         'image_path' => null,
+        'media_type' => 'photo',
+        'video_url' => null,
+        'video_path' => null,
     ];
 
     $keahlianData = \App\Models\HomeSection::dataFor('keahlian', $keahlianDefaults);
@@ -41,7 +44,24 @@
         ? \Illuminate\Support\Facades\Storage::disk('public')->url($keahlianData['image_path'])
         : asset('images/admin-login/kursi.png');
 
-    $keahlianWhatsapp = \App\Models\Setting::current()->whatsappDigits();
+    $keahlianSetting = \App\Models\Setting::current();
+    $keahlianWhatsapp = $keahlianSetting->whatsappDigits();
+
+    // ============ Media panel kiri: foto ATAU video ============
+    // Lihat App\Models\HomeSection::classifyVideoUrl() untuk daftar
+    // platform yang dikenali (YouTube, TikTok, Instagram, Facebook,
+    // Google Drive, atau tautan file video langsung).
+    $keahlianVideoUploadUrl = $keahlianData['video_path']
+        ? \Illuminate\Support\Facades\Storage::disk('public')->url($keahlianData['video_path'])
+        : null;
+
+    $keahlianVideo = null;
+
+    if ($keahlianData['media_type'] === 'video_upload' && $keahlianVideoUploadUrl) {
+        $keahlianVideo = ['provider' => 'direct', 'embed_url' => $keahlianVideoUploadUrl];
+    } elseif ($keahlianData['media_type'] === 'video_url' && $keahlianData['video_url']) {
+        $keahlianVideo = \App\Models\HomeSection::classifyVideoUrl($keahlianData['video_url']);
+    }
 @endphp
 
 <section class="bg-white">
@@ -58,11 +78,86 @@
             keduanya supaya tidak ada risiko salah crop.
         --}}
         <div class="relative aspect-10/9 w-full overflow-hidden bg-[#1A1A1A]">
-            <img
-                src="{{ $keahlianImageUrl }}"
-                alt="{{ $keahlianData['title'] }}"
-                class="absolute inset-0 h-full w-full object-cover"
-            >
+            @if ($keahlianVideo && $keahlianVideo['provider'] === 'direct')
+                {{-- Video langsung (upload dari perangkat ATAU tautan file video) --
+                     kontrol penuh: autoplay+suara begitu masuk viewport, suara
+                     meredup pelan saat dilewati, tombol mute manual kiri-bawah. --}}
+                <div
+                    x-data="keahlianVideoPlayer()"
+                    x-init="init()"
+                    class="absolute inset-0 h-full w-full"
+                >
+                    <video
+                        x-ref="video"
+                        src="{{ $keahlianVideo['embed_url'] }}"
+                        class="absolute inset-0 h-full w-full object-cover"
+                        playsinline
+                        muted
+                        loop
+                        preload="auto"
+                    ></video>
+
+                    <button
+                        type="button"
+                        x-on:click="toggleMute()"
+                        class="absolute bottom-4 left-4 z-10 flex h-10 w-10 items-center justify-center rounded-full bg-black/50 text-white backdrop-blur transition hover:bg-black/70"
+                        :aria-label="muted ? 'Aktifkan suara video' : 'Matikan suara video'"
+                    >
+                        <i class="fa-solid" :class="muted ? 'fa-volume-xmark' : 'fa-volume-high'"></i>
+                    </button>
+                </div>
+            @elseif ($keahlianVideo && $keahlianVideo['provider'] === 'youtube')
+                {{-- YouTube: iframe baru dimuat saat scroll sampai sini, dikontrol lewat
+                     YouTube postMessage API (autoplay+suara masuk, redup+pause keluar,
+                     tombol mute manual kiri-bawah -- sama seperti video langsung). --}}
+                <div
+                    x-data="keahlianYoutubePlayer(@js($keahlianVideo['embed_url']))"
+                    x-init="init()"
+                    class="absolute inset-0 h-full w-full"
+                >
+                    <iframe
+                        x-ref="iframe"
+                        title="{{ $keahlianData['title'] }}"
+                        class="absolute inset-0 h-full w-full"
+                        style="border:0;"
+                        allow="autoplay; encrypted-media; picture-in-picture"
+                        allowfullscreen
+                    ></iframe>
+
+                    <button
+                        type="button"
+                        x-on:click="toggleMute()"
+                        class="absolute bottom-4 left-4 z-10 flex h-10 w-10 items-center justify-center rounded-full bg-black/50 text-white backdrop-blur transition hover:bg-black/70"
+                        :aria-label="muted ? 'Aktifkan suara video' : 'Matikan suara video'"
+                    >
+                        <i class="fa-solid" :class="muted ? 'fa-volume-xmark' : 'fa-volume-high'"></i>
+                    </button>
+                </div>
+            @elseif ($keahlianVideo)
+                {{-- Facebook / TikTok / Instagram / Google Drive: embed resmi platform.
+                     Iframe baru dimuat saat section ini masuk layar (hemat bandwidth),
+                     tapi putar-otomatis-bersuara & efek redup mengikuti pemutar bawaan
+                     masing-masing platform -- tidak ada API publik yang bisa kita pakai
+                     untuk memaksanya dari luar seperti pada video langsung/YouTube. --}}
+                <div x-data="{ loaded: false }" x-init="new IntersectionObserver((entries) => { if (entries[0].isIntersecting) { loaded = true; } }, { threshold: 0.3 }).observe($el)" class="absolute inset-0 h-full w-full">
+                    <template x-if="loaded">
+                        <iframe
+                            src="{{ $keahlianVideo['embed_url'] }}"
+                            title="{{ $keahlianData['title'] }}"
+                            class="absolute inset-0 h-full w-full"
+                            style="border:0;"
+                            allow="autoplay; encrypted-media; picture-in-picture"
+                            allowfullscreen
+                        ></iframe>
+                    </template>
+                </div>
+            @else
+                <img
+                    src="{{ $keahlianImageUrl }}"
+                    alt="{{ $keahlianData['title'] }}"
+                    class="absolute inset-0 h-full w-full object-cover"
+                >
+            @endif
         </div>
 
         {{-- ============ KANAN: Eyebrow, heading, paragraf, checklist, ikon sosial ============ --}}
@@ -95,17 +190,23 @@
                 @endforeach
             </div>
 
-            {{-- Ikon sosial — 4 sel persegi berdampingan dalam satu container bergaris --}}
+            {{-- Ikon sosial — 4 sel persegi berdampingan dalam satu container bergaris. Instagram, TikTok & Facebook dari App\Models\Setting (Pengaturan admin), hanya tampil kalau link-nya diisi. --}}
             <div class="mt-7 inline-flex w-fit overflow-hidden rounded-lg border border-[#1A1A1A]/15">
-                <a href="#" aria-label="Instagram" class="flex h-11 w-11 items-center justify-center border-r border-[#1A1A1A]/15 text-[#1A1A1A] transition-colors duration-300 hover:bg-[#F1F1F1]">
-                    <i class="fa-brands fa-instagram text-sm"></i>
-                </a>
-                <a href="#" aria-label="TikTok" class="flex h-11 w-11 items-center justify-center border-r border-[#1A1A1A]/15 text-[#1A1A1A] transition-colors duration-300 hover:bg-[#F1F1F1]">
-                    <i class="fa-brands fa-tiktok text-sm"></i>
-                </a>
-                <a href="#" aria-label="Facebook" class="flex h-11 w-11 items-center justify-center border-r border-[#1A1A1A]/15 text-[#1A1A1A] transition-colors duration-300 hover:bg-[#F1F1F1]">
-                    <i class="fa-brands fa-facebook-f text-sm"></i>
-                </a>
+                @if ($keahlianSetting->instagram_url)
+                    <a href="{{ $keahlianSetting->instagram_url }}" target="_blank" rel="noopener" aria-label="Instagram" class="flex h-11 w-11 items-center justify-center border-r border-[#1A1A1A]/15 text-[#1A1A1A] transition-colors duration-300 hover:bg-[#F1F1F1]">
+                        <i class="fa-brands fa-instagram text-sm"></i>
+                    </a>
+                @endif
+                @if ($keahlianSetting->tiktok_url)
+                    <a href="{{ $keahlianSetting->tiktok_url }}" target="_blank" rel="noopener" aria-label="TikTok" class="flex h-11 w-11 items-center justify-center border-r border-[#1A1A1A]/15 text-[#1A1A1A] transition-colors duration-300 hover:bg-[#F1F1F1]">
+                        <i class="fa-brands fa-tiktok text-sm"></i>
+                    </a>
+                @endif
+                @if ($keahlianSetting->facebook_url)
+                    <a href="{{ $keahlianSetting->facebook_url }}" target="_blank" rel="noopener" aria-label="Facebook" class="flex h-11 w-11 items-center justify-center border-r border-[#1A1A1A]/15 text-[#1A1A1A] transition-colors duration-300 hover:bg-[#F1F1F1]">
+                        <i class="fa-brands fa-facebook-f text-sm"></i>
+                    </a>
+                @endif
                 <a
                     href="{{ $keahlianWhatsapp ? 'https://wa.me/'.$keahlianWhatsapp : '#' }}"
                     target="{{ $keahlianWhatsapp ? '_blank' : '_self' }}"

@@ -83,10 +83,12 @@
     ];
 @endphp
 
+@include('partials.frontend.marquee-brand')
+
 <footer class="bg-[#1A1A1A] text-white">
     <div class="mx-auto max-w-7xl px-6 py-14 sm:px-8 lg:px-10 lg:py-16">
 
-        <div class="grid grid-cols-2 gap-10 sm:grid-cols-2 lg:grid-cols-4 lg:gap-8">
+        <div class="grid grid-cols-1 gap-8 sm:grid-cols-2 sm:gap-10 lg:grid-cols-4 lg:gap-8">
 
             {{-- ============ KOLOM 1: BRAND ============ --}}
             <div class="col-span-2 lg:col-span-1">
@@ -107,16 +109,22 @@
                 </p>
 
                 <div class="mt-5 flex items-center gap-3">
-                    {{-- Instagram & TikTok: placeholder visual, App\Models\Setting belum punya kolomnya --}}
-                    <a href="#" aria-label="Instagram" class="flex h-9 w-9 items-center justify-center rounded-full bg-white/10 text-white/70 transition-colors duration-300 hover:bg-white/20 hover:text-white">
-                        <i class="fa-brands fa-instagram text-sm"></i>
-                    </a>
-                    <a href="#" aria-label="TikTok" class="flex h-9 w-9 items-center justify-center rounded-full bg-white/10 text-white/70 transition-colors duration-300 hover:bg-white/20 hover:text-white">
-                        <i class="fa-brands fa-tiktok text-sm"></i>
-                    </a>
-                    <a href="#" aria-label="Facebook" class="flex h-9 w-9 items-center justify-center rounded-full bg-white/10 text-white/70 transition-colors duration-300 hover:bg-white/20 hover:text-white">
-                        <i class="fa-brands fa-facebook-f text-sm"></i>
-                    </a>
+                    {{-- Instagram, TikTok & Facebook: dari App\Models\Setting (Pengaturan admin), hanya tampil kalau link-nya diisi. --}}
+                    @if ($footerSetting->instagram_url)
+                        <a href="{{ $footerSetting->instagram_url }}" target="_blank" rel="noopener" aria-label="Instagram" class="flex h-9 w-9 items-center justify-center rounded-full bg-white/10 text-white/70 transition-colors duration-300 hover:bg-white/20 hover:text-white">
+                            <i class="fa-brands fa-instagram text-sm"></i>
+                        </a>
+                    @endif
+                    @if ($footerSetting->tiktok_url)
+                        <a href="{{ $footerSetting->tiktok_url }}" target="_blank" rel="noopener" aria-label="TikTok" class="flex h-9 w-9 items-center justify-center rounded-full bg-white/10 text-white/70 transition-colors duration-300 hover:bg-white/20 hover:text-white">
+                            <i class="fa-brands fa-tiktok text-sm"></i>
+                        </a>
+                    @endif
+                    @if ($footerSetting->facebook_url)
+                        <a href="{{ $footerSetting->facebook_url }}" target="_blank" rel="noopener" aria-label="Facebook" class="flex h-9 w-9 items-center justify-center rounded-full bg-white/10 text-white/70 transition-colors duration-300 hover:bg-white/20 hover:text-white">
+                            <i class="fa-brands fa-facebook-f text-sm"></i>
+                        </a>
+                    @endif
                     @if ($footerWaLink)
                         <a href="{{ $footerWaLink }}" target="_blank" rel="noopener" aria-label="WhatsApp" class="flex h-9 w-9 items-center justify-center rounded-full bg-white/10 text-white/70 transition-colors duration-300 hover:bg-white/20 hover:text-white">
                             <i class="fa-brands fa-whatsapp text-sm"></i>

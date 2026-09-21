@@ -23,32 +23,39 @@
     $faqSetting = $siteSetting ?? \App\Models\Setting::current();
     $faqWaNumber = $faqSetting->whatsappDigits();
 
-    $faqItems = [
-        [
-            'q' => 'Bagaimana cara memesan produk di ' . $faqSetting->site_name . '?',
-            'a' => 'Pilih produk yang kamu suka di halaman Produk, lalu hubungi admin lewat tombol WhatsApp untuk konsultasi ukuran, bahan, dan harga. Pesanan baru tercatat resmi setelah kesepakatan dikonfirmasi lewat WhatsApp — lihat halaman Booking untuk alur lengkapnya.',
+    // Konten diedit admin lewat Edit Web > FAQ (lihat App\Models\HomeSection
+    // & saveFaq() di pages/admin/edit-web.blade.php). Default di bawah ini
+    // dipakai HANYA kalau admin belum pernah menyimpan section ini sama
+    // sekali -- isinya sengaja sama persis dengan konten lama supaya
+    // tampilan tidak berubah sebelum admin mengubahnya sendiri.
+    $faqItems = \App\Models\HomeSection::dataFor('faq', [
+        'items' => [
+            [
+                'q' => 'Bagaimana cara memesan produk di '.$faqSetting->site_name.'?',
+                'a' => 'Pilih produk yang kamu suka di halaman Produk, lalu hubungi admin lewat tombol WhatsApp untuk konsultasi ukuran, bahan, dan harga. Pesanan baru tercatat resmi setelah kesepakatan dikonfirmasi lewat WhatsApp — lihat halaman Booking untuk alur lengkapnya.',
+            ],
+            [
+                'q' => 'Apakah bisa pesan furniture custom sesuai ukuran ruangan saya?',
+                'a' => 'Bisa. Sampaikan ukuran, bahan, dan kebutuhan khususmu ke admin lewat WhatsApp saat proses booking — kami sesuaikan sebelum pesanan diproses.',
+            ],
+            [
+                'q' => 'Berapa lama proses pengerjaan dan pengirimannya?',
+                'a' => 'Estimasi waktu pengerjaan dan biaya ongkir menyesuaikan lokasi serta ukuran pesanan, dan akan diinfokan admin sebelum pesanan difinalkan lewat WhatsApp.',
+            ],
+            [
+                'q' => 'Bagaimana kalau produk yang sampai cacat atau tidak sesuai?',
+                'a' => 'Kami kasih garansi retur 30 hari sejak barang diterima. Kerusakan akibat cacat produksi kami tanggung — cukup kirim foto/video kondisi barang lewat WhatsApp untuk klaim.',
+            ],
+            [
+                'q' => 'Bagaimana cara memantau status pesanan saya?',
+                'a' => 'Setelah pesanan dikonfirmasi admin, kamu akan mendapat link tracking pribadi yang bisa dibuka kapan saja di halaman Lacak Pesanan.',
+            ],
+            [
+                'q' => 'Apakah saya bisa lihat detail dan foto produk sebelum booking?',
+                'a' => 'Tentu — buka halaman Produk untuk melihat foto, kategori, dan harga tiap produk sebelum menghubungi admin untuk melanjutkan pemesanan.',
+            ],
         ],
-        [
-            'q' => 'Apakah bisa pesan furniture custom sesuai ukuran ruangan saya?',
-            'a' => 'Bisa. Sampaikan ukuran, bahan, dan kebutuhan khususmu ke admin lewat WhatsApp saat proses booking — kami sesuaikan sebelum pesanan diproses.',
-        ],
-        [
-            'q' => 'Berapa lama proses pengerjaan dan pengirimannya?',
-            'a' => 'Estimasi waktu pengerjaan dan biaya ongkir menyesuaikan lokasi serta ukuran pesanan, dan akan diinfokan admin sebelum pesanan difinalkan lewat WhatsApp.',
-        ],
-        [
-            'q' => 'Bagaimana kalau produk yang sampai cacat atau tidak sesuai?',
-            'a' => 'Kami kasih garansi retur 30 hari sejak barang diterima. Kerusakan akibat cacat produksi kami tanggung — cukup kirim foto/video kondisi barang lewat WhatsApp untuk klaim.',
-        ],
-        [
-            'q' => 'Bagaimana cara memantau status pesanan saya?',
-            'a' => 'Setelah pesanan dikonfirmasi admin, kamu akan mendapat link tracking pribadi yang bisa dibuka kapan saja di halaman Lacak Pesanan.',
-        ],
-        [
-            'q' => 'Apakah saya bisa lihat detail dan foto produk sebelum booking?',
-            'a' => 'Tentu — buka halaman Produk untuk melihat foto, kategori, dan harga tiap produk sebelum menghubungi admin untuk melanjutkan pemesanan.',
-        ],
-    ];
+    ])['items'];
 @endphp
 
 <section class="bg-white">

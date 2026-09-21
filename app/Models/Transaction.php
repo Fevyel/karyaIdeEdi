@@ -43,6 +43,7 @@ class Transaction extends Model
         'custom_lebar',
         'custom_panjang',
         'custom_harga_satuan',
+        'custom_deskripsi',
         'order_code',
         'customer_name',
         'whatsapp',

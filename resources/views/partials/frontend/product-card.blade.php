@@ -111,8 +111,8 @@
     <a href="{{ route('products.show', $product) }}" class="block">
         {{-- Info produk --}}
     <div class="mt-4">
-        <p class="text-base font-semibold" style="color: {{ $cardTitleColor }};">{{ $product->nama }}</p>
-        <p class="mt-0.5 text-sm" style="color: {{ $cardBodyColor }};">{{ $product->deskripsi_pendek }}</p>
+        <p class="text-sm font-semibold sm:text-base" style="color: {{ $cardTitleColor }};">{{ $product->nama }}</p>
+        <p class="mt-0.5 line-clamp-2 text-xs sm:text-sm" style="color: {{ $cardBodyColor }};">{{ $product->deskripsi_pendek }}</p>
 
         {{-- Rating — hanya tampil kalau sudah ada testimonial approved --}}
         <div class="mt-2 flex items-center gap-1.5">
@@ -144,14 +144,14 @@
         {{-- Harga --}}
         <div class="mt-2 flex items-center gap-2">
             @if ($hasDiscount)
-                <span class="text-base font-semibold text-red-600">
+                <span class="text-sm font-semibold sm:text-base text-red-600">
                     Rp{{ number_format((float) $product->harga_diskon, 0, ',', '.') }}
                 </span>
-                <span class="text-sm line-through" style="color: {{ $cardBodyColor }}; opacity: 0.7;">
+                <span class="text-xs sm:text-sm line-through" style="color: {{ $cardBodyColor }}; opacity: 0.7;">
                     Rp{{ number_format((float) $product->harga, 0, ',', '.') }}
                 </span>
             @else
-                <span class="text-base font-semibold" style="color: {{ $cardPriceColor }};">
+                <span class="text-sm font-semibold sm:text-base" style="color: {{ $cardPriceColor }};">
                     Rp{{ number_format((float) $product->harga, 0, ',', '.') }}
                 </span>
             @endif

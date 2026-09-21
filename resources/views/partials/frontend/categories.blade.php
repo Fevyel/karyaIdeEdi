@@ -43,7 +43,10 @@
     // di atas. Data warna tersimpan di home_sections, section_key
     // 'kategori'. Pola sama persis dengan partials/frontend/products.blade.php.
     $kategoriSection = \App\Models\HomeSection::dataFor('kategori', ['bg_color' => null]);
-    $kategoriBgColor = $kategoriSection['bg_color'] ?: '#FEEDD8';
+    // Latar: warna POLOS secara bawaan; gradasi hanya kalau admin menyalakannya di
+    // Edit Web > Kategori Produk > Gradasi (lihat App\Support\FrameBackground).
+    $kategoriFrame = \App\Support\FrameBackground::resolve($kategoriSection['bg_color'] ?? null, $kategoriSection['bg_gradient'] ?? null, '#FEEDD8');
+    $kategoriBgColor = $kategoriFrame['base'];
 
     // Judul, nama kategori & jumlah produk duduk LANGSUNG di atas warna
     // latar (tidak ada kartu putih di belakangnya seperti kartu produk),
@@ -72,23 +75,9 @@
 @if ($displayCategories->isNotEmpty())
     <section
         class="relative overflow-hidden"
-        style="background: linear-gradient(135deg, color-mix(in oklab, {{ $kategoriBgColor }} 100%, white 10%) 0%, {{ $kategoriBgColor }} 55%, color-mix(in oklab, {{ $kategoriBgColor }} 100%, black 14%) 100%);"
+        style="background: {{ $kategoriFrame['css'] }};"
     >
-        {{--
-            Lapisan glow & tekstur tipis supaya latar tidak terasa flat
-            walau admin belum ganti warnanya -- keduanya diturunkan dari
-            $kategoriBgColor (bukan warna baru yang di-hardcode), jadi
-            otomatis ikut menyesuaikan setiap kali admin ganti warna di
-            Edit Web.
-        --}}
-        <div
-            class="pointer-events-none absolute -right-24 -top-32 h-105 w-105 rounded-full blur-3xl"
-            style="background: color-mix(in oklab, {{ $kategoriBgColor }} 100%, white 60%); opacity: 0.45;"
-        ></div>
-        <div
-            class="pointer-events-none absolute inset-0 opacity-[0.05] mix-blend-overlay"
-            style="background-image: url('data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22140%22 height=%22140%22%3E%3Cfilter id=%22n%22%3E%3CfeTurbulence type=%22fractalNoise%22 baseFrequency=%220.85%22 numOctaves=%222%22 stitchTiles=%22stitch%22/%3E%3C/filter%3E%3Crect width=%22140%22 height=%22140%22 filter=%22url(%23n)%22/%3E%3C/svg%3E');"
-        ></div>
+        {{-- Latar polos: tanpa lapisan glow/tekstur supaya warna pilihan admin tampil apa adanya. --}}
 
         <div class="relative mx-auto max-w-7xl px-6 py-14 sm:px-8 lg:px-10 lg:py-20">
 
@@ -100,7 +89,7 @@
             </div>
 
             {{-- ============ Grid kategori ============ --}}
-            <div class="mt-10 grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-4">
+            <div class="mt-10 grid grid-cols-2 gap-4 sm:grid-cols-2 sm:gap-8 lg:grid-cols-4">
                 @foreach ($displayCategories as $category)
                     <a
                         href="{{ route('products.index', ['category' => $category->slug]) }}"

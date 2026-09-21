@@ -45,7 +45,10 @@
         'bg_color' => null,
         'card_colors' => [1 => null, 2 => null, 3 => null],
     ]);
-    $testimoniBgColor = $testimoniSection['bg_color'] ?: '#FAF8F4';
+    // Latar: warna POLOS secara bawaan; gradasi hanya kalau admin menyalakannya di
+    // Edit Web > Testimoni Pelanggan > Gradasi (lihat App\Support\FrameBackground).
+    $testimoniFrame = \App\Support\FrameBackground::resolve($testimoniSection['bg_color'] ?? null, $testimoniSection['bg_gradient'] ?? null, '#FAF8F4');
+    $testimoniBgColor = $testimoniFrame['base'];
 
     // Warna kartu per posisi (Top 1/2/3), masing-masing independen & opsional.
     // null di posisi tertentu = admin belum pilih warna khusus utk kartu itu
@@ -57,17 +60,9 @@
 
 <section
     class="relative overflow-hidden"
-    style="background: linear-gradient(135deg, color-mix(in oklab, {{ $testimoniBgColor }} 100%, white 10%) 0%, {{ $testimoniBgColor }} 55%, color-mix(in oklab, {{ $testimoniBgColor }} 100%, black 14%) 100%);"
+    style="background: {{ $testimoniFrame['css'] }};"
 >
-    {{-- Glow & tekstur tipis, pola sama dengan section Produk Unggulan & Kategori Produk. --}}
-    <div
-        class="pointer-events-none absolute -right-24 -top-32 h-105 w-105 rounded-full blur-3xl"
-        style="background: color-mix(in oklab, {{ $testimoniBgColor }} 100%, white 60%); opacity: 0.4;"
-    ></div>
-    <div
-        class="pointer-events-none absolute inset-0 opacity-[0.05] mix-blend-overlay"
-        style="background-image: url('data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22140%22 height=%22140%22%3E%3Cfilter id=%22n%22%3E%3CfeTurbulence type=%22fractalNoise%22 baseFrequency=%220.85%22 numOctaves=%222%22 stitchTiles=%22stitch%22/%3E%3C/filter%3E%3Crect width=%22140%22 height=%22140%22 filter=%22url(%23n)%22/%3E%3C/svg%3E');"
-    ></div>
+    {{-- Latar polos: tanpa lapisan glow/tekstur supaya warna pilihan admin tampil apa adanya. --}}
 
     <div class="relative mx-auto max-w-7xl px-6 py-14 sm:px-8 lg:px-10 lg:py-20">
 
@@ -85,7 +80,7 @@
                 </p>
             </div>
         @else
-            <div class="mt-10 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            <div class="-mx-6 mt-6 flex snap-x snap-mandatory scroll-pl-6 gap-4 overflow-x-auto px-6 pb-6 pt-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:mx-0 sm:mt-10 sm:grid sm:snap-none sm:grid-cols-2 sm:gap-6 sm:overflow-visible sm:px-0 sm:pb-0 sm:pt-0 lg:grid-cols-3">
                 @foreach ($testimonialList as $index => $testimonial)
                     @php
                         // Rank 1 = kartu pertama (Top 1), dst -- cocok dengan urutan
@@ -110,7 +105,7 @@
                         x-data="{ shown: false }"
                         x-init="new IntersectionObserver((entries) => { if (entries[0].isIntersecting) { setTimeout(() => shown = true, {{ ($index % 3) * 100 }}); } }, { threshold: 0.15 }).observe($el)"
                         :class="shown ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'"
-                        class="flex flex-col rounded-3xl p-6 shadow-sm transition-all duration-500 ease-out hover:-translate-y-1.5 hover:shadow-xl
+                        class="flex w-[84%] shrink-0 snap-start flex-col rounded-2xl p-5 shadow-sm transition-all duration-500 ease-out hover:-translate-y-1.5 hover:shadow-xl max-sm:translate-y-0 max-sm:opacity-100 sm:w-auto sm:shrink sm:rounded-3xl sm:p-6
                             {{ $customCardColor
                                 ? ($isDark ? 'text-white' : 'text-admin-ink')
                                 : ($isDark ? 'bg-admin-panel text-white' : 'bg-admin-cream text-admin-ink') }}"

@@ -1,4 +1,4 @@
-/**
+﻿/**
  * ==========================================================
  * SortableJS (drag & drop kategori — Prioritas 2)
  * ==========================================================
@@ -448,3 +448,204 @@ document.addEventListener('paste', (event) => {
         renderCart();
     });
 })();
+
+/**
+ * ==========================================================
+ * VIDEO "KENAPA PILIH KAMI" (Beranda) -- autoplay saat di-scroll
+ * ==========================================================
+ * Dipakai oleh partials/frontend/expertise.blade.php. Didaftarkan
+ * lewat 'alpine:init' seperti numberStepper di atas (bukan tag
+ * <script> biasa) supaya tidak kena race condition Alpine.start()
+ * yang sama.
+ *
+ * Perilaku yang diminta:
+ * - Video otomatis play + bersuara begitu section ini masuk layar
+ *   (>=50% terlihat), tanpa tombol play.
+ * - Saat pengunjung scroll MELEWATI section (keluar layar), suara
+ *   meredup pelan (fade volume 1 -> 0, ~800ms) baru videonya pause
+ *   -- bukan berhenti mendadak.
+ * - Tombol speaker manual di kiri-bawah video tetap tersedia dan
+ *   dihormati (kalau pengunjung sudah mematikan suara sendiri,
+ *   video tidak akan otomatis dibunyikan lagi saat scroll balik).
+ *
+ * CATATAN PENTING (keterbatasan browser, bukan bug):
+ * Chrome/Safari/Firefox memblokir autoplay video BERSUARA kalau
+ * pengunjung belum pernah berinteraksi apapun dengan halaman (klik,
+ * scroll dianggap bukan interaksi yang cukup di sebagian browser).
+ * Ini kebijakan keamanan browser, tidak bisa dilewati dari kode
+ * manapun. Kalau itu terjadi, kode di bawah otomatis fallback ke
+ * video jalan dalam kondisi mute (bukan error/patah) -- pengunjung
+ * tinggal klik tombol speaker sekali untuk membunyikannya, dan
+ * setelah interaksi pertama itu section berikutnya akan otomatis
+ * bersuara.
+ */
+document.addEventListener('alpine:init', () => {
+    Alpine.data('keahlianVideoPlayer', () => ({
+        muted: true,
+        manuallyMuted: false,
+        fadeTimer: null,
+
+        init() {
+            const video = this.$refs.video;
+            if (!video) return;
+
+            new IntersectionObserver((entries) => {
+                if (entries[0].isIntersecting) {
+                    this.enter(video);
+                } else {
+                    this.exit(video);
+                }
+            }, { threshold: 0.5 }).observe(this.$el);
+        },
+
+        enter(video) {
+            clearInterval(this.fadeTimer);
+            video.volume = 1;
+            video.muted = this.manuallyMuted;
+            this.muted = this.manuallyMuted;
+
+            video.play().catch(() => {
+                // Autoplay bersuara diblokir browser (belum ada interaksi
+                // pengguna) -- lanjut jalan dalam kondisi mute saja.
+                video.muted = true;
+                this.muted = true;
+                video.play().catch(() => {});
+            });
+        },
+
+        exit(video) {
+            clearInterval(this.fadeTimer);
+
+            if (video.muted || video.volume === 0) {
+                video.pause();
+                return;
+            }
+
+            const steps = 20;
+            let step = 0;
+            this.fadeTimer = setInterval(() => {
+                step += 1;
+                video.volume = Math.max(0, 1 - step / steps);
+                if (step >= steps) {
+                    clearInterval(this.fadeTimer);
+                    video.pause();
+                }
+            }, 40); // 20 x 40ms = ~800ms
+        },
+
+        toggleMute() {
+            const video = this.$refs.video;
+            if (!video) return;
+
+            this.manuallyMuted = !this.muted;
+            this.muted = this.manuallyMuted;
+            video.muted = this.muted;
+
+            if (!this.muted) {
+                video.volume = 1;
+                video.play().catch(() => {});
+            }
+        },
+    }));
+
+    /**
+     * Versi YouTube dari player di atas -- pakai YouTube IFrame
+     * postMessage API (butuh enablejsapi=1 di embed_url, sudah
+     * diset dari App\Models\HomeSection::classifyVideoUrl()).
+     * Iframe baru diisi src-nya saat section masuk layar (supaya
+     * video tidak ikut ter-load kalau pengunjung tidak sampai
+     * scroll ke sana).
+     */
+    Alpine.data('keahlianYoutubePlayer', (embedUrl) => ({
+        muted: true,
+        manuallyMuted: false,
+        loaded: false,
+        fadeTimer: null,
+
+        init() {
+            new IntersectionObserver((entries) => {
+                if (entries[0].isIntersecting) {
+                    this.enter();
+                } else {
+                    this.exit();
+                }
+            }, { threshold: 0.5 }).observe(this.$el);
+        },
+
+        command(func, args = []) {
+            const iframe = this.$refs.iframe;
+            if (!iframe || !iframe.contentWindow) return;
+            iframe.contentWindow.postMessage(JSON.stringify({ event: 'command', func, args }), '*');
+        },
+
+        enter() {
+            clearInterval(this.fadeTimer);
+
+            if (!this.loaded) {
+                this.loaded = true;
+
+                // Selalu mulai SENYAP -- kebijakan autoplay browser cuma
+                // mengizinkan video autoplay kalau videonya mute. Kalau
+                // langsung minta mute=0 di sini, browser diam-diam MENOLAK
+                // autoplay-nya sama sekali (video berhenti di posisi
+                // "cued"/layar hitam, tidak ada fallback otomatis seperti
+                // tag <video> biasa).
+                this.$refs.iframe.src = embedUrl + '&autoplay=1&mute=1';
+
+                if (!this.manuallyMuted) {
+                    // Kita tidak memuat skrip resmi iframe_api Google (biar
+                    // ringan), jadi tidak ada event "player sudah siap" yang
+                    // bisa didengar -- pakai jeda singkat sebagai perkiraan
+                    // aman sebelum mencoba membunyikan otomatis.
+                    setTimeout(() => {
+                        if (!this.manuallyMuted && this.loaded) {
+                            this.command('unMute');
+                            this.command('setVolume', [100]);
+                            this.muted = false;
+                        }
+                    }, 600);
+                }
+
+                return;
+            }
+
+            this.command('playVideo');
+            if (!this.manuallyMuted) {
+                this.command('unMute');
+                this.command('setVolume', [100]);
+                this.muted = false;
+            }
+        },
+
+        exit() {
+            clearInterval(this.fadeTimer);
+            if (!this.loaded || this.muted) {
+                this.command('pauseVideo');
+                return;
+            }
+
+            const steps = 20;
+            let step = 0;
+            this.fadeTimer = setInterval(() => {
+                step += 1;
+                this.command('setVolume', [Math.max(0, 100 - Math.round((100 * step) / steps))]);
+                if (step >= steps) {
+                    clearInterval(this.fadeTimer);
+                    this.command('pauseVideo');
+                }
+            }, 40);
+        },
+
+        toggleMute() {
+            this.manuallyMuted = !this.muted;
+            this.muted = this.manuallyMuted;
+            this.command(this.muted ? 'mute' : 'unMute');
+            if (!this.muted) {
+                this.command('setVolume', [100]);
+                this.command('playVideo');
+            }
+        },
+    }));
+});
+
+import './dokumentasi-video.js';

@@ -59,7 +59,10 @@
     // di atas. Data warna tersimpan di home_sections, section_key
     // 'produk-unggulan'.
     $produkUnggulanSection = \App\Models\HomeSection::dataFor('produk-unggulan', ['bg_color' => null]);
-    $produkUnggulanBgColor = $produkUnggulanSection['bg_color'] ?: '#FFFFFF';
+    // Latar: warna POLOS secara bawaan; gradasi hanya kalau admin menyalakannya di
+    // Edit Web > Produk Unggulan > Gradasi (lihat App\Support\FrameBackground).
+    $produkUnggulanFrame = \App\Support\FrameBackground::resolve($produkUnggulanSection['bg_color'] ?? null, $produkUnggulanSection['bg_gradient'] ?? null, '#FFFFFF');
+    $produkUnggulanBgColor = $produkUnggulanFrame['base'];
 
     // Warna judul & link "Lihat Semua Produk" TIDAK diatur manual --
     // dihitung otomatis dari kontras warna latar, pola sama dengan
@@ -107,23 +110,9 @@
 <section
     id="produk"
     class="relative scroll-mt-24 overflow-hidden"
-    style="background: linear-gradient(135deg, color-mix(in oklab, {{ $produkUnggulanBgColor }} 100%, white 10%) 0%, {{ $produkUnggulanBgColor }} 55%, color-mix(in oklab, {{ $produkUnggulanBgColor }} 100%, black 14%) 100%);"
+    style="background: {{ $produkUnggulanFrame['css'] }};"
 >
-    {{--
-        Lapisan glow & tekstur tipis supaya latar tidak terasa flat walau
-        admin belum ganti warnanya -- keduanya diturunkan dari
-        $produkUnggulanBgColor (bukan warna baru yang di-hardcode), jadi
-        otomatis ikut menyesuaikan tiap kali admin ganti warna di Edit Web.
-        Pola sama persis dengan partials/frontend/categories.blade.php.
-    --}}
-    <div
-        class="pointer-events-none absolute -left-24 -top-32 h-110 w-110 rounded-full blur-3xl"
-        style="background: color-mix(in oklab, {{ $produkUnggulanBgColor }} 100%, white 60%); opacity: 0.4;"
-    ></div>
-    <div
-        class="pointer-events-none absolute inset-0 opacity-[0.05] mix-blend-overlay"
-        style="background-image: url('data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22140%22 height=%22140%22%3E%3Cfilter id=%22n%22%3E%3CfeTurbulence type=%22fractalNoise%22 baseFrequency=%220.85%22 numOctaves=%222%22 stitchTiles=%22stitch%22/%3E%3C/filter%3E%3Crect width=%22140%22 height=%22140%22 filter=%22url(%23n)%22/%3E%3C/svg%3E');"
-    ></div>
+    {{-- Latar polos: tanpa lapisan glow/tekstur supaya warna pilihan admin tampil apa adanya. --}}
 
     <div class="relative mx-auto max-w-7xl px-6 py-14 sm:px-8 lg:px-10 lg:py-20">
 
@@ -149,7 +138,7 @@
         @if ($products->isEmpty())
             <p class="mt-10 text-sm" style="color: {{ $produkUnggulanColors['link'] }};">Belum ada produk yang tersedia saat ini.</p>
         @else
-            <div class="mt-10 grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-3">
+            <div class="mt-10 grid grid-cols-2 gap-4 sm:grid-cols-2 sm:gap-8 lg:grid-cols-3">
                 @foreach ($products as $product)
                     @include('partials.frontend.product-card', ['product' => $product, 'cardTextColors' => $produkUnggulanColors])
                 @endforeach

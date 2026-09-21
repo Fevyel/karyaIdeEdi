@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="id" data-theme="{{ auth()->user()->theme ?? 'glow' }}">
+<html lang="id" data-theme="{{ auth()->user()->theme ?? 'glow' }}" style="zoom: 80%;">
     <head>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
