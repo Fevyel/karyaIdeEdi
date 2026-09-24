@@ -448,6 +448,9 @@ new #[Layout('layouts::admin-panel')] #[Title('Interaksi')] class extends Compon
                         <div>
                             <p class="text-sm font-semibold text-admin-ink">{{ $detailItem->customer_name }}</p>
                             <p class="text-xs text-admin-ink-soft">{{ $detailItem->jabatan ?: '—' }}</p>
+                            @if ($detailItem->displayAddress())
+                                <p class="text-xs text-admin-ink-soft"><i class="fa-solid fa-location-dot mr-1"></i>{{ $detailItem->displayAddress() }}</p>
+                            @endif
                         </div>
                     </div>
 

@@ -127,12 +127,473 @@ new #[Layout('layouts::admin-panel')] #[Title('Edit Web')] class extends Compone
      * "Tentang Kami"), jadi langsung `ready => true`.
      */
     public array $dokumentasiSections = [
-        ['key' => 'dokumentasi', 'label' => 'Hero & Galeri', 'icon' => 'fa-images', 'ready' => true],
-        ['key' => 'dokumentasi-1', 'label' => 'Dokumentasi 1', 'icon' => 'fa-arrows-left-right', 'ready' => true],
-        ['key' => 'dokumentasi-2', 'label' => 'Dokumentasi 2', 'icon' => 'fa-table-cells-large', 'ready' => true],
-        ['key' => 'dokumentasi-3', 'label' => 'Dokumentasi 3', 'icon' => 'fa-layer-group', 'ready' => true],
+        ['key' => 'dokumentasi', 'label' => 'Hero', 'icon' => 'fa-image', 'ready' => true],
+        ['key' => 'dokumentasi-3', 'label' => 'Galeri Video', 'icon' => 'fa-video', 'ready' => true],
+        ['key' => 'dokumentasi-foto', 'label' => 'Galeri Foto', 'icon' => 'fa-images', 'ready' => true],
     ];
 
+    /**
+     * Daftar section untuk grup "Our Craftsmen" (frontend: /pengrajin-kami --
+     * lihat resources/views/pages/frontend/pengrajin.blade.php). Kartunya
+     * sudah `ready` (bisa diklik, lihat $groups di bawah). Hero sudah aktif
+     * (`ready => true`); Daftar Pengrajin & CTA masih `ready => false` --
+     * sidebar tampil begitu masuk, tapi kedua item itu masih berlabel
+     * "Segera" dan tidak bisa diklik, sampai diaktifkan menyusul satu per
+     * satu (pola sama persis dengan $tentangKamiSections waktu pertama kali
+     * dibuat).
+     */
+    /** Dua section halaman Sustainability: Hero + Prinsip Sustainability. */
+    public array $sustainabilitySections = [
+        ['key' => 'sustainability-hero', 'label' => 'Hero', 'icon' => 'fa-leaf', 'ready' => true],
+        ['key' => 'sustainability-points', 'label' => 'Prinsip Sustainability', 'icon' => 'fa-seedling', 'ready' => true],
+    ];
+    /** Privacy Policy: Hero + 6 bagian + Kontak. */
+    public array $privacySections = [
+        ['key' => 'privacy-hero', 'label' => 'Hero', 'icon' => 'fa-lock', 'ready' => true],
+        ['key' => 'privacy-information', 'label' => '1. Informasi yang Dikumpulkan', 'icon' => 'fa-database', 'ready' => true],
+        ['key' => 'privacy-usage', 'label' => '2. Penggunaan Informasi', 'icon' => 'fa-gears', 'ready' => true],
+        ['key' => 'privacy-security', 'label' => '3. Penyimpanan & Keamanan', 'icon' => 'fa-shield-halved', 'ready' => true],
+        ['key' => 'privacy-sharing', 'label' => '4. Berbagi Informasi', 'icon' => 'fa-people-arrows', 'ready' => true],
+        ['key' => 'privacy-rights', 'label' => '5. Hak atas Data Pribadi', 'icon' => 'fa-user-shield', 'ready' => true],
+        ['key' => 'privacy-changes', 'label' => '6. Perubahan Kebijakan', 'icon' => 'fa-rotate', 'ready' => true],
+        ['key' => 'privacy-contact', 'label' => 'Kontak', 'icon' => 'fa-envelope-open-text', 'ready' => true],
+    ];
+
+    /** Cookies: Hero + Ringkasan + Rincian Kategori + Pengaturan Browser + Kontak. */
+    public array $cookiesSections = [
+        ['key' => 'cookies-hero', 'label' => 'Hero', 'icon' => 'fa-cookie-bite', 'ready' => true],
+        ['key' => 'cookies-summary', 'label' => 'Ringkasan', 'icon' => 'fa-circle-check', 'ready' => true],
+        ['key' => 'cookies-categories', 'label' => 'Rincian per Kategori', 'icon' => 'fa-layer-group', 'ready' => true],
+        ['key' => 'cookies-browser', 'label' => 'Mengatur Penyimpanan', 'icon' => 'fa-sliders', 'ready' => true],
+        ['key' => 'cookies-contact', 'label' => 'Kontak', 'icon' => 'fa-comments', 'ready' => true],
+    ];
+    /** Terms of Service: Hero + 9 bagian ketentuan + Kontak. */
+    public array $termsSections = [
+        ['key' => 'terms-hero', 'label' => 'Hero', 'icon' => 'fa-file-contract', 'ready' => true],
+        ['key' => 'terms-acceptance', 'label' => '1. Penerimaan Ketentuan', 'icon' => 'fa-file-signature', 'ready' => true],
+        ['key' => 'terms-custom-order', 'label' => '2. Pemesanan Custom', 'icon' => 'fa-ruler-combined', 'ready' => true],
+        ['key' => 'terms-payment', 'label' => '3. Harga & Pembayaran', 'icon' => 'fa-tags', 'ready' => true],
+        ['key' => 'terms-delivery', 'label' => '4. Pengerjaan & Pengiriman', 'icon' => 'fa-truck-fast', 'ready' => true],
+        ['key' => 'terms-cancellation', 'label' => '5. Pembatalan & Perubahan', 'icon' => 'fa-ban', 'ready' => true],
+        ['key' => 'terms-warranty', 'label' => '6. Garansi & Pengembalian', 'icon' => 'fa-shield-heart', 'ready' => true],
+        ['key' => 'terms-copyright', 'label' => '7. Hak Cipta & Konten', 'icon' => 'fa-copyright', 'ready' => true],
+        ['key' => 'terms-liability', 'label' => '8. Batasan Tanggung Jawab', 'icon' => 'fa-scale-balanced', 'ready' => true],
+        ['key' => 'terms-changes', 'label' => '9. Perubahan Ketentuan', 'icon' => 'fa-rotate', 'ready' => true],
+        ['key' => 'terms-contact', 'label' => 'Kontak', 'icon' => 'fa-handshake', 'ready' => true],
+    ];
+    public array $ourCraftsmenSections = [
+        ['key' => 'our-craftsmen-hero', 'label' => 'Hero', 'icon' => 'fa-image', 'ready' => true],
+        ['key' => 'our-craftsmen-daftar', 'label' => 'Pemilik & Founder', 'icon' => 'fa-user-tie', 'ready' => true],
+        ['key' => 'our-craftsmen-cta', 'label' => 'Mulai dari Sebuah Ide', 'icon' => 'fa-lightbulb', 'ready' => true],
+    ];
+
+    /**
+     * Section Hero halaman "Our Craftsmen" (frontend: /pengrajin-kami --
+     * lihat resources/views/pages/frontend/pengrajin.blade.php bagian
+     * HERO). Yang bisa diedit: label kecil (eyebrow), judul, paragraf,
+     * dan warna frame (latar section). Sama seperti Sejak Berdiri/Nilai
+     * Kami dkk: warna judul & paragraf BUKAN field terpisah -- otomatis
+     * dihitung dari kontras warna latar yang dipilih (lihat
+     * $contrastOurCraftsmenHeroColors di pengrajin.blade.php), supaya
+     * teks tidak pernah "bertabrakan" dengan warna latar apa pun.
+     */
+    // ================= SUSTAINABILITY =================
+
+    public bool $sustainabilityHeroUseCustomBg = false;
+    public string $sustainabilityHeroBgColor = '#F9F7F2';
+    public string $sustainabilityHeroEyebrow = 'Sustainability';
+    public string $sustainabilityHeroHeading = 'Kualitas yang Dibuat untuk Bertahan';
+    public string $sustainabilityHeroDescription = 'Bagi kami, cara paling nyata untuk mengurangi limbah adalah membuat furnitur yang benar-benar awet dan tidak perlu cepat diganti â€” dikerjakan sesuai pesanan, dari bahan yang dipilih dengan hati-hati.';
+    public array $sustainabilityHeroBgPresets = \App\Support\ColorPalette::PRESETS;
+
+    public bool $sustainabilityPointsUseCustomBg = false;
+    public string $sustainabilityPointsBgColor = '#FFFFFF';
+    public array $sustainabilityPoints = [];
+    public string $sustainabilityNote = 'Catatan: halaman ini menjelaskan prinsip kerja kami secara umum. Kami akan memperbarui halaman ini kalau ke depannya ada praktik atau sertifikasi keberlanjutan yang lebih spesifik untuk ditampilkan.';
+    public array $sustainabilityPointsBgPresets = \App\Support\ColorPalette::PRESETS;
+    public array $sustainabilityIconOptions = [
+        'fa-tree', 'fa-ruler-combined', 'fa-hammer', 'fa-couch',
+        'fa-leaf', 'fa-seedling', 'fa-recycle', 'fa-screwdriver-wrench',
+    ];
+
+    private function sustainabilityHeroDefaults(): array
+    {
+        return [
+            'bg_color' => null,
+            'eyebrow' => 'Sustainability',
+            'heading' => 'Kualitas yang Dibuat untuk Bertahan',
+            'description' => 'Bagi kami, cara paling nyata untuk mengurangi limbah adalah membuat furnitur yang benar-benar awet dan tidak perlu cepat diganti â€” dikerjakan sesuai pesanan, dari bahan yang dipilih dengan hati-hati.',
+        ];
+    }
+
+    private function sustainabilityPointsDefaults(): array
+    {
+        return [
+            'bg_color' => null,
+            'items' => [
+                ['icon' => 'fa-tree', 'title' => 'Bahan Baku Pilihan', 'text' => 'Setiap kayu diseleksi manual sebelum masuk proses produksi, supaya hasil akhirnya kuat dan awet dipakai bertahun-tahun.'],
+                ['icon' => 'fa-ruler-combined', 'title' => 'Dibuat Sesuai Pesanan', 'text' => 'Produk custom dikerjakan sesuai ukuran & kebutuhan pemesan â€” mengurangi kelebihan stok dan sisa bahan yang terbuang percuma.'],
+                ['icon' => 'fa-hammer', 'title' => 'Dikerjakan Tangan, Bukan Massal', 'text' => 'Diproses langsung oleh tukang kayu berpengalaman, bukan produksi pabrik â€” sehingga tiap detail bisa diperiksa satu per satu.'],
+                ['icon' => 'fa-couch', 'title' => 'Furnitur untuk Jangka Panjang', 'text' => 'Kami merancang furnitur yang tahan lama secara struktur, bukan sekadar tampilan â€” supaya lebih jarang perlu diganti.'],
+            ],
+            'note' => 'Catatan: halaman ini menjelaskan prinsip kerja kami secara umum. Kami akan memperbarui halaman ini kalau ke depannya ada praktik atau sertifikasi keberlanjutan yang lebih spesifik untuk ditampilkan.',
+        ];
+    }
+    // ================= PRIVACY POLICY =================
+
+    public string $privacyHeroEyebrow = 'Privacy Policy';
+    public string $privacyHeroHeading = 'Kebijakan Privasi';
+    public string $privacyHeroDescription = 'Privasi Anda penting bagi kami. Halaman ini menjelaskan secara transparan informasi apa yang kami kumpulkan, mengapa kami membutuhkannya, dan bagaimana kami menjaganya.';
+    public string $privacyHeroUpdatedDate = '2026-08-01';
+
+    public array $privacyContent = [];
+
+    public string $privacyContactHeading = 'Ada Pertanyaan Soal Privasi Anda?';
+    public string $privacyContactDescription = 'Hubungi kami kapan saja - kami siap menjelaskan bagaimana data Anda dikelola.';
+    public string $privacyContactButtonLabel = 'Hubungi via WhatsApp';
+
+    private function privacyHeroDefaults(): array
+    {
+        return [
+            'eyebrow' => 'Privacy Policy',
+            'heading' => 'Kebijakan Privasi',
+            'description' => 'Privasi Anda penting bagi kami. Halaman ini menjelaskan secara transparan informasi apa yang kami kumpulkan, mengapa kami membutuhkannya, dan bagaimana kami menjaganya.',
+            'updated_date' => '2026-08-01',
+        ];
+    }
+
+    private function privacyContentDefaults(): array
+    {
+        return [
+            'information' => [
+                'title' => '1. Informasi yang Kami Kumpulkan',
+                'intro' => 'Kami hanya mengumpulkan informasi yang benar-benar Anda berikan sendiri saat berinteraksi dengan kami, antara lain:',
+                'bullets' => [
+                    'Nama, nomor telepon/WhatsApp, dan alamat pengiriman - saat Anda mengisi formulir booking custom furniture.',
+                    'Pesan atau lampiran gambar referensi - saat Anda menghubungi kami melalui WhatsApp.',
+                    'Riwayat produk yang dilihat - digunakan hanya untuk menampilkan rekomendasi produk serupa, tersimpan sementara di server.',
+                    'Data favorit & keranjang belanja - tersimpan lokal di penyimpanan browser perangkat Anda sendiri, bukan di server kami, dan tidak memerlukan akun/login.',
+                ],
+                'outro' => '',
+            ],
+            'usage' => [
+                'title' => '2. Bagaimana Kami Menggunakan Informasi Anda',
+                'intro' => 'Informasi yang Anda berikan digunakan semata-mata untuk:',
+                'bullets' => [
+                    'Memproses dan mengonfirmasi pesanan custom furniture Anda.',
+                    'Menghubungi Anda kembali terkait status pesanan melalui WhatsApp.',
+                    'Menampilkan status pesanan pada halaman Lacak Pesanan menggunakan tautan unik milik Anda.',
+                    'Meningkatkan kualitas katalog produk berdasarkan produk yang paling sering dilihat pembeli (secara agregat, tanpa mengidentifikasi individu).',
+                ],
+                'outro' => 'Kami tidak pernah menjual, menyewakan, atau memperdagangkan data pribadi Anda kepada pihak ketiga mana pun untuk kepentingan pemasaran.',
+            ],
+            'security' => [
+                'title' => '3. Penyimpanan & Keamanan Data',
+                'intro' => 'Data pesanan disimpan pada sistem basis data yang hanya dapat diakses oleh admin toko melalui panel administrasi yang dilindungi kata sandi. Kami menerapkan langkah keamanan yang wajar untuk mencegah akses, perubahan, atau pengungkapan data tanpa izin.',
+                'bullets' => [],
+                'outro' => 'Meski begitu, tidak ada metode transmisi data melalui internet yang 100% aman sepenuhnya. Kami senantiasa berupaya menjaga data Anda dengan sebaik mungkin.',
+            ],
+            'sharing' => [
+                'title' => '4. Berbagi Informasi dengan Pihak Ketiga',
+                'intro' => 'Kami hanya membagikan informasi yang diperlukan kepada:',
+                'bullets' => [
+                    'Layanan WhatsApp - sebagai kanal komunikasi utama yang Anda pilih sendiri untuk bernegosiasi dan konfirmasi pesanan.',
+                    'Mitra pengiriman/ekspedisi - sebatas nama & alamat, semata-mata untuk keperluan pengantaran barang pesanan Anda.',
+                ],
+                'outro' => 'Kami tidak membagikan data Anda kepada pengiklan atau pihak ketiga lain di luar kebutuhan operasional di atas.',
+            ],
+            'rights' => [
+                'title' => '5. Hak Anda atas Data Pribadi',
+                'intro' => 'Anda berhak untuk:',
+                'bullets' => [
+                    'Meminta salinan data pribadi yang kami simpan terkait pesanan Anda.',
+                    'Meminta koreksi apabila terdapat data yang keliru.',
+                    'Meminta penghapusan data setelah pesanan selesai diproses, selama tidak melanggar kewajiban hukum/pembukuan yang berlaku.',
+                ],
+                'outro' => 'Untuk menggunakan hak-hak tersebut, silakan hubungi kami melalui kontak pada bagian akhir halaman ini.',
+            ],
+            'changes' => [
+                'title' => '6. Perubahan Kebijakan Ini',
+                'intro' => 'Kebijakan Privasi ini dapat kami perbarui sewaktu-waktu mengikuti perkembangan layanan. Tanggal pembaruan terakhir selalu tercantum di bagian atas halaman ini. Kami menganjurkan Anda meninjau halaman ini secara berkala.',
+                'bullets' => [],
+                'outro' => '',
+            ],
+        ];
+    }
+
+    private function privacyContactDefaults(): array
+    {
+        return [
+            'heading' => 'Ada Pertanyaan Soal Privasi Anda?',
+            'description' => 'Hubungi kami kapan saja - kami siap menjelaskan bagaimana data Anda dikelola.',
+            'button_label' => 'Hubungi via WhatsApp',
+        ];
+    }
+
+    // ================= COOKIES =================
+
+    public string $cookiesHeroEyebrow = 'Cookies';
+    public string $cookiesHeroHeading = 'Kebijakan Cookie';
+    public string $cookiesHeroDescription = 'Kami menjaga situs ini seringan dan sesederhana mungkin. Berikut rincian lengkap dan jujur soal data apa saja yang tersimpan di perangkat Anda saat berkunjung ke Karya Ide Edi.';
+    public string $cookiesHeroUpdatedDate = '2026-08-01';
+
+    public string $cookiesSummaryLabel = 'Singkatnya:';
+    public string $cookiesSummaryText = 'kami tidak memasang cookie pelacak iklan atau analitik pihak ketiga. Yang kami simpan di perangkat Anda hanya hal-hal yang membuat pengalaman belanja lebih nyaman - seperti daftar favorit dan keranjang Anda sendiri.';
+
+    public string $cookiesCategoriesHeading = 'Rincian per Kategori';
+    public string $cookiesCategoriesDescription = 'Kategori esensial & preferensi lokal tidak dapat kami hindari karena menjadi dasar fungsi belanja di situs ini. Sisanya, secara sadar tidak kami gunakan.';
+    public array $cookiesCategoryItems = [];
+    public string $cookiesStatusAlways = 'Selalu Aktif';
+    public string $cookiesStatusLocal = 'Tersimpan di Perangkat Anda';
+    public string $cookiesStatusNone = 'Tidak Digunakan';
+
+    public string $cookiesBrowserHeading = 'Mengatur Penyimpanan di Browser Anda';
+    public string $cookiesBrowserText = 'Karena favorit dan keranjang tersimpan secara lokal di browser Anda, Anda bisa menghapusnya kapan saja melalui pengaturan "Clear browsing data" / "Hapus data situs" pada browser yang Anda gunakan. Menghapus data ini hanya akan mengosongkan favorit & keranjang di perangkat tersebut - tidak memengaruhi pesanan yang sudah dikonfirmasi.';
+
+    public string $cookiesContactHeading = 'Masih Ada yang Ingin Ditanyakan?';
+    public string $cookiesContactDescription = 'Kami senang menjelaskan lebih lanjut soal bagaimana situs ini bekerja.';
+    public string $cookiesContactButtonLabel = 'Hubungi via WhatsApp';
+
+    private function cookiesHeroDefaults(): array
+    {
+        return [
+            'eyebrow' => 'Cookies',
+            'heading' => 'Kebijakan Cookie',
+            'description' => 'Kami menjaga situs ini seringan dan sesederhana mungkin. Berikut rincian lengkap dan jujur soal data apa saja yang tersimpan di perangkat Anda saat berkunjung ke Karya Ide Edi.',
+            'updated_date' => '2026-08-01',
+        ];
+    }
+
+    private function cookiesSummaryDefaults(): array
+    {
+        return [
+            'label' => 'Singkatnya:',
+            'text' => 'kami tidak memasang cookie pelacak iklan atau analitik pihak ketiga. Yang kami simpan di perangkat Anda hanya hal-hal yang membuat pengalaman belanja lebih nyaman - seperti daftar favorit dan keranjang Anda sendiri.',
+        ];
+    }
+
+    private function cookiesCategoriesDefaults(): array
+    {
+        return [
+            'heading' => 'Rincian per Kategori',
+            'description' => 'Kategori esensial & preferensi lokal tidak dapat kami hindari karena menjadi dasar fungsi belanja di situs ini. Sisanya, secara sadar tidak kami gunakan.',
+            'items' => [
+                ['name' => 'Esensial', 'desc' => 'Diperlukan agar situs berfungsi dengan baik - misalnya menjaga sesi login admin tetap aktif dan keamanan formulir. Tidak dapat dinonaktifkan karena situs tidak akan berjalan normal tanpanya.'],
+                ['name' => 'Preferensi Lokal', 'desc' => 'Favorit dan Keranjang belanja Anda disimpan di localStorage browser perangkat ini (bukan cookie, dan bukan di server kami) agar tetap tersimpan saat Anda kembali berkunjung - tanpa perlu membuat akun.'],
+                ['name' => 'Tautan Lacak Pesanan', 'desc' => 'Setelah pesanan dibuat, token pelacakan pesanan Anda didaftarkan pada perangkat ini supaya halaman Lacak Pesanan bisa langsung menampilkan riwayat pesanan Anda tanpa harus login.'],
+                ['name' => 'Analitik Pihak Ketiga', 'desc' => 'Kami tidak memasang Google Analytics, Meta Pixel, atau alat pelacak iklan pihak ketiga mana pun di situs ini.'],
+                ['name' => 'Iklan & Retargeting', 'desc' => 'Kami tidak membagikan data kunjungan Anda kepada jaringan iklan, dan tidak menampilkan iklan pihak ketiga di situs ini.'],
+            ],
+            'status_labels' => [
+                'always' => 'Selalu Aktif',
+                'local' => 'Tersimpan di Perangkat Anda',
+                'none' => 'Tidak Digunakan',
+            ],
+        ];
+    }
+
+    private function cookiesBrowserDefaults(): array
+    {
+        return [
+            'heading' => 'Mengatur Penyimpanan di Browser Anda',
+            'text' => 'Karena favorit dan keranjang tersimpan secara lokal di browser Anda, Anda bisa menghapusnya kapan saja melalui pengaturan "Clear browsing data" / "Hapus data situs" pada browser yang Anda gunakan. Menghapus data ini hanya akan mengosongkan favorit & keranjang di perangkat tersebut - tidak memengaruhi pesanan yang sudah dikonfirmasi.',
+        ];
+    }
+
+    private function cookiesContactDefaults(): array
+    {
+        return [
+            'heading' => 'Masih Ada yang Ingin Ditanyakan?',
+            'description' => 'Kami senang menjelaskan lebih lanjut soal bagaimana situs ini bekerja.',
+            'button_label' => 'Hubungi via WhatsApp',
+        ];
+    }
+    // ================= TERMS OF SERVICE =================
+
+    public string $termsHeroEyebrow = 'Terms of Service';
+    public string $termsHeroHeading = 'Ketentuan Layanan';
+    public string $termsHeroDescription = 'Ketentuan berikut mengatur hubungan Anda dengan Karya Ide Edi - mulai dari proses pemesanan custom furniture hingga pengiriman ke tangan Anda.';
+    public string $termsHeroUpdatedDate = '2026-08-01';
+
+    public array $termsContent = [];
+
+    public string $termsContactHeading = 'Butuh Penjelasan Lebih Lanjut?';
+    public string $termsContactDescription = 'Tim kami siap membantu menjelaskan ketentuan pemesanan sebelum Anda melanjutkan booking.';
+    public string $termsContactButtonLabel = 'Hubungi via WhatsApp';
+
+    private function termsHeroDefaults(): array
+    {
+        return [
+            'eyebrow' => 'Terms of Service',
+            'heading' => 'Ketentuan Layanan',
+            'description' => 'Ketentuan berikut mengatur hubungan Anda dengan Karya Ide Edi - mulai dari proses pemesanan custom furniture hingga pengiriman ke tangan Anda.',
+            'updated_date' => '2026-08-01',
+        ];
+    }
+
+    private function termsContentDefaults(): array
+    {
+        return [
+            'acceptance' => [
+                'title' => '1. Penerimaan Ketentuan',
+                'text' => 'Dengan mengakses dan menggunakan situs Karya Ide Edi, melihat katalog produk, atau mengirimkan formulir booking custom furniture, Anda dianggap telah membaca, memahami, dan menyetujui seluruh ketentuan yang tercantum dalam halaman ini.',
+            ],
+            'custom-order' => [
+                'title' => '2. Proses Pemesanan Custom',
+                'text' => 'Setiap produk pada dasarnya bersifat custom-made (dibuat sesuai pesanan), sehingga:',
+                'bullets' => [
+                    'Pengiriman formulir booking bukan konfirmasi final - pesanan baru dianggap sah setelah dikonfirmasi kedua belah pihak melalui WhatsApp.',
+                    'Spesifikasi (ukuran, bahan, warna, deskripsi custom) yang Anda kirimkan menjadi acuan utama proses produksi.',
+                    'Perubahan spesifikasi setelah produksi dimulai dapat memengaruhi waktu pengerjaan dan biaya tambahan, dan akan didiskusikan terlebih dahulu.',
+                ],
+            ],
+            'payment' => [
+                'title' => '3. Harga & Pembayaran',
+                'text' => 'Harga yang tercantum di katalog merupakan estimasi awal dan dapat berubah menyesuaikan kompleksitas custom, bahan, dan ukuran akhir yang disepakati saat negosiasi via WhatsApp. Skema pembayaran (termasuk uang muka/DP bila berlaku) akan diinformasikan dan disepakati bersama sebelum produksi dimulai - kami tidak memproses pembayaran otomatis melalui situs ini.',
+            ],
+            'delivery' => [
+                'title' => '4. Waktu Pengerjaan & Pengiriman',
+                'text' => 'Estimasi waktu pengerjaan disampaikan saat konfirmasi pesanan dan dapat bervariasi tergantung tingkat kesulitan desain serta antrian produksi yang sedang berjalan. Status terkini dapat dipantau kapan saja melalui halaman Lacak Pesanan menggunakan tautan unik yang diberikan untuk setiap pesanan.',
+            ],
+            'cancellation' => [
+                'title' => '5. Pembatalan & Perubahan Pesanan',
+                'text' => 'Pembatalan sebelum proses produksi dimulai dapat diajukan melalui WhatsApp dan akan diproses sesuai kesepakatan terkait pengembalian uang muka (bila ada). Setelah produksi berjalan, pembatalan menjadi lebih terbatas mengingat bahan dan waktu kerja yang sudah dialokasikan khusus untuk pesanan Anda - kondisi ini akan dijelaskan secara terbuka saat negosiasi.',
+            ],
+            'warranty' => [
+                'title' => '6. Garansi & Pengembalian',
+                'text' => 'Ketentuan lengkap mengenai garansi produk dan kebijakan retur diatur secara khusus pada halaman Profil, bagian Garansi & Pengiriman, agar informasinya selalu konsisten dan mudah ditemukan di satu tempat.',
+                'link_labels' => [
+                    'Lihat ketentuan Garansi',
+                    'Lihat ketentuan Pengiriman & Retur',
+                ],
+            ],
+            'copyright' => [
+                'title' => '7. Hak Cipta & Konten Situs',
+                'text' => 'Seluruh nama merek, logo, foto produk, dan konten pada situs ini adalah milik Karya Ide Edi dan dilindungi hak cipta. Penggunaan, penyalinan, atau reproduksi konten tanpa izin tertulis tidak diperkenankan.',
+            ],
+            'liability' => [
+                'title' => '8. Batasan Tanggung Jawab',
+                'text' => 'Kami berupaya menampilkan informasi produk dan harga seakurat mungkin, namun variasi kecil pada warna atau tekstur material alami (kayu) adalah hal wajar dan bukan merupakan cacat produk. Kami tidak bertanggung jawab atas keterlambatan yang disebabkan oleh faktor di luar kendali kami, seperti kendala pihak ekspedisi.',
+            ],
+            'changes' => [
+                'title' => '9. Perubahan Ketentuan',
+                'text' => 'Ketentuan Layanan ini dapat diperbarui sewaktu-waktu untuk menyesuaikan perkembangan layanan kami. Tanggal pembaruan terakhir selalu tercantum pada bagian atas halaman ini.',
+            ],
+        ];
+    }
+
+    private function termsContactDefaults(): array
+    {
+        return [
+            'heading' => 'Butuh Penjelasan Lebih Lanjut?',
+            'description' => 'Tim kami siap membantu menjelaskan ketentuan pemesanan sebelum Anda melanjutkan booking.',
+            'button_label' => 'Hubungi via WhatsApp',
+        ];
+    }
+    public bool $ourCraftsmenHeroUseCustomBg = false;
+
+    public string $ourCraftsmenHeroBgColor = '#F9F7F2';
+
+    public string $ourCraftsmenHeroEyebrow = 'Our Craftsmen';
+
+    public string $ourCraftsmenHeroHeading = 'Tangan-Tangan di Balik Setiap Produk';
+
+    public string $ourCraftsmenHeroDescription = 'Setiap produk Karya Ide Edi dibuat langsung oleh tukang kayu berpengalaman — bukan produksi massal. Berikut sebagian dari tim yang mengerjakan pesanan Anda dari awal sampai jadi.';
+
+    /** @var array<int, array{label: string, value: string, check: string}> */
+    public array $ourCraftsmenHeroBgPresets = \App\Support\ColorPalette::PRESETS;
+
+    /**
+     * @return array{bg_color: null, eyebrow: string, heading: string, description: string}
+     */
+    private function ourCraftsmenHeroDefaults(): array
+    {
+        return [
+            'bg_color' => null,
+            'eyebrow' => 'Our Craftsmen',
+            'heading' => 'Tangan-Tangan di Balik Setiap Produk',
+            'description' => 'Setiap produk Karya Ide Edi dibuat langsung oleh tukang kayu berpengalaman — bukan produksi massal. Berikut sebagian dari tim yang mengerjakan pesanan Anda dari awal sampai jadi.',
+        ];
+    }
+
+
+    // ================= OUR CRAFTSMEN â€” PROFIL PEMILIK =================
+
+    public bool $ourCraftsmenOwnerUseCustomBg = false;
+
+    public string $ourCraftsmenOwnerBgColor = '#F8F5F0';
+
+    public array $ourCraftsmenOwnerBgPresets = \App\Support\ColorPalette::PRESETS;
+
+    public string $ourCraftsmenOwnerEyebrow = 'Pemilik & Founder';
+
+    public string $ourCraftsmenOwnerName = 'Pemilik Karya Ide Edi';
+
+    public string $ourCraftsmenOwnerRole = 'Founder & Creative Director';
+
+    public string $ourCraftsmenOwnerHeading = 'Berawal dari ketelitian, tumbuh menjadi karya yang dipercaya.';
+
+    public string $ourCraftsmenOwnerDescription = 'Karya Ide Edi dibangun dengan perhatian pada detail, fungsi, dan karakter setiap ruang. Setiap pesanan dikerjakan dengan pendekatan personal agar furnitur tidak hanya mengisi ruang, tetapi benar-benar menjadi bagian dari cerita pemiliknya.';
+
+    public string $ourCraftsmenOwnerQuote = 'Bagi kami, furnitur yang baik bukan sekadar terlihat indah. Ia harus terasa tepat untuk orang dan ruang yang menggunakannya.';
+
+    public ?string $ourCraftsmenOwnerPhotoPathLama = null;
+
+    /** Hasil crop portrait 4:5. Foto baru WAJIB melewati cropper sebelum disimpan. */
+    public ?string $ourCraftsmenOwnerPhotoCroppedBase64 = null;
+
+    public $ourCraftsmenOwnerPhotoUpload = null;
+
+    /** @var array<int, array{value:string,label:string}> */
+    public array $ourCraftsmenOwnerStats = [
+        ['value' => 'Custom', 'label' => 'Dibuat sesuai kebutuhan'],
+        ['value' => 'Detail', 'label' => 'Fokus pada kerapian'],
+        ['value' => 'Jepara', 'label' => 'Berbasis karya lokal'],
+    ];
+
+    private function ourCraftsmenOwnerDefaults(): array
+    {
+        return [
+            'eyebrow' => 'Pemilik & Founder',
+            'name' => 'Pemilik Karya Ide Edi',
+            'role' => 'Founder & Creative Director',
+            'heading' => 'Berawal dari ketelitian, tumbuh menjadi karya yang dipercaya.',
+            'description' => 'Karya Ide Edi dibangun dengan perhatian pada detail, fungsi, dan karakter setiap ruang. Setiap pesanan dikerjakan dengan pendekatan personal agar furnitur tidak hanya mengisi ruang, tetapi benar-benar menjadi bagian dari cerita pemiliknya.',
+            'quote' => 'Bagi kami, furnitur yang baik bukan sekadar terlihat indah. Ia harus terasa tepat untuk orang dan ruang yang menggunakannya.',
+            'photo_path' => null,
+            'stats' => [
+                ['value' => 'Custom', 'label' => 'Dibuat sesuai kebutuhan'],
+                ['value' => 'Detail', 'label' => 'Fokus pada kerapian'],
+                ['value' => 'Jepara', 'label' => 'Berbasis karya lokal'],
+            ],
+        ];
+    }
+
+    // ================= OUR CRAFTSMEN â€” CTA =================
+
+    public bool $ourCraftsmenCtaUseCustomBg = false;
+
+    public string $ourCraftsmenCtaBgColor = '#21140D';
+
+    public array $ourCraftsmenCtaBgPresets = \App\Support\ColorPalette::PRESETS;
+
+    public string $ourCraftsmenCtaEyebrow = 'Mulai dari Sebuah Ide';
+
+    public string $ourCraftsmenCtaHeading = 'Punya ide furnitur custom?';
+
+    public string $ourCraftsmenCtaDescription = 'Ceritakan ukuran, fungsi, gaya, atau referensi yang Anda inginkan. Kami siap membantu menerjemahkannya menjadi furnitur yang sesuai dengan ruang Anda.';
+
+    public string $ourCraftsmenCtaButtonText = 'Konsultasi via WhatsApp';
+
+    private function ourCraftsmenCtaDefaults(): array
+    {
+        return [
+            'eyebrow' => 'Mulai dari Sebuah Ide',
+            'heading' => 'Punya ide furnitur custom?',
+            'description' => 'Ceritakan ukuran, fungsi, gaya, atau referensi yang Anda inginkan. Kami siap membantu menerjemahkannya menjadi furnitur yang sesuai dengan ruang Anda.',
+            'button_text' => 'Konsultasi via WhatsApp',
+        ];
+    }
     /**
      * Hero halaman "Dokumentasi" (frontend: /dokumentasi -- lihat
      * resources/views/pages/frontend/booking.blade.php). Yang bisa diedit:
@@ -186,21 +647,17 @@ new #[Layout('layouts::admin-panel')] #[Title('Edit Web')] class extends Compone
     public array $dokumentasiGaleriUploadBaru = [null, null, null, null, null, null];
 
     /**
-     * ================= 3 SECTION TAMBAHAN HALAMAN DOKUMENTASI =================
+     * ================= SECTION TAMBAHAN HALAMAN DOKUMENTASI =================
      *
      * Ini SECTION BARU yang ditaruh DI BAWAH hero + galeri di atas -- hero dan
      * galeri TIDAK diubah sedikit pun oleh fitur ini. Lihat bagian "SECTION
-     * TAMBAHAN: DOKUMENTASI 1, 2, 3" di
+     * TAMBAHAN: DOKUMENTASI 3" di
      * resources/views/pages/frontend/booking.blade.php.
      *
-     *   Dokumentasi 1 -> pita foto/video berjalan kanan ke kiri + teks di kanan
-     *                    (section_key 'dokumentasi-1')
-     *   Dokumentasi 2 -> Video Wall Mosaic, klik ubin untuk zoom
-     *                    (section_key 'dokumentasi-2')
      *   Dokumentasi 3 -> kartu foto/video bertumpuk miring 3D
      *                    (section_key 'dokumentasi-3')
      *
-     * TIDAK ADA BATAS JUMLAH foto/video di ketiga section ini -- admin bisa
+     * TIDAK ADA BATAS JUMLAH foto/video di section ini -- admin bisa
      * menambah (tombol "Tambah") atau menghapus item sebanyak yang mau.
      * Karena itu setiap item DIKUNCI DENGAN KEY STRING (UUID), bukan indeks
      * angka biasa: index bisa berubah kalau ada item yang dihapus di
@@ -212,52 +669,6 @@ new #[Layout('layouts::admin-panel')] #[Title('Edit Web')] class extends Compone
      * lain ($dokNTipe, $dokNKeterangan, dst) adalah array asosiatif yang
      * di-index oleh key yang sama.
      */
-
-    // ---- Dokumentasi 1 (Pita Berjalan) ----
-
-    public string $dok1Judul = 'Jejak Proses';
-
-    public string $dok1Subjudul = 'Pita Karya';
-
-    public string $dok1Deskripsi = '';
-
-    /**
-     * Kecepatan pita berjalan dalam DETIK per satu putaran penuh. Makin besar
-     * = makin pelan. Dipakai frontend sebagai `--kie-dok1-speed`.
-     * Sengaja bertipe string supaya input number yang dikosongkan admin tidak
-     * bikin error tipe di Livewire -- dicasting ke int waktu disimpan.
-     */
-    public string $dok1MarqueeSpeed = '45';
-
-    /** Urutan item pita, berisi key UUID. */
-    public array $dok1Keys = [];
-
-    public array $dok1Tipe = [];
-
-    public array $dok1Keterangan = [];
-
-    public array $dok1PathLama = [];
-
-    public array $dok1UploadBaru = [];
-
-    // ---- Dokumentasi 2 (Video Wall Mosaic) ----
-
-    public string $dok2Judul = 'Dinding Karya';
-
-    public string $dok2Subjudul = 'Video Wall';
-
-    public string $dok2Deskripsi = '';
-
-    /** Urutan ubin, berisi key UUID. */
-    public array $dok2Keys = [];
-
-    public array $dok2Tipe = [];
-
-    public array $dok2Keterangan = [];
-
-    public array $dok2PathLama = [];
-
-    public array $dok2UploadBaru = [];
 
     // ---- Dokumentasi 3 (3D Tilt Card Stack) ----
 
@@ -277,6 +688,17 @@ new #[Layout('layouts::admin-panel')] #[Title('Edit Web')] class extends Compone
     public array $dok3PathLama = [];
 
     public array $dok3UploadBaru = [];
+
+    // ---- Galeri Foto Dokumentasi (khusus FOTO) ----
+    public string $dokFotoJudul = 'Momen Karya dalam Bingkai';
+    public string $dokFotoSubjudul = 'Galeri Foto';
+    public string $dokFotoDeskripsi = 'Dokumentasi visual yang menampilkan proses, detail pengerjaan, hingga hasil akhir furnitur secara lebih dekat, bersih, dan profesional.';
+    public array $dokFotoKeys = [];
+    public array $dokFotoTipe = [];
+    public array $dokFotoKeterangan = [];
+    public array $dokFotoPathLama = [];
+    public array $dokFotoUploadBaru = [];
+
 
     /**
      * Halaman apa saja yang bisa dikelola dari "Edit Web", ditampilkan
@@ -316,7 +738,41 @@ new #[Layout('layouts::admin-panel')] #[Title('Edit Web')] class extends Compone
             'key' => 'dokumentasi',
             'label' => 'Dokumentasi',
             'icon' => 'fa-images',
-            'description' => 'Hero & Galeri, Dokumentasi 1 (pita berjalan), Dokumentasi 2 (video wall), Dokumentasi 3 (kartu 3D).',
+            'description' => 'Hero, Galeri Video, Galeri Foto, dan Pita Foto & Video.',
+            'ready' => true,
+        ],
+        [
+            'key' => 'sustainability',
+            'label' => 'Sustainability',
+            'icon' => 'fa-leaf',
+            'description' => 'Hero dan Prinsip Sustainability.',
+            'ready' => true,
+        ],        [
+            'key' => 'privacy-policy',
+            'label' => 'Privacy Policy',
+            'icon' => 'fa-user-shield',
+            'description' => 'Hero, 6 bagian kebijakan privasi, dan Kontak.',
+            'ready' => true,
+        ],
+        [
+            'key' => 'cookies',
+            'label' => 'Cookies',
+            'icon' => 'fa-cookie-bite',
+            'description' => 'Hero, Ringkasan, Rincian per Kategori, Pengaturan Browser, dan Kontak.',
+            'ready' => true,
+        ],
+        [
+            'key' => 'terms-of-service',
+            'label' => 'Terms of Service',
+            'icon' => 'fa-file-contract',
+            'description' => 'Hero, 9 bagian ketentuan layanan, dan Kontak.',
+            'ready' => true,
+        ],
+        [
+            'key' => 'our-craftsmen',
+            'label' => 'Our Craftsmen',
+            'icon' => 'fa-user-gear',
+            'description' => 'Hero, Pemilik & Founder, Mulai dari Sebuah Ide.',
             'ready' => true,
         ],
     ];
@@ -343,6 +799,11 @@ new #[Layout('layouts::admin-panel')] #[Title('Edit Web')] class extends Compone
             'tentang-kami' => $this->tentangKamiSections[0]['key'],
             'produk' => $this->produkSections[0]['key'],
             'dokumentasi' => $this->dokumentasiSections[0]['key'],
+            'sustainability' => $this->sustainabilitySections[0]['key'],
+            'privacy-policy' => $this->privacySections[0]['key'],
+            'cookies' => $this->cookiesSections[0]['key'],
+            'terms-of-service' => $this->termsSections[0]['key'],
+            'our-craftsmen' => $this->ourCraftsmenSections[0]['key'],
             'beranda' => 'header',
             default => $this->activeSection,
         };
@@ -1016,33 +1477,22 @@ new #[Layout('layouts::admin-panel')] #[Title('Edit Web')] class extends Compone
         ];
     }
 
-    private function dokumentasi1Defaults(): array
-    {
-        return [
-            'judul' => 'Jejak Proses',
-            'subjudul' => 'Pita Karya',
-            'deskripsi' => 'Cuplikan foto dan video yang berjalan terus, dari pemilihan bahan sampai furnitur siap dipakai di rumah pelanggan.',
-            'marquee_speed' => 45,
-            'items' => [],
-        ];
-    }
-
-    private function dokumentasi2Defaults(): array
-    {
-        return [
-            'judul' => 'Dinding Karya',
-            'subjudul' => 'Video Wall',
-            'deskripsi' => 'Potongan proses, detail sambungan, dan hasil akhir yang kami rekam langsung dari bengkel. Ketuk salah satu bidang untuk melihatnya lebih besar.',
-            'items' => [],
-        ];
-    }
-
     private function dokumentasi3Defaults(): array
     {
         return [
-            'judul' => 'Arsip Pilihan',
-            'subjudul' => 'Kartu Karya',
-            'deskripsi' => 'Beberapa karya yang paling sering ditanyakan pelanggan. Arahkan kursor ke salah satu kartu untuk melihatnya lebih dekat.',
+            'judul' => 'Galeri Video',
+            'subjudul' => 'Dokumentasi Proses & Hasil',
+            'deskripsi' => 'Kumpulan video proses kerja dan hasil akhir furnitur Karya Ide Edi. Tampil rapi seperti katalog, maksimal 4 video per baris lalu lanjut otomatis ke bawah.',
+            'items' => [],
+        ];
+    }
+
+    private function dokumentasiFotoDefaults(): array
+    {
+        return [
+            'judul' => 'Momen Karya dalam Bingkai',
+            'subjudul' => 'Galeri Foto',
+            'deskripsi' => 'Dokumentasi visual yang menampilkan proses, detail pengerjaan, hingga hasil akhir furnitur secara lebih dekat, bersih, dan profesional.',
             'items' => [],
         ];
     }
@@ -1071,15 +1521,6 @@ new #[Layout('layouts::admin-panel')] #[Title('Edit Web')] class extends Compone
             ->values()
             ->all();
 
-        $keahlianVideoPath = HomeSection::dataFor('keahlian', ['media_type' => null, 'video_path' => null])['video_path'] ?? null;
-
-        if ($keahlianVideoPath && count($items) > 0) {
-            $items[count($items) - 1] = [
-                'tipe' => 'video',
-                'path' => $keahlianVideoPath,
-                'keterangan' => 'Proses & keahlian kami',
-            ];
-        }
 
         return $items;
     }
@@ -1193,9 +1634,12 @@ new #[Layout('layouts::admin-panel')] #[Title('Edit Web')] class extends Compone
         $this->keahlianDescription = $keahlianData['description'];
         $this->keahlianChecklist = $keahlianData['checklist'];
         $this->keahlianImagePathLama = $keahlianData['image_path'];
+        // Data lama sempat punya media_type "photo" walaupun video upload
+        // sudah tersimpan. Kalau itu terjadi, utamakan video_path yang memang
+        // milik section "keahlian" agar video kembali tampil di Beranda.
         $this->keahlianMediaType = in_array($keahlianData['media_type'] ?? null, ['video_url', 'video_upload'], true)
             ? $keahlianData['media_type']
-            : 'video_url';
+            : (filled($keahlianData['video_path'] ?? null) ? 'video_upload' : 'video_url');
         $this->keahlianVideoUrl = $keahlianData['video_url'] ?? '';
         $this->keahlianVideoPathLama = $keahlianData['video_path'] ?? null;
 
@@ -1279,9 +1723,12 @@ new #[Layout('layouts::admin-panel')] #[Title('Edit Web')] class extends Compone
         $this->dokumentasiJudul = $dokumentasiData['judul'];
         $this->dokumentasiSubjudul = $dokumentasiData['subjudul'];
         $this->dokumentasiDeskripsi = $dokumentasiData['deskripsi'];
+        // Sama seperti "Kenapa Pilih Kami": kalau ada data lama tanpa
+        // media_type yang valid tetapi video upload milik Dokumentasi sudah
+        // tersimpan, jangan salah mengarahkannya ke tab URL.
         $this->dokumentasiMediaType = in_array($dokumentasiData['media_type'] ?? null, ['video_url', 'video_upload'], true)
             ? $dokumentasiData['media_type']
-            : 'video_url';
+            : (filled($dokumentasiData['video_path'] ?? null) ? 'video_upload' : 'video_url');
         $this->dokumentasiVideoUrl = $dokumentasiData['video_url'] ?? '';
         $this->dokumentasiVideoPathLama = $dokumentasiData['video_path'] ?? null;
 
@@ -1297,26 +1744,25 @@ new #[Layout('layouts::admin-panel')] #[Title('Edit Web')] class extends Compone
             $this->dokumentasiGaleriPathLama[$i] = $item['path'] ?? null;
         }
 
-        // ---- 3 section tambahan halaman Dokumentasi (jumlah item BEBAS,
+        // ---- section tambahan halaman Dokumentasi (jumlah item BEBAS,
         //      lihat catatan "TIDAK ADA BATAS JUMLAH" di atas properti) ----
-        $dok1Data = HomeSection::dataFor('dokumentasi-1', $this->dokumentasi1Defaults());
-        $this->dok1Judul = (string) $dok1Data['judul'];
-        $this->dok1Subjudul = (string) $dok1Data['subjudul'];
-        $this->dok1Deskripsi = (string) $dok1Data['deskripsi'];
-        $this->dok1MarqueeSpeed = (string) (int) ($dok1Data['marquee_speed'] ?? 45);
-        $this->muatItemDinamis('dok1', $dok1Data['items'] ?? []);
-
-        $dok2Data = HomeSection::dataFor('dokumentasi-2', $this->dokumentasi2Defaults());
-        $this->dok2Judul = (string) $dok2Data['judul'];
-        $this->dok2Subjudul = (string) $dok2Data['subjudul'];
-        $this->dok2Deskripsi = (string) $dok2Data['deskripsi'];
-        $this->muatItemDinamis('dok2', $dok2Data['items'] ?? []);
-
         $dok3Data = HomeSection::dataFor('dokumentasi-3', $this->dokumentasi3Defaults());
         $this->dok3Judul = (string) $dok3Data['judul'];
         $this->dok3Subjudul = (string) $dok3Data['subjudul'];
         $this->dok3Deskripsi = (string) $dok3Data['deskripsi'];
         $this->muatItemDinamis('dok3', $dok3Data['items'] ?? []);
+
+        $dokFotoData = HomeSection::dataFor('dokumentasi-foto', $this->dokumentasiFotoDefaults());
+        $this->dokFotoJudul = (string) ($dokFotoData['judul'] ?? $this->dokFotoJudul);
+        $this->dokFotoSubjudul = (string) ($dokFotoData['subjudul'] ?? $this->dokFotoSubjudul);
+        $this->dokFotoDeskripsi = (string) ($dokFotoData['deskripsi'] ?? $this->dokFotoDeskripsi);
+        $dokFotoItems = is_array($dokFotoData['items'] ?? null) ? $dokFotoData['items'] : [];
+        if ($dokFotoItems === []) {
+            $dokFotoItems = collect($dokumentasiData['galeri'] ?? [])->filter(fn ($item) => is_array($item) && ($item['tipe'] ?? null) === 'foto')->values()->all();
+        }
+        $this->muatItemDinamis('dokFoto', $dokFotoItems);
+        foreach ($this->dokFotoKeys as $key) { $this->dokFotoTipe[$key] = 'foto'; }
+
 
         $produkWarnaData = HomeSection::dataFor('produk', ['bg_color' => null, 'bg_color_hero' => null]);
         $this->produkWarnaUseCustomBg = filled($produkWarnaData['bg_color']);
@@ -1334,6 +1780,130 @@ new #[Layout('layouts::admin-panel')] #[Title('Edit Web')] class extends Compone
         $this->loadFrameGradient('tentangKami2', $tentangKami2Data['bg_gradient'] ?? null);
         $this->loadFrameGradient('nilaiKami', $nilaiKamiData['bg_gradient'] ?? null);
         $this->loadFrameGradient('whyChooseUs', $whyChooseUsData['bg_gradient'] ?? null);
+
+        $sustainHeroData = HomeSection::dataFor('sustainability-hero', $this->sustainabilityHeroDefaults());
+        $this->sustainabilityHeroUseCustomBg = filled($sustainHeroData['bg_color'] ?? null);
+        $this->sustainabilityHeroBgColor = $sustainHeroData['bg_color'] ?: $this->sustainabilityHeroBgColor;
+        $this->sustainabilityHeroEyebrow = (string) $sustainHeroData['eyebrow'];
+        $this->sustainabilityHeroHeading = (string) $sustainHeroData['heading'];
+        $this->sustainabilityHeroDescription = (string) $sustainHeroData['description'];
+
+        $sustainPointsData = HomeSection::dataFor('sustainability-points', $this->sustainabilityPointsDefaults());
+        $this->sustainabilityPointsUseCustomBg = filled($sustainPointsData['bg_color'] ?? null);
+        $this->sustainabilityPointsBgColor = $sustainPointsData['bg_color'] ?: $this->sustainabilityPointsBgColor;
+        $this->sustainabilityPoints = array_values(is_array($sustainPointsData['items'] ?? null) ? $sustainPointsData['items'] : $this->sustainabilityPointsDefaults()['items']);
+        $this->sustainabilityNote = (string) ($sustainPointsData['note'] ?? $this->sustainabilityPointsDefaults()['note']);
+        $privacyHeroData = HomeSection::dataFor('privacy-hero', $this->privacyHeroDefaults());
+        $this->privacyHeroEyebrow = (string) ($privacyHeroData['eyebrow'] ?? $this->privacyHeroEyebrow);
+        $this->privacyHeroHeading = (string) ($privacyHeroData['heading'] ?? $this->privacyHeroHeading);
+        $this->privacyHeroDescription = (string) ($privacyHeroData['description'] ?? $this->privacyHeroDescription);
+        $this->privacyHeroUpdatedDate = (string) ($privacyHeroData['updated_date'] ?? $this->privacyHeroUpdatedDate);
+
+        $this->privacyContent = [];
+        foreach ($this->privacyContentDefaults() as $privacyKey => $privacyDefault) {
+            $privacyData = HomeSection::dataFor('privacy-'.$privacyKey, $privacyDefault);
+
+            $this->privacyContent[$privacyKey] = [
+                'title' => (string) ($privacyData['title'] ?? $privacyDefault['title']),
+                'intro' => (string) ($privacyData['intro'] ?? $privacyDefault['intro']),
+                'bullets' => array_values(is_array($privacyData['bullets'] ?? null) ? $privacyData['bullets'] : $privacyDefault['bullets']),
+                'outro' => (string) ($privacyData['outro'] ?? $privacyDefault['outro']),
+            ];
+        }
+
+        $privacyContactData = HomeSection::dataFor('privacy-contact', $this->privacyContactDefaults());
+        $this->privacyContactHeading = (string) ($privacyContactData['heading'] ?? $this->privacyContactHeading);
+        $this->privacyContactDescription = (string) ($privacyContactData['description'] ?? $this->privacyContactDescription);
+        $this->privacyContactButtonLabel = (string) ($privacyContactData['button_label'] ?? $this->privacyContactButtonLabel);
+
+        $cookiesHeroData = HomeSection::dataFor('cookies-hero', $this->cookiesHeroDefaults());
+        $this->cookiesHeroEyebrow = (string) ($cookiesHeroData['eyebrow'] ?? $this->cookiesHeroEyebrow);
+        $this->cookiesHeroHeading = (string) ($cookiesHeroData['heading'] ?? $this->cookiesHeroHeading);
+        $this->cookiesHeroDescription = (string) ($cookiesHeroData['description'] ?? $this->cookiesHeroDescription);
+        $this->cookiesHeroUpdatedDate = (string) ($cookiesHeroData['updated_date'] ?? $this->cookiesHeroUpdatedDate);
+
+        $cookiesSummaryData = HomeSection::dataFor('cookies-summary', $this->cookiesSummaryDefaults());
+        $this->cookiesSummaryLabel = (string) ($cookiesSummaryData['label'] ?? $this->cookiesSummaryLabel);
+        $this->cookiesSummaryText = (string) ($cookiesSummaryData['text'] ?? $this->cookiesSummaryText);
+
+        $cookiesCategoriesData = HomeSection::dataFor('cookies-categories', $this->cookiesCategoriesDefaults());
+        $this->cookiesCategoriesHeading = (string) ($cookiesCategoriesData['heading'] ?? $this->cookiesCategoriesHeading);
+        $this->cookiesCategoriesDescription = (string) ($cookiesCategoriesData['description'] ?? $this->cookiesCategoriesDescription);
+        $this->cookiesCategoryItems = array_values(is_array($cookiesCategoriesData['items'] ?? null) ? $cookiesCategoriesData['items'] : $this->cookiesCategoriesDefaults()['items']);
+        $cookiesStatusLabels = is_array($cookiesCategoriesData['status_labels'] ?? null) ? $cookiesCategoriesData['status_labels'] : $this->cookiesCategoriesDefaults()['status_labels'];
+        $this->cookiesStatusAlways = (string) ($cookiesStatusLabels['always'] ?? $this->cookiesStatusAlways);
+        $this->cookiesStatusLocal = (string) ($cookiesStatusLabels['local'] ?? $this->cookiesStatusLocal);
+        $this->cookiesStatusNone = (string) ($cookiesStatusLabels['none'] ?? $this->cookiesStatusNone);
+
+        $cookiesBrowserData = HomeSection::dataFor('cookies-browser', $this->cookiesBrowserDefaults());
+        $this->cookiesBrowserHeading = (string) ($cookiesBrowserData['heading'] ?? $this->cookiesBrowserHeading);
+        $this->cookiesBrowserText = (string) ($cookiesBrowserData['text'] ?? $this->cookiesBrowserText);
+
+        $cookiesContactData = HomeSection::dataFor('cookies-contact', $this->cookiesContactDefaults());
+        $this->cookiesContactHeading = (string) ($cookiesContactData['heading'] ?? $this->cookiesContactHeading);
+        $this->cookiesContactDescription = (string) ($cookiesContactData['description'] ?? $this->cookiesContactDescription);
+        $this->cookiesContactButtonLabel = (string) ($cookiesContactData['button_label'] ?? $this->cookiesContactButtonLabel);
+        $termsHeroData = HomeSection::dataFor('terms-hero', $this->termsHeroDefaults());
+        $this->termsHeroEyebrow = (string) ($termsHeroData['eyebrow'] ?? $this->termsHeroEyebrow);
+        $this->termsHeroHeading = (string) ($termsHeroData['heading'] ?? $this->termsHeroHeading);
+        $this->termsHeroDescription = (string) ($termsHeroData['description'] ?? $this->termsHeroDescription);
+        $this->termsHeroUpdatedDate = (string) ($termsHeroData['updated_date'] ?? $this->termsHeroUpdatedDate);
+
+        $this->termsContent = [];
+        foreach ($this->termsContentDefaults() as $termsKey => $termsDefault) {
+            $termsData = HomeSection::dataFor('terms-'.$termsKey, $termsDefault);
+
+            $this->termsContent[$termsKey] = [
+                'title' => (string) ($termsData['title'] ?? $termsDefault['title']),
+                'text' => (string) ($termsData['text'] ?? $termsDefault['text']),
+            ];
+
+            if (isset($termsDefault['bullets'])) {
+                $this->termsContent[$termsKey]['bullets'] = array_values(
+                    is_array($termsData['bullets'] ?? null) ? $termsData['bullets'] : $termsDefault['bullets']
+                );
+            }
+
+            if (isset($termsDefault['link_labels'])) {
+                $this->termsContent[$termsKey]['link_labels'] = array_values(
+                    is_array($termsData['link_labels'] ?? null) ? $termsData['link_labels'] : $termsDefault['link_labels']
+                );
+            }
+        }
+
+        $termsContactData = HomeSection::dataFor('terms-contact', $this->termsContactDefaults());
+        $this->termsContactHeading = (string) ($termsContactData['heading'] ?? $this->termsContactHeading);
+        $this->termsContactDescription = (string) ($termsContactData['description'] ?? $this->termsContactDescription);
+        $this->termsContactButtonLabel = (string) ($termsContactData['button_label'] ?? $this->termsContactButtonLabel);
+        $ourCraftsmenHeroDefaults = $this->ourCraftsmenHeroDefaults();
+        $ourCraftsmenHeroData = HomeSection::dataFor('our-craftsmen-hero', $ourCraftsmenHeroDefaults);
+        $this->ourCraftsmenHeroUseCustomBg = filled($ourCraftsmenHeroData['bg_color']);
+        $this->ourCraftsmenHeroBgColor = $ourCraftsmenHeroData['bg_color'] ?: $this->ourCraftsmenHeroBgColor;
+        $this->ourCraftsmenHeroEyebrow = $ourCraftsmenHeroData['eyebrow'];
+        $this->ourCraftsmenHeroHeading = $ourCraftsmenHeroData['heading'];
+        $this->ourCraftsmenHeroDescription = $ourCraftsmenHeroData['description'];
+        $this->loadFrameGradient('ourCraftsmenHero', $ourCraftsmenHeroData['bg_gradient'] ?? null);
+
+        $ourCraftsmenOwnerData = HomeSection::dataFor('our-craftsmen-daftar', $this->ourCraftsmenOwnerDefaults());
+        $this->ourCraftsmenOwnerUseCustomBg = filled($ourCraftsmenOwnerData['bg_color'] ?? null);
+        $this->ourCraftsmenOwnerBgColor = $ourCraftsmenOwnerData['bg_color'] ?? $this->ourCraftsmenOwnerBgColor;
+        $this->ourCraftsmenOwnerEyebrow = (string) ($ourCraftsmenOwnerData['eyebrow'] ?? $this->ourCraftsmenOwnerEyebrow);
+        $this->ourCraftsmenOwnerName = (string) ($ourCraftsmenOwnerData['name'] ?? $this->ourCraftsmenOwnerName);
+        $this->ourCraftsmenOwnerRole = (string) ($ourCraftsmenOwnerData['role'] ?? $this->ourCraftsmenOwnerRole);
+        $this->ourCraftsmenOwnerHeading = (string) ($ourCraftsmenOwnerData['heading'] ?? $this->ourCraftsmenOwnerHeading);
+        $this->ourCraftsmenOwnerDescription = (string) ($ourCraftsmenOwnerData['description'] ?? $this->ourCraftsmenOwnerDescription);
+        $this->ourCraftsmenOwnerQuote = (string) ($ourCraftsmenOwnerData['quote'] ?? $this->ourCraftsmenOwnerQuote);
+        $this->ourCraftsmenOwnerPhotoPathLama = $ourCraftsmenOwnerData['photo_path'] ?? null;
+        $ownerStats = is_array($ourCraftsmenOwnerData['stats'] ?? null) ? array_values($ourCraftsmenOwnerData['stats']) : [];
+        $this->ourCraftsmenOwnerStats = count($ownerStats) === 3 ? $ownerStats : $this->ourCraftsmenOwnerStats;
+
+        $ourCraftsmenCtaData = HomeSection::dataFor('our-craftsmen-cta', $this->ourCraftsmenCtaDefaults());
+        $this->ourCraftsmenCtaUseCustomBg = filled($ourCraftsmenCtaData['bg_color'] ?? null);
+        $this->ourCraftsmenCtaBgColor = $ourCraftsmenCtaData['bg_color'] ?? $this->ourCraftsmenCtaBgColor;
+        $this->ourCraftsmenCtaEyebrow = (string) ($ourCraftsmenCtaData['eyebrow'] ?? $this->ourCraftsmenCtaEyebrow);
+        $this->ourCraftsmenCtaHeading = (string) ($ourCraftsmenCtaData['heading'] ?? $this->ourCraftsmenCtaHeading);
+        $this->ourCraftsmenCtaDescription = (string) ($ourCraftsmenCtaData['description'] ?? $this->ourCraftsmenCtaDescription);
+        $this->ourCraftsmenCtaButtonText = (string) ($ourCraftsmenCtaData['button_text'] ?? $this->ourCraftsmenCtaButtonText);
     }
 
     public function selectSection(string $key): void
@@ -1352,6 +1922,17 @@ new #[Layout('layouts::admin-panel')] #[Title('Edit Web')] class extends Compone
         $this->headerBgColor = $hex;
     }
 
+    public function selectSustainabilityHeroBgPreset(string $hex): void
+    {
+        $this->sustainabilityHeroUseCustomBg = true;
+        $this->sustainabilityHeroBgColor = $hex;
+    }
+
+    public function selectSustainabilityPointsBgPreset(string $hex): void
+    {
+        $this->sustainabilityPointsUseCustomBg = true;
+        $this->sustainabilityPointsBgColor = $hex;
+    }
     public function selectMissionBgPreset(string $hex): void
     {
         $this->missionUseCustomBg = true;
@@ -1404,6 +1985,12 @@ new #[Layout('layouts::admin-panel')] #[Title('Edit Web')] class extends Compone
     {
         $this->nilaiKamiUseCustomBg = true;
         $this->nilaiKamiBgColor = $hex;
+    }
+
+    public function selectOurCraftsmenHeroBgPreset(string $hex): void
+    {
+        $this->ourCraftsmenHeroUseCustomBg = true;
+        $this->ourCraftsmenHeroBgColor = $hex;
     }
 
     public function selectWhyChooseUsBgPreset(string $hex): void
@@ -1612,81 +2199,11 @@ new #[Layout('layouts::admin-panel')] #[Title('Edit Web')] class extends Compone
     }
 
     /**
-     * URL preview tiap item yang SUDAH tersimpan, per section (Dokumentasi
-     * 1/2/3) -- di-index oleh key UUID yang sama dengan $dok{n}Keys, bukan
-     * angka, karena jumlah item di sini TIDAK DIBATASI (lihat catatan di
-     * atas properti $dok1Keys dkk).
+     * URL preview tiap item yang SUDAH tersimpan, per section Dokumentasi 3
+     * -- di-index oleh key UUID yang sama dengan $dok3Keys, bukan angka,
+     * karena jumlah item di sini TIDAK DIBATASI (lihat catatan di atas
+     * properti $dok3Keys dkk).
      */
-
-    /** URL preview tiap item pita yang sudah tersimpan, di-index oleh key UUID-nya. */
-    public function getDok1PreviewUrlsProperty(): array
-    {
-        return collect($this->dok1PathLama)
-            ->map(fn (?string $path) => $path ? Storage::disk('public')->url($path) : null)
-            ->all();
-    }
-
-    /** Tambah 1 item pita baru (kosong) -- TIDAK ADA BATAS jumlahnya. */
-    public function addDok1Item(): void
-    {
-        $key = (string) Str::uuid();
-
-        $this->dok1Keys[] = $key;
-        $this->dok1Tipe[$key] = 'foto';
-        $this->dok1Keterangan[$key] = '';
-        $this->dok1PathLama[$key] = null;
-        $this->dok1UploadBaru[$key] = null;
-    }
-
-    /** Hapus 1 item pita (upload baru yang belum disimpan ATAU file lama), lalu buang key-nya dari urutan. */
-    public function removeDok1Item(string $key): void
-    {
-        if (! in_array($key, $this->dok1Keys, true)) {
-            return;
-        }
-
-        if ($this->dok1PathLama[$key] ?? null) {
-            Storage::disk('public')->delete($this->dok1PathLama[$key]);
-        }
-
-        $this->dok1Keys = array_values(array_diff($this->dok1Keys, [$key]));
-        unset($this->dok1Tipe[$key], $this->dok1Keterangan[$key], $this->dok1PathLama[$key], $this->dok1UploadBaru[$key]);
-    }
-
-    /** URL preview tiap item ubin mosaic yang sudah tersimpan, di-index oleh key UUID-nya. */
-    public function getDok2PreviewUrlsProperty(): array
-    {
-        return collect($this->dok2PathLama)
-            ->map(fn (?string $path) => $path ? Storage::disk('public')->url($path) : null)
-            ->all();
-    }
-
-    /** Tambah 1 item ubin mosaic baru (kosong) -- TIDAK ADA BATAS jumlahnya. */
-    public function addDok2Item(): void
-    {
-        $key = (string) Str::uuid();
-
-        $this->dok2Keys[] = $key;
-        $this->dok2Tipe[$key] = 'foto';
-        $this->dok2Keterangan[$key] = '';
-        $this->dok2PathLama[$key] = null;
-        $this->dok2UploadBaru[$key] = null;
-    }
-
-    /** Hapus 1 item ubin mosaic (upload baru yang belum disimpan ATAU file lama), lalu buang key-nya dari urutan. */
-    public function removeDok2Item(string $key): void
-    {
-        if (! in_array($key, $this->dok2Keys, true)) {
-            return;
-        }
-
-        if ($this->dok2PathLama[$key] ?? null) {
-            Storage::disk('public')->delete($this->dok2PathLama[$key]);
-        }
-
-        $this->dok2Keys = array_values(array_diff($this->dok2Keys, [$key]));
-        unset($this->dok2Tipe[$key], $this->dok2Keterangan[$key], $this->dok2PathLama[$key], $this->dok2UploadBaru[$key]);
-    }
 
     /** URL preview tiap item kartu 3D yang sudah tersimpan, di-index oleh key UUID-nya. */
     public function getDok3PreviewUrlsProperty(): array
@@ -1702,7 +2219,7 @@ new #[Layout('layouts::admin-panel')] #[Title('Edit Web')] class extends Compone
         $key = (string) Str::uuid();
 
         $this->dok3Keys[] = $key;
-        $this->dok3Tipe[$key] = 'foto';
+        $this->dok3Tipe[$key] = 'video';
         $this->dok3Keterangan[$key] = '';
         $this->dok3PathLama[$key] = null;
         $this->dok3UploadBaru[$key] = null;
@@ -1722,6 +2239,30 @@ new #[Layout('layouts::admin-panel')] #[Title('Edit Web')] class extends Compone
         $this->dok3Keys = array_values(array_diff($this->dok3Keys, [$key]));
         unset($this->dok3Tipe[$key], $this->dok3Keterangan[$key], $this->dok3PathLama[$key], $this->dok3UploadBaru[$key]);
     }
+
+    public function getDokFotoPreviewUrlsProperty(): array
+    {
+        return collect($this->dokFotoPathLama)->map(fn (?string $path) => $path ? Storage::disk('public')->url($path) : null)->all();
+    }
+
+    public function addDokFotoItem(): void
+    {
+        $key = (string) Str::uuid();
+        $this->dokFotoKeys[] = $key;
+        $this->dokFotoTipe[$key] = 'foto';
+        $this->dokFotoKeterangan[$key] = '';
+        $this->dokFotoPathLama[$key] = null;
+        $this->dokFotoUploadBaru[$key] = null;
+    }
+
+    public function removeDokFotoItem(string $key): void
+    {
+        if (! in_array($key, $this->dokFotoKeys, true)) return;
+        if ($this->dokFotoPathLama[$key] ?? null) Storage::disk('public')->delete($this->dokFotoPathLama[$key]);
+        $this->dokFotoKeys = array_values(array_diff($this->dokFotoKeys, [$key]));
+        unset($this->dokFotoTipe[$key], $this->dokFotoKeterangan[$key], $this->dokFotoPathLama[$key], $this->dokFotoUploadBaru[$key]);
+    }
+
 
     /**
      * Decode data URL base64 hasil crop jadi binary gambar.
@@ -1815,6 +2356,440 @@ new #[Layout('layouts::admin-panel')] #[Title('Edit Web')] class extends Compone
         session()->flash('edit-web-tersimpan', true);
     }
 
+    public function saveSustainabilityHero(): void
+    {
+        $validated = $this->validate([
+            'sustainabilityHeroBgColor' => ['required', 'string', 'regex:/^#[0-9A-Fa-f]{6}$/'],
+            'sustainabilityHeroEyebrow' => ['required', 'string', 'max:40'],
+            'sustainabilityHeroHeading' => ['required', 'string', 'max:100'],
+            'sustainabilityHeroDescription' => ['required', 'string', 'max:500'],
+        ]);
+
+        HomeSection::forSection('sustainability-hero')->update([
+            'data' => [
+                'bg_color' => $this->sustainabilityHeroUseCustomBg ? $validated['sustainabilityHeroBgColor'] : null,
+                'eyebrow' => $validated['sustainabilityHeroEyebrow'],
+                'heading' => $validated['sustainabilityHeroHeading'],
+                'description' => $validated['sustainabilityHeroDescription'],
+            ],
+        ]);
+
+        session()->flash('edit-web-tersimpan', true);
+    }
+
+    public function saveSustainabilityPoints(): void
+    {
+        $validated = $this->validate([
+            'sustainabilityPointsBgColor' => ['required', 'string', 'regex:/^#[0-9A-Fa-f]{6}$/'],
+            'sustainabilityPoints' => ['required', 'array', 'size:4'],
+            'sustainabilityPoints.*.icon' => ['required', 'string', 'in:'.implode(',', $this->sustainabilityIconOptions)],
+            'sustainabilityPoints.*.title' => ['required', 'string', 'max:80'],
+            'sustainabilityPoints.*.text' => ['required', 'string', 'max:300'],
+            'sustainabilityNote' => ['required', 'string', 'max:500'],
+        ]);
+
+        HomeSection::forSection('sustainability-points')->update([
+            'data' => [
+                'bg_color' => $this->sustainabilityPointsUseCustomBg ? $validated['sustainabilityPointsBgColor'] : null,
+                'items' => array_values($validated['sustainabilityPoints']),
+                'note' => $validated['sustainabilityNote'],
+            ],
+        ]);
+
+        session()->flash('edit-web-tersimpan', true);
+    }
+    public function savePrivacyHero(): void
+    {
+        $validated = $this->validate([
+            'privacyHeroEyebrow' => ['required', 'string', 'max:60'],
+            'privacyHeroHeading' => ['required', 'string', 'max:120'],
+            'privacyHeroDescription' => ['required', 'string', 'max:700'],
+            'privacyHeroUpdatedDate' => ['required', 'date'],
+        ]);
+
+        HomeSection::forSection('privacy-hero')->update([
+            'data' => [
+                'eyebrow' => $validated['privacyHeroEyebrow'],
+                'heading' => $validated['privacyHeroHeading'],
+                'description' => $validated['privacyHeroDescription'],
+                'updated_date' => $validated['privacyHeroUpdatedDate'],
+            ],
+        ]);
+
+        session()->flash('edit-web-tersimpan', true);
+    }
+
+    public function savePrivacySection(string $key): void
+    {
+        $defaults = $this->privacyContentDefaults();
+
+        if (!isset($defaults[$key])) {
+            return;
+        }
+
+        $rules = [
+            "privacyContent.$key.title" => ['required', 'string', 'max:160'],
+            "privacyContent.$key.intro" => ['required', 'string', 'max:2500'],
+            "privacyContent.$key.outro" => ['nullable', 'string', 'max:2500'],
+        ];
+
+        if (count($defaults[$key]['bullets']) > 0) {
+            $rules["privacyContent.$key.bullets"] = ['required', 'array', 'size:'.count($defaults[$key]['bullets'])];
+            $rules["privacyContent.$key.bullets.*"] = ['required', 'string', 'max:1000'];
+        }
+
+        $this->validate($rules);
+
+        HomeSection::forSection('privacy-'.$key)->update([
+            'data' => [
+                'title' => trim((string) $this->privacyContent[$key]['title']),
+                'intro' => trim((string) $this->privacyContent[$key]['intro']),
+                'bullets' => array_values($this->privacyContent[$key]['bullets'] ?? []),
+                'outro' => trim((string) ($this->privacyContent[$key]['outro'] ?? '')),
+            ],
+        ]);
+
+        session()->flash('edit-web-tersimpan', true);
+    }
+
+    public function savePrivacyContact(): void
+    {
+        $validated = $this->validate([
+            'privacyContactHeading' => ['required', 'string', 'max:140'],
+            'privacyContactDescription' => ['required', 'string', 'max:600'],
+            'privacyContactButtonLabel' => ['required', 'string', 'max:80'],
+        ]);
+
+        HomeSection::forSection('privacy-contact')->update([
+            'data' => [
+                'heading' => $validated['privacyContactHeading'],
+                'description' => $validated['privacyContactDescription'],
+                'button_label' => $validated['privacyContactButtonLabel'],
+            ],
+        ]);
+
+        session()->flash('edit-web-tersimpan', true);
+    }
+
+    public function saveCookiesHero(): void
+    {
+        $validated = $this->validate([
+            'cookiesHeroEyebrow' => ['required', 'string', 'max:60'],
+            'cookiesHeroHeading' => ['required', 'string', 'max:120'],
+            'cookiesHeroDescription' => ['required', 'string', 'max:700'],
+            'cookiesHeroUpdatedDate' => ['required', 'date'],
+        ]);
+
+        HomeSection::forSection('cookies-hero')->update([
+            'data' => [
+                'eyebrow' => $validated['cookiesHeroEyebrow'],
+                'heading' => $validated['cookiesHeroHeading'],
+                'description' => $validated['cookiesHeroDescription'],
+                'updated_date' => $validated['cookiesHeroUpdatedDate'],
+            ],
+        ]);
+
+        session()->flash('edit-web-tersimpan', true);
+    }
+
+    public function saveCookiesSummary(): void
+    {
+        $validated = $this->validate([
+            'cookiesSummaryLabel' => ['required', 'string', 'max:80'],
+            'cookiesSummaryText' => ['required', 'string', 'max:1200'],
+        ]);
+
+        HomeSection::forSection('cookies-summary')->update([
+            'data' => [
+                'label' => $validated['cookiesSummaryLabel'],
+                'text' => $validated['cookiesSummaryText'],
+            ],
+        ]);
+
+        session()->flash('edit-web-tersimpan', true);
+    }
+
+    public function saveCookiesCategories(): void
+    {
+        $this->validate([
+            'cookiesCategoriesHeading' => ['required', 'string', 'max:120'],
+            'cookiesCategoriesDescription' => ['required', 'string', 'max:800'],
+            'cookiesCategoryItems' => ['required', 'array', 'size:5'],
+            'cookiesCategoryItems.*.name' => ['required', 'string', 'max:100'],
+            'cookiesCategoryItems.*.desc' => ['required', 'string', 'max:1200'],
+            'cookiesStatusAlways' => ['required', 'string', 'max:80'],
+            'cookiesStatusLocal' => ['required', 'string', 'max:80'],
+            'cookiesStatusNone' => ['required', 'string', 'max:80'],
+        ]);
+
+        HomeSection::forSection('cookies-categories')->update([
+            'data' => [
+                'heading' => $this->cookiesCategoriesHeading,
+                'description' => $this->cookiesCategoriesDescription,
+                'items' => array_values($this->cookiesCategoryItems),
+                'status_labels' => [
+                    'always' => $this->cookiesStatusAlways,
+                    'local' => $this->cookiesStatusLocal,
+                    'none' => $this->cookiesStatusNone,
+                ],
+            ],
+        ]);
+
+        session()->flash('edit-web-tersimpan', true);
+    }
+
+    public function saveCookiesBrowser(): void
+    {
+        $validated = $this->validate([
+            'cookiesBrowserHeading' => ['required', 'string', 'max:140'],
+            'cookiesBrowserText' => ['required', 'string', 'max:1800'],
+        ]);
+
+        HomeSection::forSection('cookies-browser')->update([
+            'data' => [
+                'heading' => $validated['cookiesBrowserHeading'],
+                'text' => $validated['cookiesBrowserText'],
+            ],
+        ]);
+
+        session()->flash('edit-web-tersimpan', true);
+    }
+
+    public function saveCookiesContact(): void
+    {
+        $validated = $this->validate([
+            'cookiesContactHeading' => ['required', 'string', 'max:140'],
+            'cookiesContactDescription' => ['required', 'string', 'max:600'],
+            'cookiesContactButtonLabel' => ['required', 'string', 'max:80'],
+        ]);
+
+        HomeSection::forSection('cookies-contact')->update([
+            'data' => [
+                'heading' => $validated['cookiesContactHeading'],
+                'description' => $validated['cookiesContactDescription'],
+                'button_label' => $validated['cookiesContactButtonLabel'],
+            ],
+        ]);
+
+        session()->flash('edit-web-tersimpan', true);
+    }
+    public function saveTermsHero(): void
+    {
+        $validated = $this->validate([
+            'termsHeroEyebrow' => ['required', 'string', 'max:60'],
+            'termsHeroHeading' => ['required', 'string', 'max:120'],
+            'termsHeroDescription' => ['required', 'string', 'max:700'],
+            'termsHeroUpdatedDate' => ['required', 'date'],
+        ]);
+
+        HomeSection::forSection('terms-hero')->update([
+            'data' => [
+                'eyebrow' => $validated['termsHeroEyebrow'],
+                'heading' => $validated['termsHeroHeading'],
+                'description' => $validated['termsHeroDescription'],
+                'updated_date' => $validated['termsHeroUpdatedDate'],
+            ],
+        ]);
+
+        session()->flash('edit-web-tersimpan', true);
+    }
+
+    public function saveTermsSection(string $key): void
+    {
+        $defaults = $this->termsContentDefaults();
+
+        if (! isset($defaults[$key])) {
+            return;
+        }
+
+        $rules = [
+            "termsContent.$key.title" => ['required', 'string', 'max:140'],
+            "termsContent.$key.text" => ['required', 'string', 'max:2500'],
+        ];
+
+        if (isset($defaults[$key]['bullets'])) {
+            $rules["termsContent.$key.bullets"] = ['required', 'array', 'size:'.count($defaults[$key]['bullets'])];
+            $rules["termsContent.$key.bullets.*"] = ['required', 'string', 'max:800'];
+        }
+
+        if (isset($defaults[$key]['link_labels'])) {
+            $rules["termsContent.$key.link_labels"] = ['required', 'array', 'size:'.count($defaults[$key]['link_labels'])];
+            $rules["termsContent.$key.link_labels.*"] = ['required', 'string', 'max:120'];
+        }
+
+        $this->validate($rules);
+
+        $payload = [
+            'title' => trim((string) $this->termsContent[$key]['title']),
+            'text' => trim((string) $this->termsContent[$key]['text']),
+        ];
+
+        if (isset($defaults[$key]['bullets'])) {
+            $payload['bullets'] = array_values($this->termsContent[$key]['bullets']);
+        }
+
+        if (isset($defaults[$key]['link_labels'])) {
+            $payload['link_labels'] = array_values($this->termsContent[$key]['link_labels']);
+        }
+
+        HomeSection::forSection('terms-'.$key)->update([
+            'data' => $payload,
+        ]);
+
+        session()->flash('edit-web-tersimpan', true);
+    }
+
+    public function saveTermsContact(): void
+    {
+        $validated = $this->validate([
+            'termsContactHeading' => ['required', 'string', 'max:120'],
+            'termsContactDescription' => ['required', 'string', 'max:500'],
+            'termsContactButtonLabel' => ['required', 'string', 'max:80'],
+        ]);
+
+        HomeSection::forSection('terms-contact')->update([
+            'data' => [
+                'heading' => $validated['termsContactHeading'],
+                'description' => $validated['termsContactDescription'],
+                'button_label' => $validated['termsContactButtonLabel'],
+            ],
+        ]);
+
+        session()->flash('edit-web-tersimpan', true);
+    }
+    public function saveOurCraftsmenHero(): void
+    {
+        $validated = $this->validate([
+            'ourCraftsmenHeroBgColor' => ['required', 'string', 'regex:/^#[0-9A-Fa-f]{6}$/'],
+            ...$this->frameGradientRules('ourCraftsmenHero'),
+            'ourCraftsmenHeroEyebrow' => ['required', 'string', 'max:40'],
+            'ourCraftsmenHeroHeading' => ['required', 'string', 'max:100'],
+            'ourCraftsmenHeroDescription' => ['required', 'string', 'max:400'],
+        ], [
+            'ourCraftsmenHeroEyebrow.required' => 'Label kecil wajib diisi.',
+            'ourCraftsmenHeroHeading.required' => 'Judul wajib diisi.',
+            'ourCraftsmenHeroDescription.required' => 'Paragraf wajib diisi.',
+        ]);
+
+        HomeSection::forSection('our-craftsmen-hero')->update([
+            'data' => [
+                'bg_color' => $this->ourCraftsmenHeroUseCustomBg ? $validated['ourCraftsmenHeroBgColor'] : null,
+                'bg_gradient' => $this->frameGradientPayload('ourCraftsmenHero'),
+                'eyebrow' => $validated['ourCraftsmenHeroEyebrow'],
+                'heading' => $validated['ourCraftsmenHeroHeading'],
+                'description' => $validated['ourCraftsmenHeroDescription'],
+            ],
+        ]);
+
+        session()->flash('edit-web-tersimpan', true);
+    }
+
+    public function getOurCraftsmenOwnerPhotoPreviewUrlProperty(): ?string
+    {
+        if ($this->ourCraftsmenOwnerPhotoCroppedBase64) {
+            return $this->ourCraftsmenOwnerPhotoCroppedBase64;
+        }
+
+        return $this->ourCraftsmenOwnerPhotoPathLama
+            ? Storage::disk('public')->url($this->ourCraftsmenOwnerPhotoPathLama)
+            : null;
+    }
+
+    public function removeOurCraftsmenOwnerPhoto(): void
+    {
+        $this->ourCraftsmenOwnerPhotoUpload = null;
+        $this->ourCraftsmenOwnerPhotoCroppedBase64 = null;
+
+        if ($this->ourCraftsmenOwnerPhotoPathLama) {
+            Storage::disk('public')->delete($this->ourCraftsmenOwnerPhotoPathLama);
+            $this->ourCraftsmenOwnerPhotoPathLama = null;
+        }
+    }
+
+    public function selectOurCraftsmenOwnerBgPreset(string $hex): void
+    {
+        $this->ourCraftsmenOwnerUseCustomBg = true;
+        $this->ourCraftsmenOwnerBgColor = $hex;
+    }
+
+    public function selectOurCraftsmenCtaBgPreset(string $hex): void
+    {
+        $this->ourCraftsmenCtaUseCustomBg = true;
+        $this->ourCraftsmenCtaBgColor = $hex;
+    }
+    public function saveOurCraftsmenOwner(): void
+    {
+        $validated = $this->validate([
+            'ourCraftsmenOwnerBgColor' => ['required', 'string', 'regex:/^#[0-9A-Fa-f]{6}$/'],
+            'ourCraftsmenOwnerEyebrow' => ['required', 'string', 'max:50'],
+            'ourCraftsmenOwnerName' => ['required', 'string', 'max:80'],
+            'ourCraftsmenOwnerRole' => ['required', 'string', 'max:100'],
+            'ourCraftsmenOwnerHeading' => ['required', 'string', 'max:140'],
+            'ourCraftsmenOwnerDescription' => ['required', 'string', 'max:800'],
+            'ourCraftsmenOwnerQuote' => ['nullable', 'string', 'max:350'],
+            'ourCraftsmenOwnerPhotoCroppedBase64' => ['nullable', 'string'],
+            'ourCraftsmenOwnerStats' => ['required', 'array', 'size:3'],
+            'ourCraftsmenOwnerStats.*.value' => ['required', 'string', 'max:30'],
+            'ourCraftsmenOwnerStats.*.label' => ['required', 'string', 'max:60'],
+        ]);
+
+        $imagePath = $this->ourCraftsmenOwnerPhotoPathLama;
+
+        if ($this->ourCraftsmenOwnerPhotoCroppedBase64) {
+            $binary = $this->decodeBase64Image($this->ourCraftsmenOwnerPhotoCroppedBase64);
+
+            if ($binary !== null) {
+                if ($this->ourCraftsmenOwnerPhotoPathLama) {
+                    Storage::disk('public')->delete($this->ourCraftsmenOwnerPhotoPathLama);
+                }
+
+                $imagePath = 'home-sections/our-craftsmen-owner-'.Str::uuid().'.jpg';
+                Storage::disk('public')->put($imagePath, $binary);
+                $this->ourCraftsmenOwnerPhotoPathLama = $imagePath;
+                $this->ourCraftsmenOwnerPhotoCroppedBase64 = null;
+                $this->ourCraftsmenOwnerPhotoUpload = null;
+            }
+        }
+
+        HomeSection::forSection('our-craftsmen-daftar')->update([
+            'data' => [
+                'bg_color' => $this->ourCraftsmenOwnerUseCustomBg ? strtoupper($validated['ourCraftsmenOwnerBgColor']) : null,
+                'eyebrow' => $validated['ourCraftsmenOwnerEyebrow'],
+                'name' => $validated['ourCraftsmenOwnerName'],
+                'role' => $validated['ourCraftsmenOwnerRole'],
+                'heading' => $validated['ourCraftsmenOwnerHeading'],
+                'description' => $validated['ourCraftsmenOwnerDescription'],
+                'quote' => $validated['ourCraftsmenOwnerQuote'] !== '' ? $validated['ourCraftsmenOwnerQuote'] : null,
+                'photo_path' => $imagePath,
+                'stats' => array_values($validated['ourCraftsmenOwnerStats']),
+            ],
+        ]);
+
+        session()->flash('edit-web-tersimpan', true);
+    }
+
+    public function saveOurCraftsmenCta(): void
+    {
+        $validated = $this->validate([
+            'ourCraftsmenCtaBgColor' => ['required', 'string', 'regex:/^#[0-9A-Fa-f]{6}$/'],
+            'ourCraftsmenCtaEyebrow' => ['required', 'string', 'max:50'],
+            'ourCraftsmenCtaHeading' => ['required', 'string', 'max:120'],
+            'ourCraftsmenCtaDescription' => ['required', 'string', 'max:500'],
+            'ourCraftsmenCtaButtonText' => ['required', 'string', 'max:50'],
+        ]);
+
+        HomeSection::forSection('our-craftsmen-cta')->update([
+            'data' => [
+                'bg_color' => $this->ourCraftsmenCtaUseCustomBg ? strtoupper($validated['ourCraftsmenCtaBgColor']) : null,
+                'eyebrow' => $validated['ourCraftsmenCtaEyebrow'],
+                'heading' => $validated['ourCraftsmenCtaHeading'],
+                'description' => $validated['ourCraftsmenCtaDescription'],
+                'button_text' => $validated['ourCraftsmenCtaButtonText'],
+            ],
+        ]);
+
+        session()->flash('edit-web-tersimpan', true);
+    }
     public function saveMission(): void
     {
         $validated = $this->validate([
@@ -2362,257 +3337,37 @@ new #[Layout('layouts::admin-panel')] #[Title('Edit Web')] class extends Compone
             'dokumentasiVideoUpload' => ['nullable', 'file', 'mimetypes:video/mp4,video/webm,video/ogg,video/quicktime', 'max:51200'],
         ];
 
-        // Tautan wajib diisi HANYA kalau tab "Video (Tautan URL)" yang aktif.
         if ($this->dokumentasiMediaType === 'video_url') {
             $rules['dokumentasiVideoUrl'] = ['required', 'url', 'max:2048'];
         }
-
-        // File upload wajib diisi HANYA kalau tab "Upload dari Perangkat" aktif
-        // DAN belum pernah ada video tersimpan sebelumnya (sama pola dengan
-        // saveKeahlian(): ganti video itu opsional selama yang lama masih ada).
         if ($this->dokumentasiMediaType === 'video_upload' && ! $this->dokumentasiVideoPathLama) {
             $rules['dokumentasiVideoUpload'] = ['required', 'file', 'mimetypes:video/mp4,video/webm,video/ogg,video/quicktime', 'max:51200'];
         }
 
-        // Validasi tiap slot galeri -- foto (image, maks 8MB) atau video
-        // (mp4/webm/ogg/mov, maks 50MB) tergantung tipe yang dipilih admin.
-        foreach (range(0, self::DOKUMENTASI_GALERI_SLOTS - 1) as $i) {
-            $rules["dokumentasiGaleriTipe.$i"] = ['required', 'in:foto,video'];
-            $rules["dokumentasiGaleriKeterangan.$i"] = ['nullable', 'string', 'max:80'];
-            $rules["dokumentasiGaleriUploadBaru.$i"] = $this->dokumentasiGaleriTipe[$i] === 'video'
-                ? ['nullable', 'file', 'mimetypes:video/mp4,video/webm,video/ogg,video/quicktime', 'max:51200']
-                : ['nullable', 'image', 'max:8192'];
-        }
+        $validated = $this->validate($rules);
 
-        $validated = $this->validate($rules, [
-            'dokumentasiJudul.required' => 'Judul wajib diisi.',
-            'dokumentasiSubjudul.required' => 'Subjudul wajib diisi.',
-            'dokumentasiDeskripsi.required' => 'Deskripsi wajib diisi.',
-            'dokumentasiVideoUrl.required' => 'Tautan video wajib diisi.',
-            'dokumentasiVideoUrl.url' => 'Tautan video tidak valid (harus diawali http:// atau https://).',
-            'dokumentasiVideoUpload.required' => 'Pilih file video dari perangkat terlebih dahulu.',
-            'dokumentasiVideoUpload.mimetypes' => 'Format video harus MP4, WebM, MOV, atau OGG.',
-            'dokumentasiVideoUpload.max' => 'Ukuran video maksimal 50MB.',
-        ]);
-
-        // Video baru diunggah dari perangkat -- ganti file lama (kalau ada) dengan yang baru.
         if ($this->dokumentasiMediaType === 'video_upload' && $this->dokumentasiVideoUpload) {
-            if ($this->dokumentasiVideoPathLama) {
-                Storage::disk('public')->delete($this->dokumentasiVideoPathLama);
-            }
-
+            if ($this->dokumentasiVideoPathLama) Storage::disk('public')->delete($this->dokumentasiVideoPathLama);
             $extension = $this->dokumentasiVideoUpload->getClientOriginalExtension() ?: 'mp4';
-            $this->dokumentasiVideoPathLama = $this->dokumentasiVideoUpload->storeAs(
-                'home-sections',
-                'dokumentasi-'.Str::uuid().'.'.$extension,
-                'public'
-            );
+            $this->dokumentasiVideoPathLama = $this->dokumentasiVideoUpload->storeAs('home-sections', 'dokumentasi-'.Str::uuid().'.'.$extension, 'public');
             $this->dokumentasiVideoUpload = null;
         }
 
-        // Slot galeri yang ada upload baru -- ganti file lama (kalau ada) dengan yang baru.
-        foreach (range(0, self::DOKUMENTASI_GALERI_SLOTS - 1) as $i) {
-            $upload = $this->dokumentasiGaleriUploadBaru[$i] ?? null;
+        // Pertahankan data galeri lama sebagai fallback/migrasi aman, tapi tidak lagi diedit di tab Hero.
+        $existing = HomeSection::dataFor('dokumentasi', $this->dokumentasiDefaults());
 
-            if (! $upload) {
-                continue;
-            }
-
-            if ($this->dokumentasiGaleriPathLama[$i]) {
-                Storage::disk('public')->delete($this->dokumentasiGaleriPathLama[$i]);
-            }
-
-            $extension = $upload->getClientOriginalExtension() ?: ($this->dokumentasiGaleriTipe[$i] === 'video' ? 'mp4' : 'jpg');
-            $this->dokumentasiGaleriPathLama[$i] = $upload->storeAs(
-                'home-sections',
-                'dokumentasi-galeri-'.Str::uuid().'.'.$extension,
-                'public'
-            );
-            $this->dokumentasiGaleriUploadBaru[$i] = null;
-        }
-
-        // Slot tanpa file tersimpan (belum pernah diisi / baru dihapus) tidak
-        // ikut disimpan ke galeri -- array dirapikan ulang urutannya (values()).
-        $dokumentasiGaleri = collect(range(0, self::DOKUMENTASI_GALERI_SLOTS - 1))
-            ->map(fn ($i) => $this->dokumentasiGaleriPathLama[$i] ? [
-                'tipe' => $this->dokumentasiGaleriTipe[$i],
-                'path' => $this->dokumentasiGaleriPathLama[$i],
-                'keterangan' => trim((string) $this->dokumentasiGaleriKeterangan[$i]),
-            ] : null)
-            ->filter()
-            ->values()
-            ->all();
-
-        HomeSection::forSection('dokumentasi')->update([
-            'data' => [
-                'judul' => $validated['dokumentasiJudul'],
-                'subjudul' => $validated['dokumentasiSubjudul'],
-                'deskripsi' => $validated['dokumentasiDeskripsi'],
-                'media_type' => $this->dokumentasiMediaType,
-                'video_url' => $this->dokumentasiVideoUrl !== '' ? $this->dokumentasiVideoUrl : null,
-                'video_path' => $this->dokumentasiVideoPathLama,
-                'galeri' => $dokumentasiGaleri,
-            ],
-        ]);
+        HomeSection::forSection('dokumentasi')->update(['data' => [
+            'judul' => $validated['dokumentasiJudul'],
+            'subjudul' => $validated['dokumentasiSubjudul'],
+            'deskripsi' => $validated['dokumentasiDeskripsi'],
+            'media_type' => $this->dokumentasiMediaType,
+            'video_url' => $this->dokumentasiVideoUrl !== '' ? $this->dokumentasiVideoUrl : null,
+            'video_path' => $this->dokumentasiVideoPathLama,
+            'galeri' => is_array($existing['galeri'] ?? null) ? $existing['galeri'] : [],
+        ]]);
 
         session()->flash('edit-web-tersimpan', true);
     }
-
-
-    /**
-     * Simpan Dokumentasi 1 (section_key 'dokumentasi-1'). Polanya persis
-     * saveDokumentasi(): validasi per slot -> pindahkan upload baru ke storage
-     * -> rapikan array -> tulis ke home_sections.
-     */
-    /**
-     * Simpan Dokumentasi 1 (section_key 'dokumentasi-1'). Jumlah item
-     * BEBAS -- makanya validasi & penyimpanan mengikuti urutan key di
-     * $dok1Keys (bukan range(0, N-1) seperti pola slot tetap), lalu
-     * ditulis ulang sebagai array berurutan (values()) ke home_sections.
-     */
-    public function saveDokumentasi1(): void
-    {
-        $rules = [
-            'dok1Judul' => ['required', 'string', 'max:60'],
-            'dok1Subjudul' => ['required', 'string', 'max:100'],
-            'dok1Deskripsi' => ['required', 'string', 'max:500'],
-            'dok1MarqueeSpeed' => ['required', 'numeric', 'integer', 'min:15', 'max:180'],
-        ];
-
-        foreach ($this->dok1Keys as $key) {
-            $rules["dok1Tipe.$key"] = ['required', 'in:foto,video'];
-            $rules["dok1Keterangan.$key"] = ['nullable', 'string', 'max:80'];
-            $rules["dok1UploadBaru.$key"] = ($this->dok1Tipe[$key] ?? 'foto') === 'video'
-                ? ['nullable', 'file', 'mimetypes:video/mp4,video/webm,video/ogg,video/quicktime', 'max:51200']
-                : ['nullable', 'image', 'max:8192'];
-        }
-
-        $validated = $this->validate($rules, [
-            'dok1Judul.required' => 'Judul wajib diisi.',
-            'dok1Subjudul.required' => 'Subjudul wajib diisi.',
-            'dok1Deskripsi.required' => 'Deskripsi wajib diisi.',
-            'dok1MarqueeSpeed.required' => 'Kecepatan pita wajib diisi.',
-            'dok1MarqueeSpeed.min' => 'Kecepatan pita minimal 15 detik per putaran.',
-            'dok1MarqueeSpeed.max' => 'Kecepatan pita maksimal 180 detik per putaran.',
-        ]);
-
-        foreach ($this->dok1Keys as $key) {
-            $upload = $this->dok1UploadBaru[$key] ?? null;
-
-            if (! $upload) {
-                continue;
-            }
-
-            if ($this->dok1PathLama[$key] ?? null) {
-                Storage::disk('public')->delete($this->dok1PathLama[$key]);
-            }
-
-            $extension = $upload->getClientOriginalExtension() ?: ($this->dok1Tipe[$key] === 'video' ? 'mp4' : 'jpg');
-            $this->dok1PathLama[$key] = $upload->storeAs(
-                'home-sections',
-                'dokumentasi1-'.Str::uuid().'.'.$extension,
-                'public'
-            );
-            $this->dok1UploadBaru[$key] = null;
-        }
-
-        // Item TANPA file tersimpan (belum pernah diisi) tidak ikut disimpan --
-        // urutan yang tersisa mengikuti $dok1Keys, dirapikan ulang lewat values().
-        $items = collect($this->dok1Keys)
-            ->map(fn ($key) => ($this->dok1PathLama[$key] ?? null) ? [
-                'tipe' => $this->dok1Tipe[$key],
-                'path' => $this->dok1PathLama[$key],
-                'keterangan' => trim((string) $this->dok1Keterangan[$key]),
-            ] : null)
-            ->filter()
-            ->values()
-            ->all();
-
-        HomeSection::forSection('dokumentasi-1')->update([
-            'data' => [
-                'judul' => $validated['dok1Judul'],
-                'subjudul' => $validated['dok1Subjudul'],
-                'deskripsi' => $validated['dok1Deskripsi'],
-                'marquee_speed' => (int) $validated['dok1MarqueeSpeed'],
-                'items' => $items,
-            ],
-        ]);
-
-        session()->flash('edit-web-tersimpan', true);
-    }
-
-    /**
-     * Simpan Dokumentasi 2 (section_key 'dokumentasi-2'). Jumlah item
-     * BEBAS -- makanya validasi & penyimpanan mengikuti urutan key di
-     * $dok2Keys (bukan range(0, N-1) seperti pola slot tetap), lalu
-     * ditulis ulang sebagai array berurutan (values()) ke home_sections.
-     */
-    public function saveDokumentasi2(): void
-    {
-        $rules = [
-            'dok2Judul' => ['required', 'string', 'max:60'],
-            'dok2Subjudul' => ['required', 'string', 'max:100'],
-            'dok2Deskripsi' => ['required', 'string', 'max:500'],
-        ];
-
-        foreach ($this->dok2Keys as $key) {
-            $rules["dok2Tipe.$key"] = ['required', 'in:foto,video'];
-            $rules["dok2Keterangan.$key"] = ['nullable', 'string', 'max:80'];
-            $rules["dok2UploadBaru.$key"] = ($this->dok2Tipe[$key] ?? 'foto') === 'video'
-                ? ['nullable', 'file', 'mimetypes:video/mp4,video/webm,video/ogg,video/quicktime', 'max:51200']
-                : ['nullable', 'image', 'max:8192'];
-        }
-
-        $validated = $this->validate($rules, [
-            'dok2Judul.required' => 'Judul wajib diisi.',
-            'dok2Subjudul.required' => 'Subjudul wajib diisi.',
-            'dok2Deskripsi.required' => 'Deskripsi wajib diisi.',
-        ]);
-
-        foreach ($this->dok2Keys as $key) {
-            $upload = $this->dok2UploadBaru[$key] ?? null;
-
-            if (! $upload) {
-                continue;
-            }
-
-            if ($this->dok2PathLama[$key] ?? null) {
-                Storage::disk('public')->delete($this->dok2PathLama[$key]);
-            }
-
-            $extension = $upload->getClientOriginalExtension() ?: ($this->dok2Tipe[$key] === 'video' ? 'mp4' : 'jpg');
-            $this->dok2PathLama[$key] = $upload->storeAs(
-                'home-sections',
-                'dokumentasi2-'.Str::uuid().'.'.$extension,
-                'public'
-            );
-            $this->dok2UploadBaru[$key] = null;
-        }
-
-        // Item TANPA file tersimpan (belum pernah diisi) tidak ikut disimpan --
-        // urutan yang tersisa mengikuti $dok2Keys, dirapikan ulang lewat values().
-        $items = collect($this->dok2Keys)
-            ->map(fn ($key) => ($this->dok2PathLama[$key] ?? null) ? [
-                'tipe' => $this->dok2Tipe[$key],
-                'path' => $this->dok2PathLama[$key],
-                'keterangan' => trim((string) $this->dok2Keterangan[$key]),
-            ] : null)
-            ->filter()
-            ->values()
-            ->all();
-
-        HomeSection::forSection('dokumentasi-2')->update([
-            'data' => [
-                'judul' => $validated['dok2Judul'],
-                'subjudul' => $validated['dok2Subjudul'],
-                'deskripsi' => $validated['dok2Deskripsi'],
-                'items' => $items,
-            ],
-        ]);
-
-        session()->flash('edit-web-tersimpan', true);
-    }
-
     /**
      * Simpan Dokumentasi 3 (section_key 'dokumentasi-3'). Jumlah item
      * BEBAS -- makanya validasi & penyimpanan mengikuti urutan key di
@@ -2628,11 +3383,9 @@ new #[Layout('layouts::admin-panel')] #[Title('Edit Web')] class extends Compone
         ];
 
         foreach ($this->dok3Keys as $key) {
-            $rules["dok3Tipe.$key"] = ['required', 'in:foto,video'];
+            $rules["dok3Tipe.$key"] = ['required', 'in:video'];
             $rules["dok3Keterangan.$key"] = ['nullable', 'string', 'max:80'];
-            $rules["dok3UploadBaru.$key"] = ($this->dok3Tipe[$key] ?? 'foto') === 'video'
-                ? ['nullable', 'file', 'mimetypes:video/mp4,video/webm,video/ogg,video/quicktime', 'max:51200']
-                : ['nullable', 'image', 'max:8192'];
+            $rules["dok3UploadBaru.$key"] = ['nullable', 'file', 'mimetypes:video/mp4,video/webm,video/ogg,video/quicktime', 'max:51200'];
         }
 
         $validated = $this->validate($rules, [
@@ -2652,7 +3405,7 @@ new #[Layout('layouts::admin-panel')] #[Title('Edit Web')] class extends Compone
                 Storage::disk('public')->delete($this->dok3PathLama[$key]);
             }
 
-            $extension = $upload->getClientOriginalExtension() ?: ($this->dok3Tipe[$key] === 'video' ? 'mp4' : 'jpg');
+            $extension = $upload->getClientOriginalExtension() ?: 'mp4';
             $this->dok3PathLama[$key] = $upload->storeAs(
                 'home-sections',
                 'dokumentasi3-'.Str::uuid().'.'.$extension,
@@ -2684,6 +3437,37 @@ new #[Layout('layouts::admin-panel')] #[Title('Edit Web')] class extends Compone
 
         session()->flash('edit-web-tersimpan', true);
     }
+
+    public function saveDokumentasiFoto(): void
+    {
+        $rules = [
+            'dokFotoJudul' => ['required', 'string', 'max:80'],
+            'dokFotoSubjudul' => ['required', 'string', 'max:100'],
+            'dokFotoDeskripsi' => ['required', 'string', 'max:500'],
+        ];
+        foreach ($this->dokFotoKeys as $key) {
+            $rules["dokFotoKeterangan.$key"] = ['nullable', 'string', 'max:80'];
+            $rules["dokFotoUploadBaru.$key"] = ['nullable', 'image', 'max:8192'];
+        }
+        $validated = $this->validate($rules);
+        foreach ($this->dokFotoKeys as $key) {
+            $upload = $this->dokFotoUploadBaru[$key] ?? null;
+            if (! $upload) continue;
+            if ($this->dokFotoPathLama[$key] ?? null) Storage::disk('public')->delete($this->dokFotoPathLama[$key]);
+            $ext = $upload->getClientOriginalExtension() ?: 'jpg';
+            $this->dokFotoPathLama[$key] = $upload->storeAs('home-sections', 'dokumentasi-foto-'.Str::uuid().'.'.$ext, 'public');
+            $this->dokFotoUploadBaru[$key] = null;
+            $this->dokFotoTipe[$key] = 'foto';
+        }
+        $items = collect($this->dokFotoKeys)->map(fn ($key) => ($this->dokFotoPathLama[$key] ?? null) ? [
+            'tipe' => 'foto', 'path' => $this->dokFotoPathLama[$key], 'keterangan' => trim((string) ($this->dokFotoKeterangan[$key] ?? '')),
+        ] : null)->filter()->values()->all();
+        HomeSection::forSection('dokumentasi-foto')->update(['data' => [
+            'judul' => $validated['dokFotoJudul'], 'subjudul' => $validated['dokFotoSubjudul'], 'deskripsi' => $validated['dokFotoDeskripsi'], 'items' => $items,
+        ]]);
+        session()->flash('edit-web-tersimpan', true);
+    }
+
 
     /** Klik salah satu swatch preset -> langsung pakai warnanya + otomatis centang "warna kustom". */
     public function selectProdukWarnaBgPreset(string $hex): void
@@ -2799,12 +3583,22 @@ new #[Layout('layouts::admin-panel')] #[Title('Edit Web')] class extends Compone
                 'tentang-kami' => $tentangKamiSections,
                 'produk' => $produkSections,
                 'dokumentasi' => $dokumentasiSections,
+                'sustainability' => $sustainabilitySections,
+                'privacy-policy' => $privacySections,
+                'cookies' => $cookiesSections,
+                'terms-of-service' => $termsSections,
+                'our-craftsmen' => $ourCraftsmenSections,
                 default => $sections,
             };
             $activeGroupLabel = match ($activeGroup) {
                 'tentang-kami' => 'Tentang Kami',
                 'produk' => 'Produk',
                 'dokumentasi' => 'Dokumentasi',
+                'sustainability' => 'Sustainability',
+                'privacy-policy' => 'Privacy Policy',
+                'cookies' => 'Cookies',
+                'terms-of-service' => 'Terms of Service',
+                'our-craftsmen' => 'Our Craftsmen',
                 default => 'Beranda',
             };
         @endphp
@@ -4978,9 +5772,9 @@ new #[Layout('layouts::admin-panel')] #[Title('Edit Web')] class extends Compone
                             Dokumentasi (section paling atas halaman Dokumentasi)
                         </h3>
                         <p class="text-xs text-admin-ink-soft">
-                            Judul, subjudul, dan deskripsi yang tampil di bagian atas halaman
-                            "Dokumentasi". Kolom kanan halaman itu sengaja dikosongkan, jadi tidak
-                            ada foto untuk diedit di sini.
+                            Judul, subjudul, deskripsi, dan video yang tampil di bagian atas halaman
+                            "Dokumentasi". Media di bagian ini hanya terhubung ke section Dokumentasi
+                            dan tidak mengambil media dari section Beranda.
                         </p>
                     </div>
 
@@ -5096,88 +5890,6 @@ new #[Layout('layouts::admin-panel')] #[Title('Edit Web')] class extends Compone
                     @endif
                     </div>
 
-                    {{-- GALERI DOKUMENTASI (kartu baru) -- foto & video "jejak karya" yang
-                         tampil DI BAWAH hero di halaman /dokumentasi, lihat
-                         resources/views/pages/frontend/booking.blade.php bagian
-                         "GALERI DOKUMENTASI". 6 slot tetap, tiap slot bisa dipilih
-                         Foto atau Video. Kalau admin belum pernah mengisi galeri sama
-                         sekali, 6 slot ini otomatis terisi dari foto produk & video
-                         "Kenapa Pilih Kami" yang sudah ada (lihat dokumentasiGaleriDefaults()) --
-                         cukup diganti/dirapikan di sini kalau mau, bukan wajib diisi ulang semua. --}}
-                    <div class="space-y-4 rounded-xl border border-admin-border p-4">
-                        <div>
-                            <p class="text-xs font-semibold uppercase tracking-wide text-admin-ink-soft">Galeri Dokumentasi</p>
-                            <p class="mt-1 text-xs text-admin-ink-soft">
-                                Kumpulan foto/video "jejak karya" yang tampil di bawah hero halaman
-                                Dokumentasi, bergaya galeri -- muncul menyamping & memudar saat
-                                digulir. Maksimal {{ $this->dokumentasiGaleriSlots }} slot, boleh
-                                dikosongkan sebagian (slot kosong otomatis tidak ikut tampil).
-                            </p>
-                        </div>
-
-                        <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                            @foreach (range(0, $this->dokumentasiGaleriSlots - 1) as $slot)
-                                <div class="space-y-2.5 rounded-lg border border-admin-border bg-admin-surface p-3">
-                                    <div class="flex items-center justify-between gap-2">
-                                        <div class="inline-flex gap-1 rounded-lg bg-admin-cream p-1">
-                                            @foreach (['foto' => 'fa-image', 'video' => 'fa-video'] as $tipeKey => $tipeIcon)
-                                                <button
-                                                    type="button"
-                                                    wire:click="$set('dokumentasiGaleriTipe.{{ $slot }}', '{{ $tipeKey }}')"
-                                                    class="flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-[11px] font-semibold transition {{ $dokumentasiGaleriTipe[$slot] === $tipeKey ? 'bg-admin-panel text-white shadow-sm' : 'text-admin-ink-soft hover:bg-white' }}"
-                                                >
-                                                    <i class="fa-solid {{ $tipeIcon }} text-[10px]"></i>
-                                                    {{ ucfirst($tipeKey) }}
-                                                </button>
-                                            @endforeach
-                                        </div>
-
-                                        @if ($this->dokumentasiGaleriPreviewUrls[$slot] ?? null)
-                                            <button
-                                                type="button"
-                                                wire:click="removeDokumentasiGaleriSlot({{ $slot }})"
-                                                class="flex h-7 w-7 items-center justify-center rounded-full text-admin-danger transition hover:bg-admin-danger/10"
-                                                title="Hapus isi slot ini"
-                                            >
-                                                <i class="fa-solid fa-trash text-xs"></i>
-                                            </button>
-                                        @endif
-                                    </div>
-
-                                    {{-- Preview: file lama yang sudah tersimpan --}}
-                                    @if ($this->dokumentasiGaleriPreviewUrls[$slot] ?? null)
-                                        <div class="aspect-square overflow-hidden rounded-lg bg-admin-cream">
-                                            @if ($dokumentasiGaleriTipe[$slot] === 'video')
-                                                <video src="{{ $this->dokumentasiGaleriPreviewUrls[$slot] }}" class="h-full w-full object-cover" muted></video>
-                                            @else
-                                                <img src="{{ $this->dokumentasiGaleriPreviewUrls[$slot] }}" alt="Galeri {{ $slot + 1 }}" class="h-full w-full object-cover">
-                                            @endif
-                                        </div>
-                                    @endif
-
-                                    <input
-                                        type="file"
-                                        wire:model="dokumentasiGaleriUploadBaru.{{ $slot }}"
-                                        accept="{{ $dokumentasiGaleriTipe[$slot] === 'video' ? 'video/mp4,video/webm,video/ogg,video/quicktime' : 'image/*' }}"
-                                        class="block w-full text-xs text-admin-ink file:mr-2 file:rounded-full file:border-0 file:bg-admin-accent file:px-3 file:py-1.5 file:text-[11px] file:font-semibold file:text-white hover:file:bg-admin-accent-strong"
-                                    >
-                                    <div wire:loading wire:target="dokumentasiGaleriUploadBaru.{{ $slot }}" class="text-[11px] text-admin-ink-soft">
-                                        <i class="fa-solid fa-circle-notch animate-spin"></i> Mengunggah...
-                                    </div>
-                                    @error("dokumentasiGaleriUploadBaru.$slot")<p class="text-[11px] font-medium text-red-600">{{ $message }}</p>@enderror
-
-                                    <input
-                                        type="text" maxlength="80"
-                                        wire:model="dokumentasiGaleriKeterangan.{{ $slot }}"
-                                        placeholder="Keterangan singkat (opsional)"
-                                        class="w-full rounded-md border border-admin-border bg-admin-surface px-2.5 py-1.5 text-xs text-admin-ink transition focus:border-admin-accent focus:outline-none focus:ring-2 focus:ring-admin-accent/20"
-                                    >
-                                    @error("dokumentasiGaleriKeterangan.$slot")<p class="text-[11px] font-medium text-red-600">{{ $message }}</p>@enderror
-                                </div>
-                            @endforeach
-                        </div>
-                    </div>
-
                     <div class="flex justify-end">
                         <button
                             type="submit"
@@ -5193,495 +5905,57 @@ new #[Layout('layouts::admin-panel')] #[Title('Edit Web')] class extends Compone
                         </button>
                     </div>
                 </form>
-            @elseif ($activeSection === 'dokumentasi-1')
-                <form wire:submit="saveDokumentasi1" class="space-y-6">
-
-                    <div>
-                        <h3 class="mb-1 flex items-center gap-2 text-sm font-semibold text-admin-ink">
-                            <i class="fa-solid fa-arrows-left-right text-admin-accent"></i>
-                            Dokumentasi 1 &mdash; Pita Berjalan
-                        </h3>
-                        <p class="text-xs text-admin-ink-soft">
-                            Teks di sebelah KANAN, dan di sebelah KIRI ada pita foto &amp; video yang berjalan terus dari kanan ke kiri (seperti pita tulisan "FURNITUR TOKO MEBEL &bull; KARYA IDE-EDI" di atas footer, tapi isinya media). Section ini TAMBAHAN di bawah hero &amp; galeri
-                            halaman Dokumentasi &mdash; hero dan galeri di atasnya tidak
-                            ikut berubah. Video di halaman Dokumentasi langsung
-                            <strong>autoplay &amp; mute permanen</strong> (tidak perlu diklik
-                            untuk main, dan tidak ada tombol suara) karena ini galeri, bukan
-                            pemutar video.
-                        </p>
-                    </div>
-
-                    <div class="space-y-4 rounded-xl border border-admin-border p-4">
-                        <p class="text-xs font-semibold uppercase tracking-wide text-admin-ink-soft">Isi Teks</p>
-
-                        <div class="grid gap-4 sm:grid-cols-2">
-                            <div class="sm:col-span-2">
-                                <label class="mb-1.5 block text-sm font-medium text-admin-ink">Judul</label>
-                                <input
-                                    type="text" maxlength="60" wire:model="dok1Judul"
-                                    class="w-full rounded-lg border border-admin-border bg-admin-surface px-3 py-2.5 text-sm text-admin-ink transition focus:border-admin-accent focus:outline-none focus:ring-2 focus:ring-admin-accent/20"
-                                >
-                                @error('dok1Judul')<p class="mt-1.5 text-xs font-medium text-red-600">{{ $message }}</p>@enderror
-                            </div>
-                            <div class="sm:col-span-2">
-                                <label class="mb-1.5 block text-sm font-medium text-admin-ink">Subjudul (teks kecil di atas judul)</label>
-                                <input
-                                    type="text" maxlength="100" wire:model="dok1Subjudul"
-                                    class="w-full rounded-lg border border-admin-border bg-admin-surface px-3 py-2.5 text-sm text-admin-ink transition focus:border-admin-accent focus:outline-none focus:ring-2 focus:ring-admin-accent/20"
-                                >
-                                @error('dok1Subjudul')<p class="mt-1.5 text-xs font-medium text-red-600">{{ $message }}</p>@enderror
-                            </div>
-                            <div class="sm:col-span-2">
-                                <label class="mb-1.5 block text-sm font-medium text-admin-ink">Deskripsi</label>
-                                <textarea
-                                    rows="4" maxlength="500" wire:model="dok1Deskripsi"
-                                    class="w-full resize-none rounded-lg border border-admin-border bg-admin-surface px-3 py-2.5 text-sm text-admin-ink transition focus:border-admin-accent focus:outline-none focus:ring-2 focus:ring-admin-accent/20"
-                                ></textarea>
-                                @error('dok1Deskripsi')<p class="mt-1.5 text-xs font-medium text-red-600">{{ $message }}</p>@enderror
-                            </div>
-                        </div>
-                    </div>
-
-                    {{-- KECEPATAN PITA BERJALAN --}}
-                    <div class="space-y-3 rounded-xl border border-admin-border p-4">
-                        <div>
-                            <p class="text-xs font-semibold uppercase tracking-wide text-admin-ink-soft">Kecepatan Pita</p>
-                            <p class="mt-1 text-xs text-admin-ink-soft">
-                                Lama satu putaran penuh pita, dalam detik. Makin besar angkanya,
-                                makin PELAN jalannya. Bawaan: 45 detik.
-                            </p>
-                        </div>
-
-                        <div class="sm:max-w-xs">
-                            <input
-                                type="number" min="15" max="180" step="1" wire:model="dok1MarqueeSpeed"
-                                class="w-full rounded-lg border border-admin-border bg-admin-surface px-3 py-2.5 text-sm text-admin-ink transition focus:border-admin-accent focus:outline-none focus:ring-2 focus:ring-admin-accent/20"
-                            >
-                            @error('dok1MarqueeSpeed')<p class="mt-1.5 text-xs font-medium text-red-600">{{ $message }}</p>@enderror
-                        </div>
-                    </div>
-
-                    <div class="space-y-4 rounded-xl border border-admin-border p-4">
-                        <div class="flex flex-wrap items-start justify-between gap-3">
-                            <div>
-                                <p class="text-xs font-semibold uppercase tracking-wide text-admin-ink-soft">Isi Pita Berjalan</p>
-                                <p class="mt-1 text-xs text-admin-ink-soft">
-                                    Foto &amp; video yang berjalan di sebelah kiri teks. Jumlahnya BEBAS, tidak ada batas maksimal --
-                                    klik "Tambah" untuk menambah sebanyak yang dibutuhkan, atau
-                                    hapus yang tidak dipakai. Kalau belum ada satu pun yang diisi,
-                                    halaman Dokumentasi memakai isi dummy sementara dari internet.
-                                </p>
-                            </div>
-
-                            <button
-                                type="button"
-                                wire:click="addDok1Item"
-                                class="flex shrink-0 items-center gap-2 rounded-full border border-admin-accent px-3.5 py-2 text-xs font-semibold text-admin-accent transition hover:bg-admin-accent hover:text-white"
-                            >
-                                <i class="fa-solid fa-plus text-[10px]"></i> Tambah Slot
-                            </button>
-                        </div>
-
-                        @if (count($dok1Keys) === 0)
-                            <p class="rounded-lg border border-dashed border-admin-border bg-admin-cream/60 px-3 py-6 text-center text-xs text-admin-ink-soft">
-                                Belum ada slot yang ditambahkan. Klik "Tambah Slot" di atas untuk mulai mengisi.
-                            </p>
-                        @endif
-
-                        <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                            @foreach ($dok1Keys as $urutan => $key)
-                                <div wire:key="dok1-item-{{ $key }}" class="space-y-2.5 rounded-lg border border-admin-border bg-admin-surface p-3">
-                                    <div class="flex items-center justify-between gap-2">
-                                        <span class="rounded-full bg-admin-cream px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-admin-ink-soft">
-                                            Slot {{ $urutan + 1 }}
-                                        </span>
-
-                                        <button
-                                            type="button"
-                                            wire:click="removeDok1Item('{{ $key }}')"
-                                            class="flex h-7 w-7 items-center justify-center rounded-full text-admin-danger transition hover:bg-admin-danger/10"
-                                            title="Hapus slot ini"
-                                        >
-                                            <i class="fa-solid fa-trash text-xs"></i>
-                                        </button>
-                                    </div>
-
-                                    <div class="inline-flex gap-1 rounded-lg bg-admin-cream p-1">
-                                        @foreach (['foto' => 'fa-image', 'video' => 'fa-video'] as $tipeKey => $tipeIcon)
-                                            <button
-                                                type="button"
-                                                wire:click="$set('dok1Tipe.{{ $key }}', '{{ $tipeKey }}')"
-                                                class="flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-[11px] font-semibold transition {{ ($dok1Tipe[$key] ?? 'foto') === $tipeKey ? 'bg-admin-panel text-white shadow-sm' : 'text-admin-ink-soft hover:bg-white' }}"
-                                            >
-                                                <i class="fa-solid {{ $tipeIcon }} text-[10px]"></i>
-                                                {{ ucfirst($tipeKey) }}
-                                            </button>
-                                        @endforeach
-                                    </div>
-
-                                    @if ($this->dok1PreviewUrls[$key] ?? null)
-                                        <div class="aspect-square overflow-hidden rounded-lg bg-admin-cream">
-                                            @if (($dok1Tipe[$key] ?? 'foto') === 'video')
-                                                {{-- Autoplay + loop di preview juga, supaya admin langsung lihat
-                                                     videonya jalan tanpa perlu klik -- sama seperti di frontend. --}}
-                                                <video src="{{ $this->dok1PreviewUrls[$key] }}" class="h-full w-full object-cover" autoplay muted loop playsinline></video>
-                                            @else
-                                                <img src="{{ $this->dok1PreviewUrls[$key] }}" alt="Slot {{ $urutan + 1 }}" class="h-full w-full object-cover">
-                                            @endif
-                                        </div>
-                                    @endif
-
-                                    <input
-                                        type="file"
-                                        wire:model="dok1UploadBaru.{{ $key }}"
-                                        accept="{{ ($dok1Tipe[$key] ?? 'foto') === 'video' ? 'video/mp4,video/webm,video/ogg,video/quicktime' : 'image/*' }}"
-                                        class="block w-full text-xs text-admin-ink file:mr-2 file:rounded-full file:border-0 file:bg-admin-accent file:px-3 file:py-1.5 file:text-[11px] file:font-semibold file:text-white hover:file:bg-admin-accent-strong"
-                                    >
-                                    <div wire:loading wire:target="dok1UploadBaru.{{ $key }}" class="text-[11px] text-admin-ink-soft">
-                                        <i class="fa-solid fa-circle-notch animate-spin"></i> Mengunggah...
-                                    </div>
-                                    @error("dok1UploadBaru.$key")<p class="text-[11px] font-medium text-red-600">{{ $message }}</p>@enderror
-
-                                    <input
-                                        type="text" maxlength="80"
-                                        wire:model="dok1Keterangan.{{ $key }}"
-                                        placeholder="Keterangan singkat (opsional)"
-                                        class="w-full rounded-md border border-admin-border bg-admin-surface px-2.5 py-1.5 text-xs text-admin-ink transition focus:border-admin-accent focus:outline-none focus:ring-2 focus:ring-admin-accent/20"
-                                    >
-                                    @error("dok1Keterangan.$key")<p class="text-[11px] font-medium text-red-600">{{ $message }}</p>@enderror
-                                </div>
-                            @endforeach
-                        </div>
-                    </div>
-
-                    <div class="flex justify-end">
-                        <button
-                            type="submit"
-                            wire:loading.attr="disabled" wire:target="saveDokumentasi1"
-                            class="flex items-center gap-2 rounded-full bg-admin-panel px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-admin-panel/20 transition-all duration-200 hover:bg-admin-accent-strong active:scale-[0.99] disabled:opacity-60"
-                        >
-                            <span wire:loading.remove wire:target="saveDokumentasi1" class="flex items-center gap-2">
-                                <i class="fa-solid fa-floppy-disk text-xs"></i> Simpan
-                            </span>
-                            <span wire:loading wire:target="saveDokumentasi1" class="flex items-center gap-2">
-                                <i class="fa-solid fa-circle-notch animate-spin"></i> Menyimpan...
-                            </span>
-                        </button>
-                    </div>
-                </form>
-            @elseif ($activeSection === 'dokumentasi-2')
-                <form wire:submit="saveDokumentasi2" class="space-y-6">
-
-                    <div>
-                        <h3 class="mb-1 flex items-center gap-2 text-sm font-semibold text-admin-ink">
-                            <i class="fa-solid fa-table-cells-large text-admin-accent"></i>
-                            Dokumentasi 2 &mdash; Video Wall Mosaic
-                        </h3>
-                        <p class="text-xs text-admin-ink-soft">
-                            Dinding media bernuansa gelap ala ruang pamer: ubin besar-kecil berisi foto/video yang berputar terus, dan bisa diklik pengunjung untuk diperbesar. Section ini TAMBAHAN di bawah hero &amp; galeri
-                            halaman Dokumentasi &mdash; hero dan galeri di atasnya tidak
-                            ikut berubah. Video di halaman Dokumentasi langsung
-                            <strong>autoplay &amp; mute permanen</strong> (tidak perlu diklik
-                            untuk main, dan tidak ada tombol suara) karena ini galeri, bukan
-                            pemutar video.
-                        </p>
-                    </div>
-
-                    <div class="space-y-4 rounded-xl border border-admin-border p-4">
-                        <p class="text-xs font-semibold uppercase tracking-wide text-admin-ink-soft">Isi Teks</p>
-
-                        <div class="grid gap-4 sm:grid-cols-2">
-                            <div class="sm:col-span-2">
-                                <label class="mb-1.5 block text-sm font-medium text-admin-ink">Judul</label>
-                                <input
-                                    type="text" maxlength="60" wire:model="dok2Judul"
-                                    class="w-full rounded-lg border border-admin-border bg-admin-surface px-3 py-2.5 text-sm text-admin-ink transition focus:border-admin-accent focus:outline-none focus:ring-2 focus:ring-admin-accent/20"
-                                >
-                                @error('dok2Judul')<p class="mt-1.5 text-xs font-medium text-red-600">{{ $message }}</p>@enderror
-                            </div>
-                            <div class="sm:col-span-2">
-                                <label class="mb-1.5 block text-sm font-medium text-admin-ink">Subjudul (teks kecil di atas judul)</label>
-                                <input
-                                    type="text" maxlength="100" wire:model="dok2Subjudul"
-                                    class="w-full rounded-lg border border-admin-border bg-admin-surface px-3 py-2.5 text-sm text-admin-ink transition focus:border-admin-accent focus:outline-none focus:ring-2 focus:ring-admin-accent/20"
-                                >
-                                @error('dok2Subjudul')<p class="mt-1.5 text-xs font-medium text-red-600">{{ $message }}</p>@enderror
-                            </div>
-                            <div class="sm:col-span-2">
-                                <label class="mb-1.5 block text-sm font-medium text-admin-ink">Deskripsi</label>
-                                <textarea
-                                    rows="4" maxlength="500" wire:model="dok2Deskripsi"
-                                    class="w-full resize-none rounded-lg border border-admin-border bg-admin-surface px-3 py-2.5 text-sm text-admin-ink transition focus:border-admin-accent focus:outline-none focus:ring-2 focus:ring-admin-accent/20"
-                                ></textarea>
-                                @error('dok2Deskripsi')<p class="mt-1.5 text-xs font-medium text-red-600">{{ $message }}</p>@enderror
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="space-y-4 rounded-xl border border-admin-border p-4">
-                        <div class="flex flex-wrap items-start justify-between gap-3">
-                            <div>
-                                <p class="text-xs font-semibold uppercase tracking-wide text-admin-ink-soft">Isi Ubin Mosaic</p>
-                                <p class="mt-1 text-xs text-admin-ink-soft">
-                                    Urutan ubin menentukan ukurannya: ubin ke-1 &amp; ke-4 dalam tiap kelompok 7 tampil paling besar, sisanya mengisi di sekelilingnya -- polanya berulang tiap 7 ubin kalau diisi lebih dari 7. Jumlahnya BEBAS, tidak ada batas maksimal --
-                                    klik "Tambah" untuk menambah sebanyak yang dibutuhkan, atau
-                                    hapus yang tidak dipakai. Kalau belum ada satu pun yang diisi,
-                                    halaman Dokumentasi memakai isi dummy sementara dari internet.
-                                </p>
-                            </div>
-
-                            <button
-                                type="button"
-                                wire:click="addDok2Item"
-                                class="flex shrink-0 items-center gap-2 rounded-full border border-admin-accent px-3.5 py-2 text-xs font-semibold text-admin-accent transition hover:bg-admin-accent hover:text-white"
-                            >
-                                <i class="fa-solid fa-plus text-[10px]"></i> Tambah Ubin
-                            </button>
-                        </div>
-
-                        @if (count($dok2Keys) === 0)
-                            <p class="rounded-lg border border-dashed border-admin-border bg-admin-cream/60 px-3 py-6 text-center text-xs text-admin-ink-soft">
-                                Belum ada ubin yang ditambahkan. Klik "Tambah Ubin" di atas untuk mulai mengisi.
-                            </p>
-                        @endif
-
-                        <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                            @foreach ($dok2Keys as $urutan => $key)
-                                <div wire:key="dok2-item-{{ $key }}" class="space-y-2.5 rounded-lg border border-admin-border bg-admin-surface p-3">
-                                    <div class="flex items-center justify-between gap-2">
-                                        <span class="rounded-full bg-admin-cream px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-admin-ink-soft">
-                                            Ubin {{ $urutan + 1 }}{{ in_array($urutan % 7, [0, 3]) ? ' (besar)' : '' }}
-                                        </span>
-
-                                        <button
-                                            type="button"
-                                            wire:click="removeDok2Item('{{ $key }}')"
-                                            class="flex h-7 w-7 items-center justify-center rounded-full text-admin-danger transition hover:bg-admin-danger/10"
-                                            title="Hapus ubin ini"
-                                        >
-                                            <i class="fa-solid fa-trash text-xs"></i>
-                                        </button>
-                                    </div>
-
-                                    <div class="inline-flex gap-1 rounded-lg bg-admin-cream p-1">
-                                        @foreach (['foto' => 'fa-image', 'video' => 'fa-video'] as $tipeKey => $tipeIcon)
-                                            <button
-                                                type="button"
-                                                wire:click="$set('dok2Tipe.{{ $key }}', '{{ $tipeKey }}')"
-                                                class="flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-[11px] font-semibold transition {{ ($dok2Tipe[$key] ?? 'foto') === $tipeKey ? 'bg-admin-panel text-white shadow-sm' : 'text-admin-ink-soft hover:bg-white' }}"
-                                            >
-                                                <i class="fa-solid {{ $tipeIcon }} text-[10px]"></i>
-                                                {{ ucfirst($tipeKey) }}
-                                            </button>
-                                        @endforeach
-                                    </div>
-
-                                    @if ($this->dok2PreviewUrls[$key] ?? null)
-                                        <div class="aspect-square overflow-hidden rounded-lg bg-admin-cream">
-                                            @if (($dok2Tipe[$key] ?? 'foto') === 'video')
-                                                {{-- Autoplay + loop di preview juga, supaya admin langsung lihat
-                                                     videonya jalan tanpa perlu klik -- sama seperti di frontend. --}}
-                                                <video src="{{ $this->dok2PreviewUrls[$key] }}" class="h-full w-full object-cover" autoplay muted loop playsinline></video>
-                                            @else
-                                                <img src="{{ $this->dok2PreviewUrls[$key] }}" alt="Ubin {{ $urutan + 1 }}" class="h-full w-full object-cover">
-                                            @endif
-                                        </div>
-                                    @endif
-
-                                    <input
-                                        type="file"
-                                        wire:model="dok2UploadBaru.{{ $key }}"
-                                        accept="{{ ($dok2Tipe[$key] ?? 'foto') === 'video' ? 'video/mp4,video/webm,video/ogg,video/quicktime' : 'image/*' }}"
-                                        class="block w-full text-xs text-admin-ink file:mr-2 file:rounded-full file:border-0 file:bg-admin-accent file:px-3 file:py-1.5 file:text-[11px] file:font-semibold file:text-white hover:file:bg-admin-accent-strong"
-                                    >
-                                    <div wire:loading wire:target="dok2UploadBaru.{{ $key }}" class="text-[11px] text-admin-ink-soft">
-                                        <i class="fa-solid fa-circle-notch animate-spin"></i> Mengunggah...
-                                    </div>
-                                    @error("dok2UploadBaru.$key")<p class="text-[11px] font-medium text-red-600">{{ $message }}</p>@enderror
-
-                                    <input
-                                        type="text" maxlength="80"
-                                        wire:model="dok2Keterangan.{{ $key }}"
-                                        placeholder="Keterangan singkat (opsional)"
-                                        class="w-full rounded-md border border-admin-border bg-admin-surface px-2.5 py-1.5 text-xs text-admin-ink transition focus:border-admin-accent focus:outline-none focus:ring-2 focus:ring-admin-accent/20"
-                                    >
-                                    @error("dok2Keterangan.$key")<p class="text-[11px] font-medium text-red-600">{{ $message }}</p>@enderror
-                                </div>
-                            @endforeach
-                        </div>
-                    </div>
-
-                    <div class="flex justify-end">
-                        <button
-                            type="submit"
-                            wire:loading.attr="disabled" wire:target="saveDokumentasi2"
-                            class="flex items-center gap-2 rounded-full bg-admin-panel px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-admin-panel/20 transition-all duration-200 hover:bg-admin-accent-strong active:scale-[0.99] disabled:opacity-60"
-                        >
-                            <span wire:loading.remove wire:target="saveDokumentasi2" class="flex items-center gap-2">
-                                <i class="fa-solid fa-floppy-disk text-xs"></i> Simpan
-                            </span>
-                            <span wire:loading wire:target="saveDokumentasi2" class="flex items-center gap-2">
-                                <i class="fa-solid fa-circle-notch animate-spin"></i> Menyimpan...
-                            </span>
-                        </button>
-                    </div>
-                </form>
             @elseif ($activeSection === 'dokumentasi-3')
                 <form wire:submit="saveDokumentasi3" class="space-y-6">
-
                     <div>
-                        <h3 class="mb-1 flex items-center gap-2 text-sm font-semibold text-admin-ink">
-                            <i class="fa-solid fa-layer-group text-admin-accent"></i>
-                            Dokumentasi 3 &mdash; Kartu 3D Bertumpuk
-                        </h3>
-                        <p class="text-xs text-admin-ink-soft">
-                            Kartu foto/video bertumpuk yang "mengipas" miring 3D begitu masuk layar, lalu menegak &amp; terangkat saat disentuh kursor. Section ini TAMBAHAN di bawah hero &amp; galeri
-                            halaman Dokumentasi &mdash; hero dan galeri di atasnya tidak
-                            ikut berubah. Video di halaman Dokumentasi langsung
-                            <strong>autoplay &amp; mute permanen</strong> (tidak perlu diklik
-                            untuk main, dan tidak ada tombol suara) karena ini galeri, bukan
-                            pemutar video.
-                        </p>
+                        <h3 class="mb-1 flex items-center gap-2 text-sm font-semibold text-admin-ink"><i class="fa-solid fa-video text-admin-accent"></i> Galeri Video</h3>
+                        <p class="text-xs text-admin-ink-soft">Khusus VIDEO. Setiap item yang diunggah di sini tampil pada grid video modern di halaman Dokumentasi. Jumlah video bebas; halaman otomatis menyusun maksimal 4 video per baris di desktop.</p>
                     </div>
-
                     <div class="space-y-4 rounded-xl border border-admin-border p-4">
-                        <p class="text-xs font-semibold uppercase tracking-wide text-admin-ink-soft">Isi Teks</p>
-
-                        <div class="grid gap-4 sm:grid-cols-2">
-                            <div class="sm:col-span-2">
-                                <label class="mb-1.5 block text-sm font-medium text-admin-ink">Judul</label>
-                                <input
-                                    type="text" maxlength="60" wire:model="dok3Judul"
-                                    class="w-full rounded-lg border border-admin-border bg-admin-surface px-3 py-2.5 text-sm text-admin-ink transition focus:border-admin-accent focus:outline-none focus:ring-2 focus:ring-admin-accent/20"
-                                >
-                                @error('dok3Judul')<p class="mt-1.5 text-xs font-medium text-red-600">{{ $message }}</p>@enderror
-                            </div>
-                            <div class="sm:col-span-2">
-                                <label class="mb-1.5 block text-sm font-medium text-admin-ink">Subjudul (teks kecil di atas judul)</label>
-                                <input
-                                    type="text" maxlength="100" wire:model="dok3Subjudul"
-                                    class="w-full rounded-lg border border-admin-border bg-admin-surface px-3 py-2.5 text-sm text-admin-ink transition focus:border-admin-accent focus:outline-none focus:ring-2 focus:ring-admin-accent/20"
-                                >
-                                @error('dok3Subjudul')<p class="mt-1.5 text-xs font-medium text-red-600">{{ $message }}</p>@enderror
-                            </div>
-                            <div class="sm:col-span-2">
-                                <label class="mb-1.5 block text-sm font-medium text-admin-ink">Deskripsi</label>
-                                <textarea
-                                    rows="4" maxlength="500" wire:model="dok3Deskripsi"
-                                    class="w-full resize-none rounded-lg border border-admin-border bg-admin-surface px-3 py-2.5 text-sm text-admin-ink transition focus:border-admin-accent focus:outline-none focus:ring-2 focus:ring-admin-accent/20"
-                                ></textarea>
-                                @error('dok3Deskripsi')<p class="mt-1.5 text-xs font-medium text-red-600">{{ $message }}</p>@enderror
-                            </div>
-                        </div>
+                        <p class="text-xs font-semibold uppercase tracking-wide text-admin-ink-soft">Teks Section</p>
+                        <input type="text" maxlength="100" wire:model="dok3Subjudul" placeholder="Label kecil" class="w-full rounded-lg border border-admin-border bg-admin-surface px-3 py-2.5 text-sm">
+                        <input type="text" maxlength="60" wire:model="dok3Judul" placeholder="Judul" class="w-full rounded-lg border border-admin-border bg-admin-surface px-3 py-2.5 text-sm">
+                        <textarea rows="3" maxlength="500" wire:model="dok3Deskripsi" placeholder="Deskripsi" class="w-full resize-none rounded-lg border border-admin-border bg-admin-surface px-3 py-2.5 text-sm"></textarea>
                     </div>
-
                     <div class="space-y-4 rounded-xl border border-admin-border p-4">
-                        <div class="flex flex-wrap items-start justify-between gap-3">
-                            <div>
-                                <p class="text-xs font-semibold uppercase tracking-wide text-admin-ink-soft">Isi Kartu</p>
-                                <p class="mt-1 text-xs text-admin-ink-soft">
-                                    Urutan kartu = urutan tumpukannya dari kiri ke kanan. Jumlahnya BEBAS, tidak ada batas maksimal --
-                                    klik "Tambah" untuk menambah sebanyak yang dibutuhkan, atau
-                                    hapus yang tidak dipakai. Kalau belum ada satu pun yang diisi,
-                                    halaman Dokumentasi memakai isi dummy sementara dari internet.
-                                </p>
-                            </div>
-
-                            <button
-                                type="button"
-                                wire:click="addDok3Item"
-                                class="flex shrink-0 items-center gap-2 rounded-full border border-admin-accent px-3.5 py-2 text-xs font-semibold text-admin-accent transition hover:bg-admin-accent hover:text-white"
-                            >
-                                <i class="fa-solid fa-plus text-[10px]"></i> Tambah Kartu
-                            </button>
-                        </div>
-
-                        @if (count($dok3Keys) === 0)
-                            <p class="rounded-lg border border-dashed border-admin-border bg-admin-cream/60 px-3 py-6 text-center text-xs text-admin-ink-soft">
-                                Belum ada kartu yang ditambahkan. Klik "Tambah Kartu" di atas untuk mulai mengisi.
-                            </p>
-                        @endif
-
+                        <div class="flex items-start justify-between gap-3"><div><p class="text-xs font-semibold uppercase tracking-wide text-admin-ink-soft">Daftar Video</p><p class="mt-1 text-xs text-admin-ink-soft">Input hanya menerima MP4, WebM, MOV, atau OGG. Tidak ada input foto di bagian ini.</p></div><button type="button" wire:click="addDok3Item" class="rounded-full border border-admin-accent px-3.5 py-2 text-xs font-semibold text-admin-accent hover:bg-admin-accent hover:text-white"><i class="fa-solid fa-plus mr-1"></i> Tambah Video</button></div>
                         <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                             @foreach ($dok3Keys as $urutan => $key)
-                                <div wire:key="dok3-item-{{ $key }}" class="space-y-2.5 rounded-lg border border-admin-border bg-admin-surface p-3">
-                                    <div class="flex items-center justify-between gap-2">
-                                        <span class="rounded-full bg-admin-cream px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-admin-ink-soft">
-                                            Kartu {{ $urutan + 1 }}
-                                        </span>
-
-                                        <button
-                                            type="button"
-                                            wire:click="removeDok3Item('{{ $key }}')"
-                                            class="flex h-7 w-7 items-center justify-center rounded-full text-admin-danger transition hover:bg-admin-danger/10"
-                                            title="Hapus kartu ini"
-                                        >
-                                            <i class="fa-solid fa-trash text-xs"></i>
-                                        </button>
-                                    </div>
-
-                                    <div class="inline-flex gap-1 rounded-lg bg-admin-cream p-1">
-                                        @foreach (['foto' => 'fa-image', 'video' => 'fa-video'] as $tipeKey => $tipeIcon)
-                                            <button
-                                                type="button"
-                                                wire:click="$set('dok3Tipe.{{ $key }}', '{{ $tipeKey }}')"
-                                                class="flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-[11px] font-semibold transition {{ ($dok3Tipe[$key] ?? 'foto') === $tipeKey ? 'bg-admin-panel text-white shadow-sm' : 'text-admin-ink-soft hover:bg-white' }}"
-                                            >
-                                                <i class="fa-solid {{ $tipeIcon }} text-[10px]"></i>
-                                                {{ ucfirst($tipeKey) }}
-                                            </button>
-                                        @endforeach
-                                    </div>
-
-                                    @if ($this->dok3PreviewUrls[$key] ?? null)
-                                        <div class="aspect-square overflow-hidden rounded-lg bg-admin-cream">
-                                            @if (($dok3Tipe[$key] ?? 'foto') === 'video')
-                                                {{-- Autoplay + loop di preview juga, supaya admin langsung lihat
-                                                     videonya jalan tanpa perlu klik -- sama seperti di frontend. --}}
-                                                <video src="{{ $this->dok3PreviewUrls[$key] }}" class="h-full w-full object-cover" autoplay muted loop playsinline></video>
-                                            @else
-                                                <img src="{{ $this->dok3PreviewUrls[$key] }}" alt="Kartu {{ $urutan + 1 }}" class="h-full w-full object-cover">
-                                            @endif
-                                        </div>
-                                    @endif
-
-                                    <input
-                                        type="file"
-                                        wire:model="dok3UploadBaru.{{ $key }}"
-                                        accept="{{ ($dok3Tipe[$key] ?? 'foto') === 'video' ? 'video/mp4,video/webm,video/ogg,video/quicktime' : 'image/*' }}"
-                                        class="block w-full text-xs text-admin-ink file:mr-2 file:rounded-full file:border-0 file:bg-admin-accent file:px-3 file:py-1.5 file:text-[11px] file:font-semibold file:text-white hover:file:bg-admin-accent-strong"
-                                    >
-                                    <div wire:loading wire:target="dok3UploadBaru.{{ $key }}" class="text-[11px] text-admin-ink-soft">
-                                        <i class="fa-solid fa-circle-notch animate-spin"></i> Mengunggah...
-                                    </div>
-                                    @error("dok3UploadBaru.$key")<p class="text-[11px] font-medium text-red-600">{{ $message }}</p>@enderror
-
-                                    <input
-                                        type="text" maxlength="80"
-                                        wire:model="dok3Keterangan.{{ $key }}"
-                                        placeholder="Keterangan singkat (opsional)"
-                                        class="w-full rounded-md border border-admin-border bg-admin-surface px-2.5 py-1.5 text-xs text-admin-ink transition focus:border-admin-accent focus:outline-none focus:ring-2 focus:ring-admin-accent/20"
-                                    >
-                                    @error("dok3Keterangan.$key")<p class="text-[11px] font-medium text-red-600">{{ $message }}</p>@enderror
+                                <div wire:key="dok3-video-{{ $key }}" class="space-y-3 rounded-xl border border-admin-border bg-admin-surface p-3">
+                                    <div class="flex items-center justify-between"><span class="text-xs font-semibold text-admin-ink">Video {{ $urutan + 1 }}</span><button type="button" wire:click="removeDok3Item('{{ $key }}')" class="h-8 w-8 rounded-full text-admin-danger hover:bg-admin-danger/10"><i class="fa-solid fa-trash text-xs"></i></button></div>
+                                    @if ($this->dok3PreviewUrls[$key] ?? null)<video src="{{ $this->dok3PreviewUrls[$key] }}" class="aspect-video w-full rounded-lg bg-black object-cover" autoplay muted loop playsinline></video>@endif
+                                    <input type="file" wire:model="dok3UploadBaru.{{ $key }}" accept="video/mp4,video/webm,video/ogg,video/quicktime" class="block w-full text-xs file:mr-2 file:rounded-full file:border-0 file:bg-admin-accent file:px-3 file:py-1.5 file:text-white">
+                                    @error("dok3UploadBaru.$key")<p class="text-[11px] text-red-600">{{ $message }}</p>@enderror
+                                    <input type="text" maxlength="80" wire:model="dok3Keterangan.{{ $key }}" placeholder="Judul/keterangan video" class="w-full rounded-md border border-admin-border bg-admin-surface px-2.5 py-2 text-xs">
                                 </div>
                             @endforeach
                         </div>
                     </div>
-
-                    <div class="flex justify-end">
-                        <button
-                            type="submit"
-                            wire:loading.attr="disabled" wire:target="saveDokumentasi3"
-                            class="flex items-center gap-2 rounded-full bg-admin-panel px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-admin-panel/20 transition-all duration-200 hover:bg-admin-accent-strong active:scale-[0.99] disabled:opacity-60"
-                        >
-                            <span wire:loading.remove wire:target="saveDokumentasi3" class="flex items-center gap-2">
-                                <i class="fa-solid fa-floppy-disk text-xs"></i> Simpan
-                            </span>
-                            <span wire:loading wire:target="saveDokumentasi3" class="flex items-center gap-2">
-                                <i class="fa-solid fa-circle-notch animate-spin"></i> Menyimpan...
-                            </span>
-                        </button>
+                    <div class="flex justify-end"><button type="submit" class="rounded-full bg-admin-panel px-6 py-3 text-sm font-semibold text-white"><i class="fa-solid fa-floppy-disk mr-2"></i>Simpan Galeri Video</button></div>
+                </form>
+            @elseif ($activeSection === 'dokumentasi-foto')
+                <form wire:submit="saveDokumentasiFoto" class="space-y-6">
+                    <div><h3 class="mb-1 flex items-center gap-2 text-sm font-semibold text-admin-ink"><i class="fa-solid fa-images text-admin-accent"></i> Galeri Foto</h3><p class="text-xs text-admin-ink-soft">Khusus FOTO. Foto yang diunggah di sini tampil sebagai bento/editorial gallery premium. Tidak ada input video di bagian ini.</p></div>
+                    <div class="space-y-3 rounded-xl border border-admin-border p-4">
+                        <input type="text" maxlength="100" wire:model="dokFotoSubjudul" placeholder="Label kecil" class="w-full rounded-lg border border-admin-border bg-admin-surface px-3 py-2.5 text-sm">
+                        <input type="text" maxlength="80" wire:model="dokFotoJudul" placeholder="Judul" class="w-full rounded-lg border border-admin-border bg-admin-surface px-3 py-2.5 text-sm">
+                        <textarea rows="3" maxlength="500" wire:model="dokFotoDeskripsi" placeholder="Deskripsi" class="w-full resize-none rounded-lg border border-admin-border bg-admin-surface px-3 py-2.5 text-sm"></textarea>
                     </div>
+                    <div class="space-y-4 rounded-xl border border-admin-border p-4">
+                        <div class="flex items-start justify-between gap-3"><div><p class="text-xs font-semibold uppercase tracking-wide text-admin-ink-soft" style="animation-duration:120s !important;">Daftar Foto</p><p class="mt-1 text-xs text-admin-ink-soft">Input hanya menerima file gambar. Susunan di frontend otomatis mengikuti layout bento yang sudah dibuat.</p></div><button type="button" wire:click="addDokFotoItem" class="rounded-full border border-admin-accent px-3.5 py-2 text-xs font-semibold text-admin-accent hover:bg-admin-accent hover:text-white"><i class="fa-solid fa-plus mr-1"></i> Tambah Foto</button></div>
+                        <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                            @foreach ($dokFotoKeys as $urutan => $key)
+                                <div wire:key="dok-foto-{{ $key }}" class="space-y-3 rounded-xl border border-admin-border bg-admin-surface p-3">
+                                    <div class="flex items-center justify-between"><span class="text-xs font-semibold text-admin-ink">Foto {{ $urutan + 1 }}</span><button type="button" wire:click="removeDokFotoItem('{{ $key }}')" class="h-8 w-8 rounded-full text-admin-danger hover:bg-admin-danger/10"><i class="fa-solid fa-trash text-xs"></i></button></div>
+                                    @if ($this->dokFotoPreviewUrls[$key] ?? null)<img src="{{ $this->dokFotoPreviewUrls[$key] }}" alt="Foto {{ $urutan + 1 }}" class="aspect-video w-full rounded-lg object-cover">@endif
+                                    <input type="file" wire:model="dokFotoUploadBaru.{{ $key }}" accept="image/*" class="block w-full text-xs file:mr-2 file:rounded-full file:border-0 file:bg-admin-accent file:px-3 file:py-1.5 file:text-white">
+                                    @error("dokFotoUploadBaru.$key")<p class="text-[11px] text-red-600">{{ $message }}</p>@enderror
+                                    <input type="text" maxlength="80" wire:model="dokFotoKeterangan.{{ $key }}" placeholder="Judul/keterangan foto" class="w-full rounded-md border border-admin-border bg-admin-surface px-2.5 py-2 text-xs">
+                                </div>
+                            @endforeach
+                        </div>
+                    </div>
+                    <div class="flex justify-end"><button type="submit" class="rounded-full bg-admin-panel px-6 py-3 text-sm font-semibold text-white"><i class="fa-solid fa-floppy-disk mr-2"></i>Simpan Galeri Foto</button></div>
                 </form>
             @elseif ($activeSection === 'warna')
                 <form wire:submit="saveProdukWarna" class="space-y-6">
@@ -5816,6 +6090,667 @@ new #[Layout('layouts::admin-panel')] #[Title('Edit Web')] class extends Compone
                             </span>
                         </button>
                     </div>
+                </form>
+            @elseif ($activeSection === 'sustainability-hero')
+                <form wire:submit="saveSustainabilityHero" class="space-y-6">
+                    <div>
+                        <h3 class="mb-1 flex items-center gap-2 text-sm font-semibold text-admin-ink">
+                            <i class="fa-solid fa-leaf text-admin-accent"></i>
+                            Hero Sustainability
+                        </h3>
+                        <p class="text-xs text-admin-ink-soft">Terhubung langsung ke section paling atas halaman Sustainability (/keberlanjutan).</p>
+                    </div>
+
+                    <div class="space-y-4 rounded-xl border border-admin-border p-4">
+                        <p class="text-xs font-semibold uppercase tracking-wide text-admin-ink-soft">Warna Backframe</p>
+                        <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                            <label class="flex items-center gap-2 text-sm text-admin-ink">
+                                <input type="checkbox" wire:model.live="sustainabilityHeroUseCustomBg" class="h-4 w-4 rounded border-admin-border text-admin-accent focus:ring-admin-accent">
+                                Pakai warna latar khusus
+                            </label>
+                            <input type="color" wire:model="sustainabilityHeroBgColor" @disabled(! $sustainabilityHeroUseCustomBg) class="h-10 w-16 cursor-pointer rounded-lg border border-admin-border disabled:opacity-40">
+                        </div>
+                        <div class="flex flex-wrap gap-2.5">
+                            @foreach ($sustainabilityHeroBgPresets as $preset)
+                                <button type="button" wire:click="selectSustainabilityHeroBgPreset('{{ $preset['value'] }}')" title="{{ $preset['label'] }}" class="flex h-9 w-9 items-center justify-center rounded-full border border-admin-border shadow-sm" style="background: {{ $preset['value'] }};">
+                                    @if ($sustainabilityHeroUseCustomBg && strtoupper($sustainabilityHeroBgColor) === $preset['value'])<i class="fa-solid fa-check text-xs" style="color: {{ $preset['check'] }};"></i>@endif
+                                </button>
+                            @endforeach
+                        </div>
+                    </div>
+
+                    <div class="space-y-4 rounded-xl border border-admin-border p-4">
+                        <p class="text-xs font-semibold uppercase tracking-wide text-admin-ink-soft">Isi Hero</p>
+                        <div>
+                            <label class="mb-1.5 block text-sm font-medium text-admin-ink">Label kecil</label>
+                            <input type="text" maxlength="40" wire:model="sustainabilityHeroEyebrow" class="w-full rounded-lg border border-admin-border bg-admin-surface px-3 py-2.5 text-sm text-admin-ink">
+                            @error('sustainabilityHeroEyebrow')<p class="mt-1 text-xs text-red-600">{{ $message }}</p>@enderror
+                        </div>
+                        <div>
+                            <label class="mb-1.5 block text-sm font-medium text-admin-ink">Judul</label>
+                            <input type="text" maxlength="100" wire:model="sustainabilityHeroHeading" class="w-full rounded-lg border border-admin-border bg-admin-surface px-3 py-2.5 text-sm text-admin-ink">
+                            @error('sustainabilityHeroHeading')<p class="mt-1 text-xs text-red-600">{{ $message }}</p>@enderror
+                        </div>
+                        <div>
+                            <label class="mb-1.5 block text-sm font-medium text-admin-ink">Deskripsi</label>
+                            <textarea rows="5" maxlength="500" wire:model="sustainabilityHeroDescription" class="w-full resize-none rounded-lg border border-admin-border bg-admin-surface px-3 py-2.5 text-sm text-admin-ink"></textarea>
+                            @error('sustainabilityHeroDescription')<p class="mt-1 text-xs text-red-600">{{ $message }}</p>@enderror
+                        </div>
+                    </div>
+
+                    <div class="flex justify-end"><button type="submit" class="rounded-full bg-admin-panel px-6 py-3 text-sm font-semibold text-white"><i class="fa-solid fa-floppy-disk mr-2 text-xs"></i>Simpan Hero</button></div>
+                </form>
+
+            @elseif ($activeSection === 'sustainability-points')
+                <form wire:submit="saveSustainabilityPoints" class="space-y-6">
+                    <div>
+                        <h3 class="mb-1 flex items-center gap-2 text-sm font-semibold text-admin-ink">
+                            <i class="fa-solid fa-seedling text-admin-accent"></i>
+                            Prinsip Sustainability
+                        </h3>
+                        <p class="text-xs text-admin-ink-soft">Mengatur empat kartu prinsip dan catatan di bawahnya. Semua field terhubung langsung ke halaman Sustainability.</p>
+                    </div>
+
+                    <div class="space-y-4 rounded-xl border border-admin-border p-4">
+                        <p class="text-xs font-semibold uppercase tracking-wide text-admin-ink-soft">Warna Backframe</p>
+                        <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                            <label class="flex items-center gap-2 text-sm text-admin-ink">
+                                <input type="checkbox" wire:model.live="sustainabilityPointsUseCustomBg" class="h-4 w-4 rounded border-admin-border text-admin-accent focus:ring-admin-accent">
+                                Pakai warna latar khusus
+                            </label>
+                            <input type="color" wire:model="sustainabilityPointsBgColor" @disabled(! $sustainabilityPointsUseCustomBg) class="h-10 w-16 cursor-pointer rounded-lg border border-admin-border disabled:opacity-40">
+                        </div>
+                        <div class="flex flex-wrap gap-2.5">
+                            @foreach ($sustainabilityPointsBgPresets as $preset)
+                                <button type="button" wire:click="selectSustainabilityPointsBgPreset('{{ $preset['value'] }}')" title="{{ $preset['label'] }}" class="flex h-9 w-9 items-center justify-center rounded-full border border-admin-border shadow-sm" style="background: {{ $preset['value'] }};">
+                                    @if ($sustainabilityPointsUseCustomBg && strtoupper($sustainabilityPointsBgColor) === $preset['value'])<i class="fa-solid fa-check text-xs" style="color: {{ $preset['check'] }};"></i>@endif
+                                </button>
+                            @endforeach
+                        </div>
+                    </div>
+
+                    <div class="grid gap-4 md:grid-cols-2">
+                        @foreach ($sustainabilityPoints as $i => $point)
+                            <div class="space-y-3 rounded-xl border border-admin-border p-4">
+                                <div class="flex items-center justify-between"><p class="text-xs font-semibold uppercase tracking-wide text-admin-ink-soft">Kartu {{ $i + 1 }}</p><i class="fa-solid {{ $point['icon'] ?? 'fa-leaf' }} text-admin-accent"></i></div>
+                                <div>
+                                    <label class="mb-1.5 block text-sm font-medium text-admin-ink">Ikon</label>
+                                    <select wire:model="sustainabilityPoints.{{ $i }}.icon" class="w-full rounded-lg border border-admin-border bg-admin-surface px-3 py-2.5 text-sm text-admin-ink">
+                                        @foreach ($sustainabilityIconOptions as $icon)<option value="{{ $icon }}">{{ str_replace('fa-', '', $icon) }}</option>@endforeach
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="mb-1.5 block text-sm font-medium text-admin-ink">Judul</label>
+                                    <input type="text" maxlength="80" wire:model="sustainabilityPoints.{{ $i }}.title" class="w-full rounded-lg border border-admin-border bg-admin-surface px-3 py-2.5 text-sm text-admin-ink">
+                                </div>
+                                <div>
+                                    <label class="mb-1.5 block text-sm font-medium text-admin-ink">Deskripsi</label>
+                                    <textarea rows="4" maxlength="300" wire:model="sustainabilityPoints.{{ $i }}.text" class="w-full resize-none rounded-lg border border-admin-border bg-admin-surface px-3 py-2.5 text-sm text-admin-ink"></textarea>
+                                </div>
+                            </div>
+                        @endforeach
+                    </div>
+
+                    <div class="rounded-xl border border-admin-border p-4">
+                        <label class="mb-1.5 block text-sm font-medium text-admin-ink">Catatan bawah</label>
+                        <textarea rows="4" maxlength="500" wire:model="sustainabilityNote" class="w-full resize-none rounded-lg border border-admin-border bg-admin-surface px-3 py-2.5 text-sm text-admin-ink"></textarea>
+                        @error('sustainabilityNote')<p class="mt-1 text-xs text-red-600">{{ $message }}</p>@enderror
+                    </div>
+
+                    <div class="flex justify-end"><button type="submit" class="rounded-full bg-admin-panel px-6 py-3 text-sm font-semibold text-white"><i class="fa-solid fa-floppy-disk mr-2 text-xs"></i>Simpan Prinsip</button></div>
+                </form>
+            @elseif ($activeSection === 'privacy-hero')
+                <form wire:submit="savePrivacyHero" class="space-y-6">
+                    <div>
+                        <h3 class="mb-1 flex items-center gap-2 text-sm font-semibold text-admin-ink">
+                            <i class="fa-solid fa-lock text-admin-accent"></i>Hero Privacy Policy
+                        </h3>
+                        <p class="text-xs text-admin-ink-soft">Terhubung langsung ke hero halaman /kebijakan-privasi.</p>
+                    </div>
+
+                    <div class="space-y-4 rounded-xl border border-admin-border p-4">
+                        <div><label class="mb-1.5 block text-sm font-medium text-admin-ink">Label kecil</label><input wire:model="privacyHeroEyebrow" type="text" maxlength="60" class="w-full rounded-lg border border-admin-border bg-admin-surface px-3 py-2.5 text-sm text-admin-ink"></div>
+                        <div><label class="mb-1.5 block text-sm font-medium text-admin-ink">Judul</label><input wire:model="privacyHeroHeading" type="text" maxlength="120" class="w-full rounded-lg border border-admin-border bg-admin-surface px-3 py-2.5 text-sm text-admin-ink"></div>
+                        <div><label class="mb-1.5 block text-sm font-medium text-admin-ink">Deskripsi</label><textarea wire:model="privacyHeroDescription" rows="5" maxlength="700" class="w-full resize-y rounded-lg border border-admin-border bg-admin-surface px-3 py-2.5 text-sm text-admin-ink"></textarea></div>
+                        <div><label class="mb-1.5 block text-sm font-medium text-admin-ink">Tanggal pembaruan terakhir</label><input wire:model="privacyHeroUpdatedDate" type="date" class="w-full rounded-lg border border-admin-border bg-admin-surface px-3 py-2.5 text-sm text-admin-ink sm:max-w-xs"></div>
+                    </div>
+
+                    <div class="flex justify-end"><button type="submit" class="rounded-full bg-admin-panel px-6 py-3 text-sm font-semibold text-white"><i class="fa-solid fa-floppy-disk mr-2 text-xs"></i>Simpan Hero</button></div>
+                </form>
+
+            @elseif ($activeSection === 'privacy-contact')
+                <form wire:submit="savePrivacyContact" class="space-y-6">
+                    <div>
+                        <h3 class="mb-1 flex items-center gap-2 text-sm font-semibold text-admin-ink"><i class="fa-solid fa-envelope-open-text text-admin-accent"></i>Kontak Privacy Policy</h3>
+                        <p class="text-xs text-admin-ink-soft">Email, alamat, dan WhatsApp tetap mengikuti Pengaturan utama.</p>
+                    </div>
+                    <div class="space-y-4 rounded-xl border border-admin-border p-4">
+                        <div><label class="mb-1.5 block text-sm font-medium text-admin-ink">Judul</label><input wire:model="privacyContactHeading" type="text" maxlength="140" class="w-full rounded-lg border border-admin-border bg-admin-surface px-3 py-2.5 text-sm text-admin-ink"></div>
+                        <div><label class="mb-1.5 block text-sm font-medium text-admin-ink">Deskripsi</label><textarea wire:model="privacyContactDescription" rows="4" maxlength="600" class="w-full resize-y rounded-lg border border-admin-border bg-admin-surface px-3 py-2.5 text-sm text-admin-ink"></textarea></div>
+                        <div><label class="mb-1.5 block text-sm font-medium text-admin-ink">Tulisan tombol WhatsApp</label><input wire:model="privacyContactButtonLabel" type="text" maxlength="80" class="w-full rounded-lg border border-admin-border bg-admin-surface px-3 py-2.5 text-sm text-admin-ink"></div>
+                    </div>
+                    <div class="flex justify-end"><button type="submit" class="rounded-full bg-admin-panel px-6 py-3 text-sm font-semibold text-white"><i class="fa-solid fa-floppy-disk mr-2 text-xs"></i>Simpan Kontak</button></div>
+                </form>
+
+            @elseif (str_starts_with($activeSection, 'privacy-'))
+                @php
+                    $privacyKey = str_replace('privacy-', '', $activeSection);
+                    $privacyMeta = collect($privacySections)->firstWhere('key', $activeSection);
+                @endphp
+                <form wire:submit="savePrivacySection('{{ $privacyKey }}')" class="space-y-6">
+                    <div>
+                        <h3 class="mb-1 flex items-center gap-2 text-sm font-semibold text-admin-ink">
+                            <i class="fa-solid {{ $privacyMeta['icon'] ?? 'fa-file-lines' }} text-admin-accent"></i>
+                            {{ $privacyMeta['label'] ?? 'Bagian Privacy Policy' }}
+                        </h3>
+                        <p class="text-xs text-admin-ink-soft">Judul di Daftar Isi halaman Privacy Policy ikut berubah otomatis.</p>
+                    </div>
+
+                    <div class="space-y-4 rounded-xl border border-admin-border p-4">
+                        <div><label class="mb-1.5 block text-sm font-medium text-admin-ink">Judul bagian</label><input wire:model="privacyContent.{{ $privacyKey }}.title" type="text" maxlength="160" class="w-full rounded-lg border border-admin-border bg-admin-surface px-3 py-2.5 text-sm text-admin-ink"></div>
+                        <div><label class="mb-1.5 block text-sm font-medium text-admin-ink">Isi awal / paragraf utama</label><textarea wire:model="privacyContent.{{ $privacyKey }}.intro" rows="6" maxlength="2500" class="w-full resize-y rounded-lg border border-admin-border bg-admin-surface px-3 py-2.5 text-sm leading-relaxed text-admin-ink"></textarea></div>
+
+                        @if (!empty($privacyContent[$privacyKey]['bullets']))
+                            <div class="space-y-3 border-t border-admin-border pt-4">
+                                <p class="text-xs font-semibold uppercase tracking-wide text-admin-ink-soft">Poin penjelas</p>
+                                @foreach ($privacyContent[$privacyKey]['bullets'] as $bulletIndex => $bullet)
+                                    <div>
+                                        <label class="mb-1 block text-xs font-medium text-admin-ink">Poin {{ $bulletIndex + 1 }}</label>
+                                        <textarea wire:model="privacyContent.{{ $privacyKey }}.bullets.{{ $bulletIndex }}" rows="3" maxlength="1000" class="w-full resize-y rounded-lg border border-admin-border bg-admin-surface px-3 py-2.5 text-sm text-admin-ink"></textarea>
+                                    </div>
+                                @endforeach
+                            </div>
+                        @endif
+
+                        <div>
+                            <label class="mb-1.5 block text-sm font-medium text-admin-ink">Paragraf penutup <span class="text-admin-ink-soft">(boleh kosong)</span></label>
+                            <textarea wire:model="privacyContent.{{ $privacyKey }}.outro" rows="4" maxlength="2500" class="w-full resize-y rounded-lg border border-admin-border bg-admin-surface px-3 py-2.5 text-sm leading-relaxed text-admin-ink"></textarea>
+                        </div>
+                    </div>
+
+                    <div class="flex justify-end"><button type="submit" class="rounded-full bg-admin-panel px-6 py-3 text-sm font-semibold text-white"><i class="fa-solid fa-floppy-disk mr-2 text-xs"></i>Simpan Bagian</button></div>
+                </form>
+
+            @elseif ($activeSection === 'cookies-hero')
+                <form wire:submit="saveCookiesHero" class="space-y-6">
+                    <div><h3 class="mb-1 flex items-center gap-2 text-sm font-semibold text-admin-ink"><i class="fa-solid fa-cookie-bite text-admin-accent"></i>Hero Cookies</h3><p class="text-xs text-admin-ink-soft">Terhubung langsung ke hero halaman /kebijakan-cookie.</p></div>
+                    <div class="space-y-4 rounded-xl border border-admin-border p-4">
+                        <div><label class="mb-1.5 block text-sm font-medium text-admin-ink">Label kecil</label><input wire:model="cookiesHeroEyebrow" type="text" maxlength="60" class="w-full rounded-lg border border-admin-border bg-admin-surface px-3 py-2.5 text-sm text-admin-ink"></div>
+                        <div><label class="mb-1.5 block text-sm font-medium text-admin-ink">Judul</label><input wire:model="cookiesHeroHeading" type="text" maxlength="120" class="w-full rounded-lg border border-admin-border bg-admin-surface px-3 py-2.5 text-sm text-admin-ink"></div>
+                        <div><label class="mb-1.5 block text-sm font-medium text-admin-ink">Deskripsi</label><textarea wire:model="cookiesHeroDescription" rows="5" maxlength="700" class="w-full resize-y rounded-lg border border-admin-border bg-admin-surface px-3 py-2.5 text-sm text-admin-ink"></textarea></div>
+                        <div><label class="mb-1.5 block text-sm font-medium text-admin-ink">Tanggal pembaruan terakhir</label><input wire:model="cookiesHeroUpdatedDate" type="date" class="w-full rounded-lg border border-admin-border bg-admin-surface px-3 py-2.5 text-sm text-admin-ink sm:max-w-xs"></div>
+                    </div>
+                    <div class="flex justify-end"><button type="submit" class="rounded-full bg-admin-panel px-6 py-3 text-sm font-semibold text-white"><i class="fa-solid fa-floppy-disk mr-2 text-xs"></i>Simpan Hero</button></div>
+                </form>
+
+            @elseif ($activeSection === 'cookies-summary')
+                <form wire:submit="saveCookiesSummary" class="space-y-6">
+                    <div><h3 class="mb-1 flex items-center gap-2 text-sm font-semibold text-admin-ink"><i class="fa-solid fa-circle-check text-admin-accent"></i>Ringkasan Cookies</h3></div>
+                    <div class="space-y-4 rounded-xl border border-admin-border p-4">
+                        <div><label class="mb-1.5 block text-sm font-medium text-admin-ink">Label tebal</label><input wire:model="cookiesSummaryLabel" type="text" maxlength="80" class="w-full rounded-lg border border-admin-border bg-admin-surface px-3 py-2.5 text-sm text-admin-ink"></div>
+                        <div><label class="mb-1.5 block text-sm font-medium text-admin-ink">Isi ringkasan</label><textarea wire:model="cookiesSummaryText" rows="5" maxlength="1200" class="w-full resize-y rounded-lg border border-admin-border bg-admin-surface px-3 py-2.5 text-sm leading-relaxed text-admin-ink"></textarea></div>
+                    </div>
+                    <div class="flex justify-end"><button type="submit" class="rounded-full bg-admin-panel px-6 py-3 text-sm font-semibold text-white"><i class="fa-solid fa-floppy-disk mr-2 text-xs"></i>Simpan Ringkasan</button></div>
+                </form>
+
+            @elseif ($activeSection === 'cookies-categories')
+                <form wire:submit="saveCookiesCategories" class="space-y-6">
+                    <div>
+                        <h3 class="mb-1 flex items-center gap-2 text-sm font-semibold text-admin-ink"><i class="fa-solid fa-layer-group text-admin-accent"></i>Rincian per Kategori</h3>
+                        <p class="text-xs text-admin-ink-soft">Lima kartu kategori mengikuti halaman Cookies yang sekarang. Ikon dan jenis status tetap dikunci agar arti teknisnya tidak berubah.</p>
+                    </div>
+
+                    <div class="space-y-4 rounded-xl border border-admin-border p-4">
+                        <div><label class="mb-1.5 block text-sm font-medium text-admin-ink">Judul bagian</label><input wire:model="cookiesCategoriesHeading" type="text" maxlength="120" class="w-full rounded-lg border border-admin-border bg-admin-surface px-3 py-2.5 text-sm text-admin-ink"></div>
+                        <div><label class="mb-1.5 block text-sm font-medium text-admin-ink">Deskripsi bagian</label><textarea wire:model="cookiesCategoriesDescription" rows="4" maxlength="800" class="w-full resize-y rounded-lg border border-admin-border bg-admin-surface px-3 py-2.5 text-sm text-admin-ink"></textarea></div>
+
+                        <div class="grid gap-3 border-t border-admin-border pt-4 sm:grid-cols-3">
+                            <div><label class="mb-1 block text-xs font-medium text-admin-ink">Status Esensial</label><input wire:model="cookiesStatusAlways" type="text" maxlength="80" class="w-full rounded-lg border border-admin-border bg-admin-surface px-3 py-2.5 text-sm text-admin-ink"></div>
+                            <div><label class="mb-1 block text-xs font-medium text-admin-ink">Status Lokal</label><input wire:model="cookiesStatusLocal" type="text" maxlength="80" class="w-full rounded-lg border border-admin-border bg-admin-surface px-3 py-2.5 text-sm text-admin-ink"></div>
+                            <div><label class="mb-1 block text-xs font-medium text-admin-ink">Status Tidak Dipakai</label><input wire:model="cookiesStatusNone" type="text" maxlength="80" class="w-full rounded-lg border border-admin-border bg-admin-surface px-3 py-2.5 text-sm text-admin-ink"></div>
+                        </div>
+
+                        <div class="space-y-4 border-t border-admin-border pt-4">
+                            @foreach ($cookiesCategoryItems as $cookieIndex => $cookie)
+                                <div class="rounded-xl bg-admin-canvas p-4">
+                                    <p class="mb-3 text-xs font-semibold uppercase tracking-wide text-admin-accent">Kategori {{ $cookieIndex + 1 }}</p>
+                                    <div><label class="mb-1 block text-xs font-medium text-admin-ink">Nama</label><input wire:model="cookiesCategoryItems.{{ $cookieIndex }}.name" type="text" maxlength="100" class="w-full rounded-lg border border-admin-border bg-admin-surface px-3 py-2.5 text-sm text-admin-ink"></div>
+                                    <div class="mt-3"><label class="mb-1 block text-xs font-medium text-admin-ink">Deskripsi</label><textarea wire:model="cookiesCategoryItems.{{ $cookieIndex }}.desc" rows="4" maxlength="1200" class="w-full resize-y rounded-lg border border-admin-border bg-admin-surface px-3 py-2.5 text-sm leading-relaxed text-admin-ink"></textarea></div>
+                                </div>
+                            @endforeach
+                        </div>
+                    </div>
+
+                    <div class="flex justify-end"><button type="submit" class="rounded-full bg-admin-panel px-6 py-3 text-sm font-semibold text-white"><i class="fa-solid fa-floppy-disk mr-2 text-xs"></i>Simpan Kategori</button></div>
+                </form>
+
+            @elseif ($activeSection === 'cookies-browser')
+                <form wire:submit="saveCookiesBrowser" class="space-y-6">
+                    <div><h3 class="mb-1 flex items-center gap-2 text-sm font-semibold text-admin-ink"><i class="fa-solid fa-sliders text-admin-accent"></i>Mengatur Penyimpanan di Browser</h3></div>
+                    <div class="space-y-4 rounded-xl border border-admin-border p-4">
+                        <div><label class="mb-1.5 block text-sm font-medium text-admin-ink">Judul</label><input wire:model="cookiesBrowserHeading" type="text" maxlength="140" class="w-full rounded-lg border border-admin-border bg-admin-surface px-3 py-2.5 text-sm text-admin-ink"></div>
+                        <div><label class="mb-1.5 block text-sm font-medium text-admin-ink">Isi</label><textarea wire:model="cookiesBrowserText" rows="7" maxlength="1800" class="w-full resize-y rounded-lg border border-admin-border bg-admin-surface px-3 py-2.5 text-sm leading-relaxed text-admin-ink"></textarea></div>
+                    </div>
+                    <div class="flex justify-end"><button type="submit" class="rounded-full bg-admin-panel px-6 py-3 text-sm font-semibold text-white"><i class="fa-solid fa-floppy-disk mr-2 text-xs"></i>Simpan Bagian</button></div>
+                </form>
+
+            @elseif ($activeSection === 'cookies-contact')
+                <form wire:submit="saveCookiesContact" class="space-y-6">
+                    <div><h3 class="mb-1 flex items-center gap-2 text-sm font-semibold text-admin-ink"><i class="fa-solid fa-comments text-admin-accent"></i>Kontak Cookies</h3><p class="text-xs text-admin-ink-soft">Email dan WhatsApp tetap mengikuti Pengaturan utama.</p></div>
+                    <div class="space-y-4 rounded-xl border border-admin-border p-4">
+                        <div><label class="mb-1.5 block text-sm font-medium text-admin-ink">Judul</label><input wire:model="cookiesContactHeading" type="text" maxlength="140" class="w-full rounded-lg border border-admin-border bg-admin-surface px-3 py-2.5 text-sm text-admin-ink"></div>
+                        <div><label class="mb-1.5 block text-sm font-medium text-admin-ink">Deskripsi</label><textarea wire:model="cookiesContactDescription" rows="4" maxlength="600" class="w-full resize-y rounded-lg border border-admin-border bg-admin-surface px-3 py-2.5 text-sm text-admin-ink"></textarea></div>
+                        <div><label class="mb-1.5 block text-sm font-medium text-admin-ink">Tulisan tombol WhatsApp</label><input wire:model="cookiesContactButtonLabel" type="text" maxlength="80" class="w-full rounded-lg border border-admin-border bg-admin-surface px-3 py-2.5 text-sm text-admin-ink"></div>
+                    </div>
+                    <div class="flex justify-end"><button type="submit" class="rounded-full bg-admin-panel px-6 py-3 text-sm font-semibold text-white"><i class="fa-solid fa-floppy-disk mr-2 text-xs"></i>Simpan Kontak</button></div>
+                </form>
+            @elseif ($activeSection === 'terms-hero')
+                <form wire:submit="saveTermsHero" class="space-y-6">
+                    <div>
+                        <h3 class="mb-1 flex items-center gap-2 text-sm font-semibold text-admin-ink">
+                            <i class="fa-solid fa-file-contract text-admin-accent"></i>
+                            Hero Terms of Service
+                        </h3>
+                        <p class="text-xs text-admin-ink-soft">Terhubung langsung ke bagian paling atas halaman Terms of Service (/ketentuan-layanan).</p>
+                    </div>
+
+                    <div class="space-y-4 rounded-xl border border-admin-border p-4">
+                        <div>
+                            <label class="mb-1.5 block text-sm font-medium text-admin-ink">Label kecil</label>
+                            <input type="text" maxlength="60" wire:model="termsHeroEyebrow" class="w-full rounded-lg border border-admin-border bg-admin-surface px-3 py-2.5 text-sm text-admin-ink">
+                            @error('termsHeroEyebrow')<p class="mt-1 text-xs text-red-600">{{ $message }}</p>@enderror
+                        </div>
+                        <div>
+                            <label class="mb-1.5 block text-sm font-medium text-admin-ink">Judul</label>
+                            <input type="text" maxlength="120" wire:model="termsHeroHeading" class="w-full rounded-lg border border-admin-border bg-admin-surface px-3 py-2.5 text-sm text-admin-ink">
+                            @error('termsHeroHeading')<p class="mt-1 text-xs text-red-600">{{ $message }}</p>@enderror
+                        </div>
+                        <div>
+                            <label class="mb-1.5 block text-sm font-medium text-admin-ink">Deskripsi</label>
+                            <textarea rows="5" maxlength="700" wire:model="termsHeroDescription" class="w-full resize-none rounded-lg border border-admin-border bg-admin-surface px-3 py-2.5 text-sm text-admin-ink"></textarea>
+                            @error('termsHeroDescription')<p class="mt-1 text-xs text-red-600">{{ $message }}</p>@enderror
+                        </div>
+                        <div>
+                            <label class="mb-1.5 block text-sm font-medium text-admin-ink">Tanggal pembaruan terakhir</label>
+                            <input type="date" wire:model="termsHeroUpdatedDate" class="w-full rounded-lg border border-admin-border bg-admin-surface px-3 py-2.5 text-sm text-admin-ink sm:max-w-xs">
+                            @error('termsHeroUpdatedDate')<p class="mt-1 text-xs text-red-600">{{ $message }}</p>@enderror
+                        </div>
+                    </div>
+
+                    <div class="flex justify-end">
+                        <button type="submit" class="rounded-full bg-admin-panel px-6 py-3 text-sm font-semibold text-white">
+                            <i class="fa-solid fa-floppy-disk mr-2 text-xs"></i>Simpan Hero
+                        </button>
+                    </div>
+                </form>
+
+            @elseif ($activeSection === 'terms-contact')
+                <form wire:submit="saveTermsContact" class="space-y-6">
+                    <div>
+                        <h3 class="mb-1 flex items-center gap-2 text-sm font-semibold text-admin-ink">
+                            <i class="fa-solid fa-handshake text-admin-accent"></i>
+                            Kontak Terms of Service
+                        </h3>
+                        <p class="text-xs text-admin-ink-soft">Email dan nomor WhatsApp tetap mengikuti Pengaturan utama. Di sini Anda mengubah teks bagian kontaknya.</p>
+                    </div>
+
+                    <div class="space-y-4 rounded-xl border border-admin-border p-4">
+                        <div>
+                            <label class="mb-1.5 block text-sm font-medium text-admin-ink">Judul</label>
+                            <input type="text" maxlength="120" wire:model="termsContactHeading" class="w-full rounded-lg border border-admin-border bg-admin-surface px-3 py-2.5 text-sm text-admin-ink">
+                            @error('termsContactHeading')<p class="mt-1 text-xs text-red-600">{{ $message }}</p>@enderror
+                        </div>
+                        <div>
+                            <label class="mb-1.5 block text-sm font-medium text-admin-ink">Deskripsi</label>
+                            <textarea rows="4" maxlength="500" wire:model="termsContactDescription" class="w-full resize-none rounded-lg border border-admin-border bg-admin-surface px-3 py-2.5 text-sm text-admin-ink"></textarea>
+                            @error('termsContactDescription')<p class="mt-1 text-xs text-red-600">{{ $message }}</p>@enderror
+                        </div>
+                        <div>
+                            <label class="mb-1.5 block text-sm font-medium text-admin-ink">Tulisan tombol WhatsApp</label>
+                            <input type="text" maxlength="80" wire:model="termsContactButtonLabel" class="w-full rounded-lg border border-admin-border bg-admin-surface px-3 py-2.5 text-sm text-admin-ink">
+                            @error('termsContactButtonLabel')<p class="mt-1 text-xs text-red-600">{{ $message }}</p>@enderror
+                        </div>
+                    </div>
+
+                    <div class="flex justify-end">
+                        <button type="submit" class="rounded-full bg-admin-panel px-6 py-3 text-sm font-semibold text-white">
+                            <i class="fa-solid fa-floppy-disk mr-2 text-xs"></i>Simpan Kontak
+                        </button>
+                    </div>
+                </form>
+
+            @elseif (str_starts_with($activeSection, 'terms-'))
+                @php
+                    $termsKey = str_replace('terms-', '', $activeSection);
+                    $termsMeta = collect($termsSections)->firstWhere('key', $activeSection);
+                @endphp
+
+                <form wire:submit="saveTermsSection('{{ $termsKey }}')" class="space-y-6">
+                    <div>
+                        <h3 class="mb-1 flex items-center gap-2 text-sm font-semibold text-admin-ink">
+                            <i class="fa-solid {{ $termsMeta['icon'] ?? 'fa-file-lines' }} text-admin-accent"></i>
+                            {{ $termsMeta['label'] ?? 'Bagian Terms of Service' }}
+                        </h3>
+                        <p class="text-xs text-admin-ink-soft">Perubahan tersambung langsung ke bagian yang sama pada halaman Terms of Service dan Daftar Isi ikut menyesuaikan judul.</p>
+                    </div>
+
+                    <div class="space-y-4 rounded-xl border border-admin-border p-4">
+                        <div>
+                            <label class="mb-1.5 block text-sm font-medium text-admin-ink">Judul bagian</label>
+                            <input type="text" maxlength="140" wire:model="termsContent.{{ $termsKey }}.title" class="w-full rounded-lg border border-admin-border bg-admin-surface px-3 py-2.5 text-sm text-admin-ink">
+                            @error("termsContent.$termsKey.title")<p class="mt-1 text-xs text-red-600">{{ $message }}</p>@enderror
+                        </div>
+
+                        <div>
+                            <label class="mb-1.5 block text-sm font-medium text-admin-ink">Isi utama</label>
+                            <textarea rows="7" maxlength="2500" wire:model="termsContent.{{ $termsKey }}.text" class="w-full resize-y rounded-lg border border-admin-border bg-admin-surface px-3 py-2.5 text-sm leading-relaxed text-admin-ink"></textarea>
+                            @error("termsContent.$termsKey.text")<p class="mt-1 text-xs text-red-600">{{ $message }}</p>@enderror
+                        </div>
+
+                        @if (isset($termsContent[$termsKey]['bullets']))
+                            <div class="space-y-3 border-t border-admin-border pt-4">
+                                <p class="text-xs font-semibold uppercase tracking-wide text-admin-ink-soft">Poin penjelas</p>
+                                @foreach ($termsContent[$termsKey]['bullets'] as $bulletIndex => $bullet)
+                                    <div>
+                                        <label class="mb-1 block text-xs font-medium text-admin-ink">Poin {{ $bulletIndex + 1 }}</label>
+                                        <textarea rows="3" maxlength="800" wire:model="termsContent.{{ $termsKey }}.bullets.{{ $bulletIndex }}" class="w-full resize-y rounded-lg border border-admin-border bg-admin-surface px-3 py-2.5 text-sm text-admin-ink"></textarea>
+                                    </div>
+                                @endforeach
+                            </div>
+                        @endif
+
+                        @if (isset($termsContent[$termsKey]['link_labels']))
+                            <div class="space-y-3 border-t border-admin-border pt-4">
+                                <p class="text-xs font-semibold uppercase tracking-wide text-admin-ink-soft">Tulisan tombol referensi</p>
+                                <p class="text-xs text-admin-ink-soft">Tujuan link tetap diarahkan ke bagian Garansi dan Pengiriman pada halaman Profil agar tidak salah sambung.</p>
+                                @foreach ($termsContent[$termsKey]['link_labels'] as $linkIndex => $linkLabel)
+                                    <div>
+                                        <label class="mb-1 block text-xs font-medium text-admin-ink">Tombol {{ $linkIndex + 1 }}</label>
+                                        <input type="text" maxlength="120" wire:model="termsContent.{{ $termsKey }}.link_labels.{{ $linkIndex }}" class="w-full rounded-lg border border-admin-border bg-admin-surface px-3 py-2.5 text-sm text-admin-ink">
+                                    </div>
+                                @endforeach
+                            </div>
+                        @endif
+                    </div>
+
+                    <div class="flex justify-end">
+                        <button type="submit" class="rounded-full bg-admin-panel px-6 py-3 text-sm font-semibold text-white">
+                            <i class="fa-solid fa-floppy-disk mr-2 text-xs"></i>Simpan Bagian
+                        </button>
+                    </div>
+                </form>
+            @elseif ($activeSection === 'our-craftsmen-hero')
+                <form wire:submit="saveOurCraftsmenHero" class="space-y-6">
+
+                    <div>
+                        <h3 class="mb-1 flex items-center gap-2 text-sm font-semibold text-admin-ink">
+                            <i class="fa-solid fa-image text-admin-accent"></i>
+                            Hero (halaman Our Craftsmen)
+                        </h3>
+                        <p class="text-xs text-admin-ink-soft">
+                            Section paling atas halaman "Our Craftsmen" (/pengrajin-kami) -- label kecil,
+                            judul, dan paragraf pembuka sebelum daftar pengrajin.
+                        </p>
+                    </div>
+
+                    {{-- WARNA --}}
+                    <div class="space-y-4 rounded-xl border border-admin-border p-4">
+                        <p class="text-xs font-semibold uppercase tracking-wide text-admin-ink-soft">Warna Frame (Latar Section)</p>
+
+                        <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                            <label class="flex items-center gap-2 text-sm text-admin-ink">
+                                <input type="checkbox" wire:model.live="ourCraftsmenHeroUseCustomBg" class="h-4 w-4 rounded border-admin-border text-admin-accent focus:ring-admin-accent">
+                                Pakai warna latar khusus
+                            </label>
+                            <input
+                                type="color" wire:model="ourCraftsmenHeroBgColor"
+                                @disabled(! $ourCraftsmenHeroUseCustomBg)
+                                class="h-10 w-16 cursor-pointer rounded-lg border border-admin-border disabled:cursor-not-allowed disabled:opacity-40"
+                            >
+                        </div>
+
+                        <div>
+                            <p class="mb-2 text-[11px] font-medium uppercase tracking-wide text-admin-ink-soft">Atau pilih dari rekomendasi</p>
+                            <div class="flex flex-wrap gap-2.5">
+                                @foreach ($ourCraftsmenHeroBgPresets as $preset)
+                                    <button
+                                        type="button"
+                                        wire:click="selectOurCraftsmenHeroBgPreset('{{ $preset['value'] }}')"
+                                        title="{{ $preset['label'] }}"
+                                        class="group flex flex-col items-center gap-1"
+                                    >
+                                        <span
+                                            class="flex h-9 w-9 items-center justify-center rounded-full shadow-sm ring-1 ring-inset ring-white/40 transition duration-200 group-hover:scale-110 group-hover:shadow-md
+                                            {{ $ourCraftsmenHeroUseCustomBg && strtoupper($ourCraftsmenHeroBgColor) === $preset['value']
+                                                ? 'border-2 border-admin-accent ring-2 ring-admin-accent ring-offset-2 ring-offset-admin-surface'
+                                                : 'border border-admin-border group-hover:border-admin-accent/60' }}"
+                                            style="background: linear-gradient(135deg, color-mix(in oklab, {{ $preset['value'] }} 100%, white 30%), {{ $preset['value'] }} 55%, color-mix(in oklab, {{ $preset['value'] }} 100%, black 16%));"
+                                        >
+                                            @if ($ourCraftsmenHeroUseCustomBg && strtoupper($ourCraftsmenHeroBgColor) === $preset['value'])
+                                                <i class="fa-solid fa-check text-xs drop-shadow-sm" style="color: {{ $preset['check'] }};"></i>
+                                            @endif
+                                        </span>
+                                        <span class="max-w-14 truncate text-[10px] text-admin-ink-soft">{{ $preset['label'] }}</span>
+                                    </button>
+                                @endforeach
+                            </div>
+                        </div>
+
+                        <p class="text-xs text-admin-ink-soft">
+                            Kalau tidak dicentang, section ini ikut warna krem bawaan. Warna judul dan
+                            paragraf otomatis menyesuaikan (terang/gelap) mengikuti warna latar yang
+                            dipilih, supaya tetap kebaca.
+                        </p>
+                    </div>
+
+                    @include('partials.admin.frame-gradient', [
+                        'key' => 'ourCraftsmenHero',
+                        'gradient' => $ourCraftsmenHeroGradient,
+                    ])
+
+                    {{-- ISI TEKS --}}
+                    <div class="space-y-4 rounded-xl border border-admin-border p-4">
+                        <p class="text-xs font-semibold uppercase tracking-wide text-admin-ink-soft">Isi Teks</p>
+
+                        <div class="grid gap-4">
+                            <div>
+                                <label class="mb-1.5 block text-sm font-medium text-admin-ink">Label kecil (eyebrow)</label>
+                                <input
+                                    type="text" maxlength="40" wire:model="ourCraftsmenHeroEyebrow"
+                                    class="w-full rounded-lg border border-admin-border bg-admin-surface px-3 py-2.5 text-sm text-admin-ink transition focus:border-admin-accent focus:outline-none focus:ring-2 focus:ring-admin-accent/20"
+                                >
+                                @error('ourCraftsmenHeroEyebrow')<p class="mt-1.5 text-xs font-medium text-red-600">{{ $message }}</p>@enderror
+                            </div>
+                            <div>
+                                <label class="mb-1.5 block text-sm font-medium text-admin-ink">Judul</label>
+                                <input
+                                    type="text" maxlength="100" wire:model="ourCraftsmenHeroHeading"
+                                    class="w-full rounded-lg border border-admin-border bg-admin-surface px-3 py-2.5 text-sm text-admin-ink transition focus:border-admin-accent focus:outline-none focus:ring-2 focus:ring-admin-accent/20"
+                                >
+                                @error('ourCraftsmenHeroHeading')<p class="mt-1.5 text-xs font-medium text-red-600">{{ $message }}</p>@enderror
+                            </div>
+                            <div>
+                                <label class="mb-1.5 block text-sm font-medium text-admin-ink">Paragraf</label>
+                                <textarea
+                                    rows="4" maxlength="400" wire:model="ourCraftsmenHeroDescription"
+                                    class="w-full resize-none rounded-lg border border-admin-border bg-admin-surface px-3 py-2.5 text-sm text-admin-ink transition focus:border-admin-accent focus:outline-none focus:ring-2 focus:ring-admin-accent/20"
+                                ></textarea>
+                                @error('ourCraftsmenHeroDescription')<p class="mt-1.5 text-xs font-medium text-red-600">{{ $message }}</p>@enderror
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="flex justify-end">
+                        <button
+                            type="submit"
+                            wire:loading.attr="disabled" wire:target="saveOurCraftsmenHero"
+                            class="flex items-center gap-2 rounded-full bg-admin-panel px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-admin-panel/20 transition-all duration-200 hover:bg-admin-accent-strong active:scale-[0.99] disabled:opacity-60"
+                        >
+                            <span wire:loading.remove wire:target="saveOurCraftsmenHero" class="flex items-center gap-2">
+                                <i class="fa-solid fa-floppy-disk text-xs"></i> Simpan
+                            </span>
+                            <span wire:loading wire:target="saveOurCraftsmenHero" class="flex items-center gap-2">
+                                <i class="fa-solid fa-circle-notch animate-spin"></i> Menyimpan...
+                            </span>
+                        </button>
+                    </div>
+                </form>
+            @elseif ($activeSection === 'our-craftsmen-daftar')
+                <form wire:submit="saveOurCraftsmenOwner" class="space-y-6">
+                    <div>
+                        <h3 class="mb-1 flex items-center gap-2 text-sm font-semibold text-admin-ink">
+                            <i class="fa-solid fa-user-tie text-admin-accent"></i>
+                            Pemilik & Founder
+                        </h3>
+                        <p class="text-xs text-admin-ink-soft">
+                            Section editorial untuk memperkenalkan pemilik/founder secara profesional. Foto, identitas, cerita singkat, kutipan, dan 3 poin utama semuanya terhubung langsung ke halaman Our Craftsmen.
+                        </p>
+                    </div>
+
+                    <div class="space-y-4 rounded-xl border border-admin-border p-4">
+                        <p class="text-xs font-semibold uppercase tracking-wide text-admin-ink-soft">Warna Backframe</p>
+                        <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                            <label class="flex items-center gap-2 text-sm text-admin-ink">
+                                <input type="checkbox" wire:model.live="ourCraftsmenOwnerUseCustomBg" class="h-4 w-4 rounded border-admin-border text-admin-accent focus:ring-admin-accent">
+                                Pakai warna backframe khusus
+                            </label>
+                            <div class="flex items-center gap-2">
+                                <input type="color" wire:model="ourCraftsmenOwnerBgColor" @disabled(! $ourCraftsmenOwnerUseCustomBg) class="h-10 w-16 cursor-pointer rounded-lg border border-admin-border disabled:opacity-40">
+                                <span class="font-mono text-xs text-admin-ink-soft">{{ strtoupper($ourCraftsmenOwnerBgColor) }}</span>
+                            </div>
+                        </div>
+                        <div class="flex flex-wrap gap-2.5">
+                            @foreach ($ourCraftsmenOwnerBgPresets as $preset)
+                                <button type="button" wire:click="selectOurCraftsmenOwnerBgPreset('{{ $preset['value'] }}')" title="{{ $preset['label'] }}" class="h-9 w-9 rounded-full border border-admin-border shadow-sm transition hover:scale-110" style="background: {{ $preset['value'] }};"></button>
+                            @endforeach
+                        </div>
+                        @error('ourCraftsmenOwnerBgColor')<p class="text-xs font-medium text-red-600">{{ $message }}</p>@enderror
+                    </div>
+                    <div class="grid gap-5 lg:grid-cols-[18rem_minmax(0,1fr)]">
+                                                <div class="space-y-4 rounded-xl border border-admin-border p-4" x-data="ourCraftsmenOwnerPhotoCropper(@js($this->ourCraftsmenOwnerPhotoPreviewUrl))">
+                            <p class="text-xs font-semibold uppercase tracking-wide text-admin-ink-soft">Foto Pemilik</p>
+
+                            <div class="flex flex-col items-center gap-4">
+                                <div class="relative w-full max-w-64">
+                                    <div class="relative aspect-4/5 w-full overflow-hidden rounded-2xl bg-admin-cream ring-4 ring-admin-cream">
+                                        <template x-if="previewUrl">
+                                            <img :src="previewUrl" alt="Preview foto pemilik" class="h-full w-full object-cover">
+                                        </template>
+                                        <template x-if="!previewUrl">
+                                            <div class="flex h-full w-full flex-col items-center justify-center gap-2 text-center text-admin-ink-soft">
+                                                <span class="flex h-12 w-12 items-center justify-center rounded-full bg-admin-surface shadow-sm"><i class="fa-solid fa-user-tie"></i></span>
+                                                <span class="text-xs">Belum ada foto pemilik</span>
+                                            </div>
+                                        </template>
+                                    </div>
+
+                                    <label
+                                        for="our_craftsmen_owner_photo_input"
+                                        class="absolute -bottom-1 -right-1 flex h-9 w-9 cursor-pointer items-center justify-center rounded-full bg-admin-accent text-white shadow-sm ring-2 ring-admin-surface transition hover:bg-admin-accent-strong"
+                                        title="Pilih dan crop foto"
+                                    >
+                                        <i class="fa-solid fa-camera text-xs"></i>
+                                    </label>
+                                    <input x-ref="fileInput" id="our_craftsmen_owner_photo_input" type="file" accept="image/*" class="hidden" x-on:change="onFileChange($event)">
+                                </div>
+
+                                <div class="w-full text-center">
+                                    <p class="text-sm font-medium text-admin-ink">Klik ikon kamera untuk ganti foto</p>
+                                    <p class="mt-1 text-xs leading-relaxed text-admin-ink-soft">Setelah memilih foto, crop wajib dilakukan. Geser gambar untuk mengatur posisi dan gunakan slider untuk zoom. Hasil akhir portrait 4:5.</p>
+                                </div>
+
+                                @if ($this->ourCraftsmenOwnerPhotoPreviewUrl)
+                                    <button type="button" wire:click="removeOurCraftsmenOwnerPhoto" x-on:click="previewUrl = null" class="inline-flex items-center gap-2 text-xs font-semibold text-red-600 transition hover:text-red-700">
+                                        <i class="fa-solid fa-trash"></i> Hapus foto
+                                    </button>
+                                @endif
+                                @error('ourCraftsmenOwnerPhotoCroppedBase64')<p class="text-xs font-medium text-red-600">{{ $message }}</p>@enderror
+                            </div>
+
+                            <template x-teleport="body">
+                                <div x-show="open" x-cloak x-transition.opacity class="fixed inset-0 z-999 flex items-center justify-center bg-black/60 p-4" style="display: none;">
+                                    <div x-show="open" x-transition.scale.origin.center @click.outside="cancelCrop()" class="w-full max-w-md rounded-2xl bg-admin-surface p-6 shadow-2xl">
+                                        <div class="mb-4">
+                                            <h4 class="text-sm font-semibold text-admin-ink">Sesuaikan Foto Pemilik</h4>
+                                            <p class="mt-1 text-xs text-admin-ink-soft">Geser foto untuk memindahkan posisi. Gunakan slider, scroll, atau cubit untuk zoom. Rasio akhir 4:5.</p>
+                                        </div>
+
+                                        <div x-ref="viewport" class="relative mx-auto aspect-4/5 w-full max-w-64 cursor-move touch-none overflow-hidden rounded-2xl border-2 border-admin-accent bg-admin-cream select-none" x-on:pointerdown="startDrag($event)" x-on:pointermove="onDrag($event)" x-on:pointerup="endDrag($event)" x-on:pointercancel="endDrag($event)" x-on:pointerleave="endDrag($event)" x-on:wheel.prevent="onWheel($event)">
+                                            <img x-ref="cropImg" :src="rawImage" x-on:load="onImgLoad($event)" draggable="false" class="absolute left-0 top-0 max-w-none origin-top-left select-none" :style="`width:${natW * scale}px; height:${natH * scale}px; transform: translate(${posX}px, ${posY}px);`">
+                                        </div>
+
+                                        <div class="mt-4 flex items-center gap-3">
+                                            <i class="fa-solid fa-magnifying-glass-minus text-xs text-admin-ink-soft"></i>
+                                            <input type="range" min="0" max="100" x-model.number="zoomPercent" x-on:input="applyZoom()" class="h-1.5 w-full cursor-pointer appearance-none rounded-full bg-admin-border accent-admin-accent">
+                                            <i class="fa-solid fa-magnifying-glass-plus text-xs text-admin-ink-soft"></i>
+                                        </div>
+
+                                        <div class="mt-5 flex justify-end gap-2">
+                                            <button type="button" x-on:click="cancelCrop()" class="rounded-full border border-admin-border px-4 py-2 text-xs font-semibold text-admin-ink-soft transition hover:bg-admin-cream">Batal</button>
+                                            <button type="button" x-on:click="confirmCrop()" class="rounded-full bg-admin-accent px-4 py-2 text-xs font-semibold text-white transition hover:bg-admin-accent-strong">Gunakan Foto Ini</button>
+                                        </div>
+                                        <canvas x-ref="cropCanvas" class="hidden"></canvas>
+                                    </div>
+                                </div>
+                            </template>
+                        </div>
+<div class="space-y-4 rounded-xl border border-admin-border p-4">
+                            <p class="text-xs font-semibold uppercase tracking-wide text-admin-ink-soft">Identitas & Cerita</p>
+                            <div class="grid gap-4 sm:grid-cols-2">
+                                <div><label class="mb-1.5 block text-sm font-medium text-admin-ink">Label kecil</label><input type="text" maxlength="50" wire:model="ourCraftsmenOwnerEyebrow" class="w-full rounded-lg border border-admin-border bg-admin-surface px-3 py-2.5 text-sm text-admin-ink focus:border-admin-accent focus:outline-none focus:ring-2 focus:ring-admin-accent/20">@error('ourCraftsmenOwnerEyebrow')<p class="mt-1 text-xs text-red-600">{{ $message }}</p>@enderror</div>
+                                <div><label class="mb-1.5 block text-sm font-medium text-admin-ink">Nama pemilik</label><input type="text" maxlength="80" wire:model="ourCraftsmenOwnerName" class="w-full rounded-lg border border-admin-border bg-admin-surface px-3 py-2.5 text-sm text-admin-ink focus:border-admin-accent focus:outline-none focus:ring-2 focus:ring-admin-accent/20">@error('ourCraftsmenOwnerName')<p class="mt-1 text-xs text-red-600">{{ $message }}</p>@enderror</div>
+                                <div class="sm:col-span-2"><label class="mb-1.5 block text-sm font-medium text-admin-ink">Jabatan / peran</label><input type="text" maxlength="100" wire:model="ourCraftsmenOwnerRole" class="w-full rounded-lg border border-admin-border bg-admin-surface px-3 py-2.5 text-sm text-admin-ink focus:border-admin-accent focus:outline-none focus:ring-2 focus:ring-admin-accent/20">@error('ourCraftsmenOwnerRole')<p class="mt-1 text-xs text-red-600">{{ $message }}</p>@enderror</div>
+                                <div class="sm:col-span-2"><label class="mb-1.5 block text-sm font-medium text-admin-ink">Headline profil</label><input type="text" maxlength="140" wire:model="ourCraftsmenOwnerHeading" class="w-full rounded-lg border border-admin-border bg-admin-surface px-3 py-2.5 text-sm text-admin-ink focus:border-admin-accent focus:outline-none focus:ring-2 focus:ring-admin-accent/20">@error('ourCraftsmenOwnerHeading')<p class="mt-1 text-xs text-red-600">{{ $message }}</p>@enderror</div>
+                                <div class="sm:col-span-2"><label class="mb-1.5 block text-sm font-medium text-admin-ink">Cerita singkat</label><textarea rows="5" maxlength="800" wire:model="ourCraftsmenOwnerDescription" class="w-full resize-none rounded-lg border border-admin-border bg-admin-surface px-3 py-2.5 text-sm text-admin-ink focus:border-admin-accent focus:outline-none focus:ring-2 focus:ring-admin-accent/20"></textarea>@error('ourCraftsmenOwnerDescription')<p class="mt-1 text-xs text-red-600">{{ $message }}</p>@enderror</div>
+                                <div class="sm:col-span-2"><label class="mb-1.5 block text-sm font-medium text-admin-ink">Kutipan pemilik</label><textarea rows="3" maxlength="350" wire:model="ourCraftsmenOwnerQuote" class="w-full resize-none rounded-lg border border-admin-border bg-admin-surface px-3 py-2.5 text-sm text-admin-ink focus:border-admin-accent focus:outline-none focus:ring-2 focus:ring-admin-accent/20"></textarea>@error('ourCraftsmenOwnerQuote')<p class="mt-1 text-xs text-red-600">{{ $message }}</p>@enderror</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="rounded-xl border border-admin-border p-4">
+                        <p class="mb-1 text-xs font-semibold uppercase tracking-wide text-admin-ink-soft">3 Highlight Profil</p>
+                        <p class="mb-4 text-xs text-admin-ink-soft">Contoh: â€œ10+ / Tahun pengalamanâ€, â€œCustom / Dibuat sesuai kebutuhanâ€, atau â€œJepara / Workshopâ€.</p>
+                        <div class="grid gap-4 md:grid-cols-3">
+                            @foreach ($ourCraftsmenOwnerStats as $i => $stat)
+                                <div class="space-y-2 rounded-lg bg-admin-cream/50 p-3">
+                                    <input type="text" maxlength="30" wire:model="ourCraftsmenOwnerStats.{{ $i }}.value" placeholder="Nilai" class="w-full rounded-lg border border-admin-border bg-admin-surface px-3 py-2 text-sm font-semibold text-admin-ink focus:border-admin-accent focus:outline-none">
+                                    <input type="text" maxlength="60" wire:model="ourCraftsmenOwnerStats.{{ $i }}.label" placeholder="Keterangan" class="w-full rounded-lg border border-admin-border bg-admin-surface px-3 py-2 text-xs text-admin-ink focus:border-admin-accent focus:outline-none">
+                                </div>
+                            @endforeach
+                        </div>
+                    </div>
+
+                    <div class="flex justify-end"><button type="submit" wire:loading.attr="disabled" wire:target="saveOurCraftsmenOwner" class="flex items-center gap-2 rounded-full bg-admin-panel px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-admin-panel/20 transition hover:bg-admin-accent-strong disabled:opacity-60"><span wire:loading.remove wire:target="saveOurCraftsmenOwner"><i class="fa-solid fa-floppy-disk mr-2 text-xs"></i>Simpan Pemilik & Founder</span><span wire:loading wire:target="saveOurCraftsmenOwner"><i class="fa-solid fa-circle-notch mr-2 animate-spin"></i>Menyimpan...</span></button></div>
+                </form>
+            @elseif ($activeSection === 'our-craftsmen-cta')
+                <form wire:submit="saveOurCraftsmenCta" class="space-y-6">
+                    <div><h3 class="mb-1 flex items-center gap-2 text-sm font-semibold text-admin-ink"><i class="fa-solid fa-bullhorn text-admin-accent"></i>Mulai dari Sebuah Ide</h3><p class="text-xs text-admin-ink-soft">Bagian penutup halaman. Tombol otomatis menuju WhatsApp toko jika nomor WhatsApp tersedia di Pengaturan; jika belum, tombol menuju halaman booking.</p></div>
+                    <div class="space-y-4 rounded-xl border border-admin-border p-4">
+                        <p class="text-xs font-semibold uppercase tracking-wide text-admin-ink-soft">Warna Backframe</p>
+                        <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                            <label class="flex items-center gap-2 text-sm text-admin-ink">
+                                <input type="checkbox" wire:model.live="ourCraftsmenCtaUseCustomBg" class="h-4 w-4 rounded border-admin-border text-admin-accent focus:ring-admin-accent">
+                                Pakai warna backframe khusus
+                            </label>
+                            <div class="flex items-center gap-2">
+                                <input type="color" wire:model="ourCraftsmenCtaBgColor" @disabled(! $ourCraftsmenCtaUseCustomBg) class="h-10 w-16 cursor-pointer rounded-lg border border-admin-border disabled:opacity-40">
+                                <span class="font-mono text-xs text-admin-ink-soft">{{ strtoupper($ourCraftsmenCtaBgColor) }}</span>
+                            </div>
+                        </div>
+                        <div class="flex flex-wrap gap-2.5">
+                            @foreach ($ourCraftsmenCtaBgPresets as $preset)
+                                <button type="button" wire:click="selectOurCraftsmenCtaBgPreset('{{ $preset['value'] }}')" title="{{ $preset['label'] }}" class="h-9 w-9 rounded-full border border-admin-border shadow-sm transition hover:scale-110" style="background: {{ $preset['value'] }};"></button>
+                            @endforeach
+                        </div>
+                        @error('ourCraftsmenCtaBgColor')<p class="text-xs font-medium text-red-600">{{ $message }}</p>@enderror
+                    </div>
+                    <div class="space-y-4 rounded-xl border border-admin-border p-4">
+                        <div><label class="mb-1.5 block text-sm font-medium text-admin-ink">Label kecil</label><input type="text" maxlength="50" wire:model="ourCraftsmenCtaEyebrow" class="w-full rounded-lg border border-admin-border bg-admin-surface px-3 py-2.5 text-sm text-admin-ink focus:border-admin-accent focus:outline-none focus:ring-2 focus:ring-admin-accent/20">@error('ourCraftsmenCtaEyebrow')<p class="mt-1 text-xs text-red-600">{{ $message }}</p>@enderror</div>
+                        <div><label class="mb-1.5 block text-sm font-medium text-admin-ink">Judul</label><input type="text" maxlength="120" wire:model="ourCraftsmenCtaHeading" class="w-full rounded-lg border border-admin-border bg-admin-surface px-3 py-2.5 text-sm text-admin-ink focus:border-admin-accent focus:outline-none focus:ring-2 focus:ring-admin-accent/20">@error('ourCraftsmenCtaHeading')<p class="mt-1 text-xs text-red-600">{{ $message }}</p>@enderror</div>
+                        <div><label class="mb-1.5 block text-sm font-medium text-admin-ink">Deskripsi</label><textarea rows="4" maxlength="500" wire:model="ourCraftsmenCtaDescription" class="w-full resize-none rounded-lg border border-admin-border bg-admin-surface px-3 py-2.5 text-sm text-admin-ink focus:border-admin-accent focus:outline-none focus:ring-2 focus:ring-admin-accent/20"></textarea>@error('ourCraftsmenCtaDescription')<p class="mt-1 text-xs text-red-600">{{ $message }}</p>@enderror</div>
+                        <div><label class="mb-1.5 block text-sm font-medium text-admin-ink">Teks tombol</label><input type="text" maxlength="50" wire:model="ourCraftsmenCtaButtonText" class="w-full rounded-lg border border-admin-border bg-admin-surface px-3 py-2.5 text-sm text-admin-ink focus:border-admin-accent focus:outline-none focus:ring-2 focus:ring-admin-accent/20">@error('ourCraftsmenCtaButtonText')<p class="mt-1 text-xs text-red-600">{{ $message }}</p>@enderror</div>
+                    </div>
+                    <div class="flex justify-end"><button type="submit" wire:loading.attr="disabled" wire:target="saveOurCraftsmenCta" class="flex items-center gap-2 rounded-full bg-admin-panel px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-admin-panel/20 transition hover:bg-admin-accent-strong disabled:opacity-60"><span wire:loading.remove wire:target="saveOurCraftsmenCta"><i class="fa-solid fa-floppy-disk mr-2 text-xs"></i>Simpan CTA</span><span wire:loading wire:target="saveOurCraftsmenCta"><i class="fa-solid fa-circle-notch mr-2 animate-spin"></i>Menyimpan...</span></button></div>
                 </form>
             @else
                 <div class="flex flex-col items-center justify-center rounded-2xl border border-dashed border-admin-border px-5 py-16 text-center">
@@ -7062,6 +7997,234 @@ new #[Layout('layouts::admin-panel')] #[Title('Edit Web')] class extends Compone
 
     // Sama persis strukturnya dengan profilHeroFotoCropper di atas -- cuma
     // rasio (4:5, mengikuti bingkai foto section Sejarah) dan target property yang beda.
+    Alpine.data('ourCraftsmenOwnerPhotoCropper', (existingPreviewUrl) => ({
+        open: false,
+        rawImage: null,
+        previewUrl: existingPreviewUrl || null,
+        natW: 0,
+        natH: 0,
+        scale: 1,
+        minScale: 1,
+        maxScale: 1,
+        zoomPercent: 0,
+        posX: 0,
+        posY: 0,
+        dragging: false,
+        dragStartX: 0,
+        dragStartY: 0,
+        startPosX: 0,
+        startPosY: 0,
+
+        // Gestur 2 jari: pointer aktif (id -> {x, y}) untuk cubit di layar sentuh.
+        pointers: {},
+        pinchStartDist: 0,
+        pinchStartScale: 1,
+        pinchLastMidX: 0,
+        pinchLastMidY: 0,
+
+        ASPECT_W: 4,
+        ASPECT_H: 5,
+
+        viewW: 0,
+        viewH: 0,
+
+        OUT_W: 800,
+        OUT_H: 1000,
+
+        init() {
+            this.$watch('open', (isOpen) => {
+                document.body.style.overflow = isOpen ? 'hidden' : '';
+            });
+
+            window.addEventListener('resize', () => {
+                if (!this.open || !this.$refs.viewport || this.natW === 0) return;
+
+                this.viewW = this.$refs.viewport.offsetWidth;
+                this.viewH = this.$refs.viewport.offsetHeight;
+                this.clampPos();
+            });
+        },
+
+        onFileChange(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = () => {
+                this.rawImage = reader.result;
+                this.open = true;
+            };
+            reader.readAsDataURL(file);
+        },
+
+        onImgLoad(e) {
+            this.natW = e.target.naturalWidth;
+            this.natH = e.target.naturalHeight;
+
+            this.$nextTick(() => {
+                this.viewW = this.$refs.viewport.offsetWidth;
+                this.viewH = this.$refs.viewport.offsetHeight;
+
+                this.minScale = Math.max(this.viewW / this.natW, this.viewH / this.natH);
+                this.maxScale = this.minScale * 3;
+                this.scale = this.minScale;
+                this.zoomPercent = 0;
+
+                this.posX = (this.viewW - this.natW * this.scale) / 2;
+                this.posY = (this.viewH - this.natH * this.scale) / 2;
+            });
+        },
+
+        clampPos() {
+            const w = this.natW * this.scale;
+            const h = this.natH * this.scale;
+            this.posX = Math.min(0, Math.max(this.viewW - w, this.posX));
+            this.posY = Math.min(0, Math.max(this.viewH - h, this.posY));
+        },
+
+        applyZoom() {
+            this.scale = this.minScale + (this.maxScale - this.minScale) * (this.zoomPercent / 100);
+            this.clampPos();
+        },
+
+        // Ubah zoom dengan titik (cx, cy) di dalam viewport tetap di tempatnya
+        // (dipakai gestur cubit / Ctrl + scroll; slider tetap lewat applyZoom).
+        zoomTo(newScale, cx, cy) {
+            newScale = Math.min(this.maxScale, Math.max(this.minScale, newScale));
+            const ratio = newScale / this.scale;
+
+            this.posX = cx - (cx - this.posX) * ratio;
+            this.posY = cy - (cy - this.posY) * ratio;
+            this.scale = newScale;
+            this.zoomPercent = this.maxScale > this.minScale
+                ? ((newScale - this.minScale) / (this.maxScale - this.minScale)) * 100
+                : 0;
+            this.clampPos();
+        },
+
+        // Touchpad: geser 2 jari = wheel biasa (geser foto), cubit 2 jari = wheel + Ctrl (zoom).
+        onWheel(e) {
+            if (this.natW === 0) return;
+
+            if (e.ctrlKey) {
+                const rect = this.$refs.viewport.getBoundingClientRect();
+                this.zoomTo(this.scale * Math.exp(-e.deltaY * 0.01), e.clientX - rect.left, e.clientY - rect.top);
+                return;
+            }
+
+            this.posX -= e.deltaX;
+            this.posY -= e.deltaY;
+            this.clampPos();
+        },
+
+        startDrag(e) {
+            this.pointers[e.pointerId] = { x: e.clientX, y: e.clientY };
+
+            const points = Object.values(this.pointers);
+
+            if (points.length >= 2) {
+                // Dua jari menyentuh layar: mulai cubit.
+                const rect = this.$refs.viewport.getBoundingClientRect();
+                this.dragging = false;
+                this.pinchStartDist = Math.hypot(points[0].x - points[1].x, points[0].y - points[1].y);
+                this.pinchStartScale = this.scale;
+                this.pinchLastMidX = (points[0].x + points[1].x) / 2 - rect.left;
+                this.pinchLastMidY = (points[0].y + points[1].y) / 2 - rect.top;
+                return;
+            }
+
+            this.dragging = true;
+            this.dragStartX = e.clientX;
+            this.dragStartY = e.clientY;
+            this.startPosX = this.posX;
+            this.startPosY = this.posY;
+        },
+
+        onDrag(e) {
+            if (!(e.pointerId in this.pointers)) return;
+            this.pointers[e.pointerId] = { x: e.clientX, y: e.clientY };
+
+            const points = Object.values(this.pointers);
+
+            if (points.length >= 2) {
+                const rect = this.$refs.viewport.getBoundingClientRect();
+                const midX = (points[0].x + points[1].x) / 2 - rect.left;
+                const midY = (points[0].y + points[1].y) / 2 - rect.top;
+                const dist = Math.hypot(points[0].x - points[1].x, points[0].y - points[1].y);
+
+                // Geser mengikuti titik tengah kedua jari, lalu zoom sesuai jarak antar jari.
+                this.posX += midX - this.pinchLastMidX;
+                this.posY += midY - this.pinchLastMidY;
+                this.pinchLastMidX = midX;
+                this.pinchLastMidY = midY;
+
+                if (this.pinchStartDist > 0) {
+                    this.zoomTo(this.pinchStartScale * (dist / this.pinchStartDist), midX, midY);
+                } else {
+                    this.clampPos();
+                }
+                return;
+            }
+
+            if (!this.dragging) return;
+            this.posX = this.startPosX + (e.clientX - this.dragStartX);
+            this.posY = this.startPosY + (e.clientY - this.dragStartY);
+            this.clampPos();
+        },
+
+        endDrag(e) {
+            if (e && e.pointerId !== undefined) {
+                delete this.pointers[e.pointerId];
+            } else {
+                this.pointers = {};
+            }
+
+            const rest = Object.values(this.pointers);
+
+            if (rest.length === 1) {
+                // Tinggal satu jari: lanjut geser dari posisi sekarang (tanpa lompatan).
+                this.dragging = true;
+                this.dragStartX = rest[0].x;
+                this.dragStartY = rest[0].y;
+                this.startPosX = this.posX;
+                this.startPosY = this.posY;
+            } else {
+                this.dragging = false;
+            }
+        },
+
+        confirmCrop() {
+            const canvas = this.$refs.cropCanvas;
+            canvas.width = this.OUT_W;
+            canvas.height = this.OUT_H;
+            const ctx = canvas.getContext('2d');
+
+            const sx = -this.posX / this.scale;
+            const sy = -this.posY / this.scale;
+            const sWidth = this.viewW / this.scale;
+            const sHeight = this.viewH / this.scale;
+
+            ctx.clearRect(0, 0, this.OUT_W, this.OUT_H);
+            ctx.drawImage(this.$refs.cropImg, sx, sy, sWidth, sHeight, 0, 0, this.OUT_W, this.OUT_H);
+
+            const dataUrl = canvas.toDataURL('image/jpeg', 0.9);
+            this.previewUrl = dataUrl;
+            this.$wire.set('ourCraftsmenOwnerPhotoCroppedBase64', dataUrl);
+            this.closeModal();
+        },
+
+        cancelCrop() {
+            this.closeModal();
+        },
+
+        closeModal() {
+            this.open = false;
+            this.rawImage = null;
+            this.pointers = {};
+            this.dragging = false;
+            if (this.$refs.fileInput) this.$refs.fileInput.value = '';
+        },
+    }));
     Alpine.data('sejarahFotoCropper', (existingPreviewUrl) => ({
         open: false,
         rawImage: null,

@@ -649,3 +649,4 @@ document.addEventListener('alpine:init', () => {
 });
 
 import './dokumentasi-video.js';
+import './dokumentasi-galeri.js';

@@ -11,8 +11,11 @@ use Illuminate\Support\Str;
 class TrackingController
 {
     private const COOKIE_NAME = 'kie_tracking_tokens';
+
     private const DEVICE_COOKIE_NAME = 'kie_tracking_device';
+
     private const COOKIE_MINUTES = 60 * 24 * 60; // 60 hari
+
     private const MAX_TOKENS = 30;
 
     /** Batas waktu boleh mengirim Komentar Update, dihitung sejak komentar pertama dibuat. */
@@ -159,6 +162,8 @@ class TrackingController
             'comment' => ['nullable', 'string', 'max:1000'],
             'rating' => ['nullable', 'integer', 'min:1', 'max:5'],
             'is_name_masked' => ['nullable', 'boolean'],
+            'provinsi' => ['nullable', 'string', 'max:255'],
+            'kabupaten' => ['nullable', 'string', 'max:255'],
             'photos' => ['nullable', 'array', 'max:'.self::MAX_PHOTOS],
             'photos.*' => ['image', 'mimes:jpg,jpeg,png,webp', 'max:2048'], // 2048 KB = 2 MB
         ]);
@@ -166,6 +171,12 @@ class TrackingController
         $comment = trim((string) ($validated['comment'] ?? ''));
         $rating = $validated['rating'] ?? null;
         $isNameMasked = $request->boolean('is_name_masked');
+        // Alamat (provinsi/kabupaten) — sama seperti sensor nama, opsional dan
+        // hanya berlaku untuk komentar PERTAMA (lihat blok "if ($originalComment
+        // === null)" di bawah), sesuai form yang juga menyembunyikannya untuk
+        // Komentar Update di tracking.blade.php.
+        $provinsi = trim((string) ($validated['provinsi'] ?? ''));
+        $kabupaten = trim((string) ($validated['kabupaten'] ?? ''));
         $photos = $this->storePhotos($request->file('photos') ?? []);
 
         if ($comment === '' && $rating === null && $photos === []) {
@@ -185,6 +196,8 @@ class TrackingController
                 'transaction_id' => $transaction->id,
                 'customer_name' => $transaction->customer_name,
                 'is_name_masked' => $isNameMasked,
+                'provinsi' => $provinsi !== '' ? $provinsi : null,
+                'kabupaten' => $kabupaten !== '' ? $kabupaten : null,
                 'rating' => $rating,
                 'comment' => $comment,
                 'photos' => $photos === [] ? null : $photos,

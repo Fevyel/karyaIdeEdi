@@ -49,7 +49,6 @@ new #[Layout('layouts::admin-panel')] class extends Component
 
     public string $harga = '';
 
-    public string $stok = '0';
 
     public string $status = 'aktif';
 
@@ -78,7 +77,6 @@ new #[Layout('layouts::admin-panel')] class extends Component
             $this->deskripsi_lengkap = $product->deskripsi_lengkap;
             $this->thumbnail_lama = $product->thumbnail;
             $this->harga = (string) $product->harga;
-            $this->stok = (string) $product->stok;
             $this->status = $product->status;
             $this->featured = $product->featured;
             $this->berat = (string) $product->berat;
@@ -139,7 +137,6 @@ new #[Layout('layouts::admin-panel')] class extends Component
             'newAdditionalPhotos.*' => ['nullable', 'image', 'mimes:jpeg,jpg,png,webp', 'max:5120'],
             // decimal('harga', 12, 2) di database -> maksimal 10 digit di depan koma.
             'harga' => ['required', 'numeric', 'min:0', 'max:9999999999.99'],
-            'stok' => ['required', 'integer', 'min:0'],
             'status' => ['required', Rule::in(['aktif', 'nonaktif'])],
             // decimal(8, 2) di database -> maksimal 6 digit di depan koma.
             'berat' => ['nullable', 'numeric', 'min:0', 'max:999999.99'],
@@ -165,7 +162,6 @@ new #[Layout('layouts::admin-panel')] class extends Component
             'harga.required' => 'Harga wajib diisi.',
             'harga.numeric' => 'Harga harus berupa angka.',
             'harga.max' => 'Harga maksimal Rp9.999.999.999,99.',
-            'stok.required' => 'Stok wajib diisi.',
             'berat.max' => 'Berat maksimal 999.999,99 kg.',
             'panjang.max' => 'Panjang maksimal 999.999,99 cm.',
             'lebar.max' => 'Lebar maksimal 999.999,99 cm.',
@@ -276,7 +272,8 @@ new #[Layout('layouts::admin-panel')] class extends Component
         $product->deskripsi_pendek = $this->deskripsi_pendek;
         $product->deskripsi_lengkap = $this->deskripsi_lengkap;
         $product->harga = $this->harga;
-        $product->stok = $this->stok;
+        // Kolom stok dipertahankan hanya untuk kompatibilitas kode lama; tidak lagi dikelola admin.
+        $product->stok = 1000000000;
         $product->status = $this->status;
         $product->featured = $this->featured;
         $product->berat = $this->berat !== '' ? $this->berat : 0;
@@ -502,11 +499,11 @@ new #[Layout('layouts::admin-panel')] class extends Component
             </div>
         </div>
 
-        {{-- ================= CARD: HARGA, STOK & STATUS ================= --}}
+        {{-- ================= CARD: HARGA & STATUS ================= --}}
         <div class="rounded-2xl border border-admin-border bg-admin-surface p-5 shadow-sm sm:p-6">
             <h3 class="mb-5 flex items-center gap-2 text-sm font-semibold text-admin-ink">
                 <i class="fa-solid fa-tag text-admin-accent"></i>
-                Harga, Stok &amp; Status
+                Harga &amp; Status
             </h3>
 
             <div class="grid gap-5 sm:grid-cols-2">
@@ -530,25 +527,7 @@ new #[Layout('layouts::admin-panel')] class extends Component
                     @error('harga')<p class="mt-1.5 flex items-center gap-1 text-xs font-medium text-red-600"><i class="fa-solid fa-circle-exclamation"></i> {{ $message }}</p>@enderror
                 </div>
 
-                <div>
-                    <label for="stok" class="mb-1.5 block text-sm font-medium text-admin-ink">Stok</label>
-                    <div class="relative" x-data="numberStepper()">
-                        <input
-                            id="stok" type="number" step="1" min="0" wire:model="stok" data-zero-replace="{{ $isEdit ? 'false' : 'true' }}"
-                            x-ref="numInput"
-                            class="w-full rounded-lg border {{ $errors->has('stok') ? 'border-red-400' : 'border-admin-border' }} bg-admin-surface px-3 py-2.5 pr-8 text-sm text-admin-ink transition focus:border-admin-accent focus:outline-none focus:ring-2 focus:ring-admin-accent/20 "
-                        >
-                        <div class="absolute right-1.5 top-1/2 flex -translate-y-1/2 flex-col overflow-hidden rounded-md border border-admin-border">
-                            <button type="button" x-on:click="step(1)" tabindex="-1" class="flex h-4 w-6 items-center justify-center text-admin-ink-soft transition hover:bg-admin-cream hover:text-admin-accent">
-                                <x-icon-arrow direction="chevron-up" size="text-[9px]" />
-                            </button>
-                            <button type="button" x-on:click="step(-1)" tabindex="-1" class="flex h-4 w-6 items-center justify-center border-t border-admin-border text-admin-ink-soft transition hover:bg-admin-cream hover:text-admin-accent">
-                                <x-icon-arrow direction="chevron-down" size="text-[9px]" />
-                            </button>
-                        </div>
-                    </div>
-                    @error('stok')<p class="mt-1.5 flex items-center gap-1 text-xs font-medium text-red-600"><i class="fa-solid fa-circle-exclamation"></i> {{ $message }}</p>@enderror
-                </div>
+                
 
                 <div>
                     <label for="status" class="mb-1.5 block text-sm font-medium text-admin-ink">Status</label>

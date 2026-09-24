@@ -50,6 +50,32 @@
     $testimoniFrame = \App\Support\FrameBackground::resolve($testimoniSection['bg_color'] ?? null, $testimoniSection['bg_gradient'] ?? null, '#FAF8F4');
     $testimoniBgColor = $testimoniFrame['base'];
 
+    // Warna judul "Ulasan Pelanggan Kami" TIDAK diatur manual -- dihitung
+    // otomatis dari kontras $testimoniBgColor, pola sama persis dengan
+    // $contrastMissionColors di partials/frontend/mission.blade.php. Kartu
+    // Top 1/2/3 di bawah sudah punya kontrasnya sendiri lewat $isDark,
+    // ini KHUSUS judul section yang duduk langsung di atas warna latar.
+    // Warna latar bawaan (belum diganti admin, #FAF8F4) selalu
+    // menghasilkan warna PERSIS sama dengan text-admin-ink sekarang.
+    $contrastTestimoniHeading = function (string $hex): string {
+        $hex = ltrim($hex, '#');
+
+        if (strtoupper($hex) === 'FAF8F4') {
+            return '#221A14';
+        }
+
+        $r = hexdec(substr($hex, 0, 2)) / 255;
+        $g = hexdec(substr($hex, 2, 2)) / 255;
+        $b = hexdec(substr($hex, 4, 2)) / 255;
+
+        $linearize = fn (float $c): float => $c <= 0.03928 ? $c / 12.92 : (($c + 0.055) / 1.055) ** 2.4;
+        $luminance = 0.2126 * $linearize($r) + 0.7152 * $linearize($g) + 0.0722 * $linearize($b);
+
+        return $luminance > 0.5 ? '#1A1208' : '#FFFFFF';
+    };
+
+    $testimoniHeadingColor = $contrastTestimoniHeading($testimoniBgColor);
+
     // Warna kartu per posisi (Top 1/2/3), masing-masing independen & opsional.
     // null di posisi tertentu = admin belum pilih warna khusus utk kartu itu
     // -> kartu itu pakai desain bawaan (bergantian gelap/krem berdasarkan
@@ -66,7 +92,7 @@
 
     <div class="relative mx-auto max-w-7xl px-6 py-14 sm:px-8 lg:px-10 lg:py-20">
 
-        <h2 class="font-display text-2xl text-admin-ink sm:text-3xl">Ulasan Pelanggan Kami</h2>
+        <h2 class="font-display text-2xl text-admin-ink sm:text-3xl" style="color: {{ $testimoniHeadingColor }};">Ulasan Pelanggan Kami</h2>
 
         @if ($testimonialList->isEmpty())
             {{-- Empty state — tetap rapi selagi belum ada testimoni --}}
@@ -111,7 +137,7 @@
                                 : ($isDark ? 'bg-admin-panel text-white' : 'bg-admin-cream text-admin-ink') }}"
                         @if ($customCardColor) style="background: {{ $customCardColor }};" @endif
                     >
-                        {{-- 1. Nama pembeli (+ foto profil & rating di baris yang sama) --}}
+                        {{-- 1. Foto profil + Nama pembeli --}}
                         <div class="flex items-center gap-3">
                             @if ($testimonial->foto && \Illuminate\Support\Facades\Storage::disk('public')->exists($testimonial->foto))
                                 <img
@@ -131,26 +157,39 @@
                                     {{ $testimonial->displayName() }}
                                 </p>
                             </div>
-
-                            <div class="flex shrink-0 items-center gap-0.5 text-admin-gold">
-                                @for ($i = 1; $i <= 5; $i++)
-                                    <i class="fa-solid fa-star text-[11px] {{ $i > ($testimonial->rating ?? 0) ? ($isDark ? 'text-white/20' : 'text-admin-border') : '' }}"></i>
-                                @endfor
-                            </div>
                         </div>
 
-                        {{-- 2. Produk yang dibeli --}}
-                        @if ($testimonial->product)
-                            <div class="mt-3 inline-flex w-fit items-center gap-1.5 rounded-full px-3 py-1 text-[10px] font-medium
-                                {{ $isDark ? 'bg-white/10 text-white/70' : 'bg-white text-admin-ink-soft' }}">
-                                <i class="fa-solid fa-box text-[9px]"></i>
-                                {{ $testimonial->product->nama }}
+                        {{-- 2. Alamat (Provinsi & Kabupaten/Kota) — bertumpuk 2 baris, opsional.
+                             Kalau salah satu/keduanya kosong, baris yang kosong disembunyikan. --}}
+                        @if ($testimonial->provinsi || $testimonial->kabupaten)
+                            <div class="mt-2 text-xs leading-snug {{ $isDark ? 'text-white/60' : 'text-admin-ink-soft' }}">
+                                @if ($testimonial->provinsi)
+                                    <p class="truncate">{{ $testimonial->provinsi }}</p>
+                                @endif
+                                @if ($testimonial->kabupaten)
+                                    <p class="truncate">{{ $testimonial->kabupaten }}</p>
+                                @endif
                             </div>
                         @endif
 
-                        {{-- 3. Foto yang dikirim pembeli (kalau ada) — kalau tidak ada, langsung ke komentar --}}
+                        {{-- 3. Bintang rating — baris sendiri --}}
+                        <div class="mt-3 flex items-center gap-0.5 text-admin-gold">
+                            @for ($i = 1; $i <= 5; $i++)
+                                <i class="fa-solid fa-star text-xs {{ $i > ($testimonial->rating ?? 0) ? ($isDark ? 'text-white/20' : 'text-admin-border') : '' }}"></i>
+                            @endfor
+                        </div>
+
+                        {{-- 4. Komentar --}}
+                        <div class="mt-4 flex-1">
+                            <i class="fa-solid fa-quote-left text-lg {{ $isDark ? 'text-white/40' : 'text-admin-accent/50' }}"></i>
+                            <p class="mt-2 text-sm leading-relaxed {{ $isDark ? 'text-white/85' : 'text-admin-ink-soft' }}">
+                                "{{ $testimonial->comment }}"
+                            </p>
+                        </div>
+
+                        {{-- 5. Foto yang dikirim pembeli (kalau ada) — paling bawah, setelah komentar --}}
                         @if (! empty($testimonial->photos))
-                            <div class="mt-3 flex gap-2 overflow-x-auto">
+                            <div class="mt-4 flex gap-2 overflow-x-auto">
                                 @foreach ($testimonial->photos as $photo)
                                     <img
                                         src="{{ \Illuminate\Support\Facades\Storage::disk('public')->url($photo) }}"
@@ -160,14 +199,6 @@
                                 @endforeach
                             </div>
                         @endif
-
-                        {{-- 4. Komentar --}}
-                        <div class="mt-4 flex-1">
-                            <i class="fa-solid fa-quote-left text-lg {{ $isDark ? 'text-white/40' : 'text-admin-accent/50' }}"></i>
-                            <p class="mt-2 text-sm leading-relaxed {{ $isDark ? 'text-white/85' : 'text-admin-ink-soft' }}">
-                                "{{ $testimonial->comment }}"
-                            </p>
-                        </div>
                     </div>
                 @endforeach
             </div>

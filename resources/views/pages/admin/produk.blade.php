@@ -131,7 +131,6 @@ new #[Layout('layouts::admin-panel')] #[Title('Produk')] class extends Component
                             <th class="px-3 py-3 font-semibold">Harga</th>
                             <th class="px-3 py-3 font-semibold">Status</th>
                             <th class="px-3 py-3 font-semibold">Featured</th>
-                            <th class="px-3 py-3 font-semibold">Stok</th>
                             <th class="px-3 py-3 font-semibold">Dibuat</th>
                             <th class="px-5 py-3 text-right font-semibold">Aksi</th>
                         </tr>
@@ -184,9 +183,6 @@ new #[Layout('layouts::admin-panel')] #[Title('Produk')] class extends Component
                                     @else
                                         <span class="text-xs text-admin-ink-soft">&mdash;</span>
                                     @endif
-                                </td>
-                                <td class="px-3 py-3 {{ $product->stok === 0 ? 'font-semibold text-admin-danger' : 'text-admin-ink' }}">
-                                    {{ $product->stok }}
                                 </td>
                                 <td class="px-3 py-3 text-xs text-admin-ink-soft">
                                     {{ $product->created_at?->translatedFormat('d M Y') }}

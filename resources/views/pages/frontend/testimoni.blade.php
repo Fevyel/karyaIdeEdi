@@ -85,7 +85,7 @@
                     @foreach ($testimonials as $testimonial)
                         <div class="flex flex-col rounded-2xl border border-[#F0ECE7] bg-white p-6 shadow-sm">
 
-                            {{-- 1. Nama pembeli (foto profil admin/rating menyertai baris yang sama) --}}
+                            {{-- 1. Foto profil + Nama pembeli --}}
                             <div class="flex items-center gap-3">
                                 @if ($testimonial->foto && \Illuminate\Support\Facades\Storage::disk('public')->exists($testimonial->foto))
                                     <img
@@ -104,23 +104,34 @@
                                         {{ $testimonial->displayName() }}
                                     </p>
                                 </div>
-
-                                <div class="flex shrink-0 items-center gap-0.5 text-[#F0A321]">
-                                    @for ($i = 1; $i <= 5; $i++)
-                                        <i class="fa-solid fa-star text-[11px] {{ $i > ($testimonial->rating ?? 0) ? 'text-[#E3DED7]' : '' }}"></i>
-                                    @endfor
-                                </div>
                             </div>
 
-                            {{-- 2. Produk yang dibeli --}}
-                            @if ($testimonial->product)
-                                <div class="mt-3 inline-flex w-fit items-center gap-1.5 rounded-full bg-[#F7F1E8] px-3 py-1 text-[10px] font-medium text-[#8A6D3B]">
-                                    <i class="fa-solid fa-box text-[9px]"></i>
-                                    {{ $testimonial->product->nama }}
+                            {{-- 2. Alamat (Provinsi & Kabupaten/Kota) — bertumpuk 2 baris, opsional.
+                                 Kalau salah satu/keduanya kosong, baris yang kosong disembunyikan. --}}
+                            @if ($testimonial->provinsi || $testimonial->kabupaten)
+                                <div class="mt-2 text-[10px] leading-snug text-[#A29587] sm:text-[11px]">
+                                    @if ($testimonial->provinsi)
+                                        <p class="truncate">{{ $testimonial->provinsi }}</p>
+                                    @endif
+                                    @if ($testimonial->kabupaten)
+                                        <p class="truncate">{{ $testimonial->kabupaten }}</p>
+                                    @endif
                                 </div>
                             @endif
 
-                            {{-- 3. Foto yang dikirim pembeli (kalau ada) — kalau tidak ada, langsung ke komentar --}}
+                            {{-- 3. Bintang rating — baris sendiri --}}
+                            <div class="mt-3 flex items-center gap-0.5 text-[#F0A321]">
+                                @for ($i = 1; $i <= 5; $i++)
+                                    <i class="fa-solid fa-star text-[11px] {{ $i > ($testimonial->rating ?? 0) ? 'text-[#E3DED7]' : '' }}"></i>
+                                @endfor
+                            </div>
+
+                            {{-- 4. Komentar --}}
+                            <p class="mt-3 flex-1 text-[11px] leading-relaxed text-[#5C5147] sm:text-xs">
+                                {{ $testimonial->comment }}
+                            </p>
+
+                            {{-- 5. Foto yang dikirim pembeli (kalau ada) — paling bawah, setelah komentar --}}
                             @if (! empty($testimonial->photos))
                                 <div class="mt-3 flex gap-2 overflow-x-auto">
                                     @foreach ($testimonial->photos as $photo)
@@ -132,11 +143,6 @@
                                     @endforeach
                                 </div>
                             @endif
-
-                            {{-- 4. Komentar --}}
-                            <p class="mt-3 flex-1 text-[11px] leading-relaxed text-[#5C5147] sm:text-xs">
-                                {{ $testimonial->comment }}
-                            </p>
                         </div>
                     @endforeach
                 </div>

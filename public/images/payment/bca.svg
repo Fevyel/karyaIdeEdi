@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 220 72" role="img" aria-label="BCA">
+  <rect width="220" height="72" rx="12" fill="white"/>
+  <g transform="translate(16 14)">
+    <path d="M20 0c10 8 15 16 15 24S30 40 20 48C10 40 5 32 5 24S10 8 20 0Z" fill="none" stroke="#1677c8" stroke-width="4"/>
+    <path d="M0 24h40M20 3v42M7 10l26 28M33 10 7 38" stroke="#1677c8" stroke-width="3" stroke-linecap="round"/>
+  </g>
+  <text x="72" y="47" font-family="Arial, Helvetica, sans-serif" font-size="34" font-weight="800" fill="#1677c8" letter-spacing="1">BCA</text>
+</svg>

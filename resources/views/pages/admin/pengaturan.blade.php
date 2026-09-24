@@ -24,6 +24,17 @@ new #[Layout('layouts::admin-panel')] #[Title('Pengaturan')] class extends Compo
 
     public string $facebook_url = '';
 
+    public string $bca_account_number = '';
+
+    public string $bca_account_name = '';
+
+    public string $bri_account_number = '';
+
+    public string $bri_account_name = '';
+
+    public string $dana_account_number = '';
+
+    public string $dana_account_name = '';
     /** Hasil crop dari kanvas JS, dikirim sebagai data URL base64 PNG. Null = logo tidak diganti. */
     public ?string $logoBase64 = null;
 
@@ -42,6 +53,12 @@ new #[Layout('layouts::admin-panel')] #[Title('Pengaturan')] class extends Compo
         $this->instagram_url = (string) $setting->instagram_url;
         $this->tiktok_url = (string) $setting->tiktok_url;
         $this->facebook_url = (string) $setting->facebook_url;
+        $this->bca_account_number = (string) $setting->bca_account_number;
+        $this->bca_account_name = (string) $setting->bca_account_name;
+        $this->bri_account_number = (string) $setting->bri_account_number;
+        $this->bri_account_name = (string) $setting->bri_account_name;
+        $this->dana_account_number = (string) $setting->dana_account_number;
+        $this->dana_account_name = (string) $setting->dana_account_name;
         $this->existingLogoUrl = $setting->logoUrl();
     }
 
@@ -76,6 +93,12 @@ new #[Layout('layouts::admin-panel')] #[Title('Pengaturan')] class extends Compo
             'instagram_url' => ['nullable', 'url', 'max:255', $this->socialPlatformMismatchRule('instagram_url')],
             'tiktok_url' => ['nullable', 'url', 'max:255', $this->socialPlatformMismatchRule('tiktok_url')],
             'facebook_url' => ['nullable', 'url', 'max:255', $this->socialPlatformMismatchRule('facebook_url')],
+            'bca_account_number' => ['nullable', 'regex:/^[0-9]+$/', 'max:30'],
+            'bca_account_name' => ['nullable', 'string', 'max:100'],
+            'bri_account_number' => ['nullable', 'regex:/^[0-9]+$/', 'max:30'],
+            'bri_account_name' => ['nullable', 'string', 'max:100'],
+            'dana_account_number' => ['nullable', 'regex:/^[0-9]+$/', 'max:30'],
+            'dana_account_name' => ['nullable', 'string', 'max:100'],
         ]);
 
         $setting = Setting::current();
@@ -346,7 +369,171 @@ new #[Layout('layouts::admin-panel')] #[Title('Pengaturan')] class extends Compo
             </div>
         </div>
 
-        {{-- ================= TOMBOL SIMPAN ================= --}}
+        {{-- ================= SECTION 3: REKENING PEMBAYARAN ================= --}}
+        <div class="flex flex-col rounded-2xl border border-[var(--color-admin-border)] bg-admin-surface p-5 shadow-sm sm:p-6" id="rekening-pembayaran-fullwidth" data-payment-fullwidth="1" style="width:100%;max-width:none;min-width:0;overflow:visible;">
+            <h3 class="mb-1 flex items-center gap-2 text-sm font-semibold text-[var(--color-admin-ink)]">
+                <i class="fa-solid fa-building-columns text-[var(--color-admin-accent)]"></i>
+                Rekening Pembayaran
+            </h3>
+            <p class="mb-5 text-xs leading-relaxed text-[var(--color-admin-ink-soft)]">
+                Nomor ini dipakai otomatis pada halaman pembayaran saat pelanggan menekan logo BCA, BRI, atau DANA di footer.
+                Isi hanya angka pada kolom nomor rekening/nomor DANA.
+            </p>
+
+            <div class="grid w-full grid-cols-1 gap-5 md:grid-cols-3" style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:1.25rem;width:100%;min-width:0;" id="rekening-pembayaran-grid">
+                <div class="rounded-xl border border-[var(--color-admin-border)] p-4">
+                    <div class="mb-4 flex items-center gap-2">
+                        <span class="flex h-8 w-12 items-center justify-center rounded-md bg-[#1677C8]/10 text-xs font-extrabold text-[#1677C8]">BCA</span>
+                        <p class="text-sm font-semibold text-[var(--color-admin-ink)]">Bank BCA</p>
+                    </div>
+
+                    <div class="space-y-4">
+                        <div>
+                            <label for="setting_bca_account_number" class="mb-1.5 block text-sm font-medium text-[var(--color-admin-ink)]">Nomor Rekening BCA</label>
+                            <input
+                                id="setting_bca_account_number"
+                                type="text"
+                                inputmode="numeric"
+                                autocomplete="off"
+                                wire:model="bca_account_number"
+                                placeholder="Contoh: 1234567890"
+                                class="w-full rounded-lg border border-[var(--color-admin-border)] bg-admin-surface px-3 py-2.5 text-sm text-[var(--color-admin-ink)] transition focus:border-[var(--color-admin-accent)] focus:outline-none focus:ring-2 focus:ring-[var(--color-admin-accent)]/20"
+                            >
+                            @error('bca_account_number')
+                                <p class="mt-1.5 text-xs font-medium text-red-600">{{ $message }}</p>
+                            @enderror
+                        </div>
+
+                        <div>
+                            <label for="setting_bca_account_name" class="mb-1.5 block text-sm font-medium text-[var(--color-admin-ink)]">Atas Nama</label>
+                            <input
+                                id="setting_bca_account_name"
+                                type="text"
+                                wire:model="bca_account_name"
+                                placeholder="Nama pemilik rekening"
+                                class="w-full rounded-lg border border-[var(--color-admin-border)] bg-admin-surface px-3 py-2.5 text-sm text-[var(--color-admin-ink)] transition focus:border-[var(--color-admin-accent)] focus:outline-none focus:ring-2 focus:ring-[var(--color-admin-accent)]/20"
+                            >
+                        </div>
+                    </div>
+                </div>
+
+                <div class="rounded-xl border border-[var(--color-admin-border)] p-4">
+                    <div class="mb-4 flex items-center gap-2">
+                        <span class="flex h-8 w-12 items-center justify-center rounded-md bg-[#00529C]/10 text-xs font-extrabold text-[#00529C]">BRI</span>
+                        <p class="text-sm font-semibold text-[var(--color-admin-ink)]">Bank BRI</p>
+                    </div>
+
+                    <div class="space-y-4">
+                        <div>
+                            <label for="setting_bri_account_number" class="mb-1.5 block text-sm font-medium text-[var(--color-admin-ink)]">Nomor Rekening BRI</label>
+                            <input
+                                id="setting_bri_account_number"
+                                type="text"
+                                inputmode="numeric"
+                                autocomplete="off"
+                                wire:model="bri_account_number"
+                                placeholder="Contoh: 123456789012345"
+                                class="w-full rounded-lg border border-[var(--color-admin-border)] bg-admin-surface px-3 py-2.5 text-sm text-[var(--color-admin-ink)] transition focus:border-[var(--color-admin-accent)] focus:outline-none focus:ring-2 focus:ring-[var(--color-admin-accent)]/20"
+                            >
+                            @error('bri_account_number')
+                                <p class="mt-1.5 text-xs font-medium text-red-600">{{ $message }}</p>
+                            @enderror
+                        </div>
+
+                        <div>
+                            <label for="setting_bri_account_name" class="mb-1.5 block text-sm font-medium text-[var(--color-admin-ink)]">Atas Nama</label>
+                            <input
+                                id="setting_bri_account_name"
+                                type="text"
+                                wire:model="bri_account_name"
+                                placeholder="Nama pemilik rekening"
+                                class="w-full rounded-lg border border-[var(--color-admin-border)] bg-admin-surface px-3 py-2.5 text-sm text-[var(--color-admin-ink)] transition focus:border-[var(--color-admin-accent)] focus:outline-none focus:ring-2 focus:ring-[var(--color-admin-accent)]/20"
+                            >
+                        </div>
+                    </div>
+                </div>
+
+                <div class="rounded-xl border border-[var(--color-admin-border)] p-4">
+                    <div class="mb-4 flex items-center gap-2">
+                        <span class="flex h-8 w-12 items-center justify-center rounded-md bg-[#1689E8]/10 text-xs font-extrabold text-[#1689E8]">DANA</span>
+                        <p class="text-sm font-semibold text-[var(--color-admin-ink)]">DANA</p>
+                    </div>
+
+                    <div class="space-y-4">
+                        <div>
+                            <label for="setting_dana_account_number" class="mb-1.5 block text-sm font-medium text-[var(--color-admin-ink)]">Nomor DANA</label>
+                            <input
+                                id="setting_dana_account_number"
+                                type="text"
+                                inputmode="numeric"
+                                autocomplete="off"
+                                wire:model="dana_account_number"
+                                placeholder="Contoh: 081234567890"
+                                class="w-full rounded-lg border border-[var(--color-admin-border)] bg-admin-surface px-3 py-2.5 text-sm text-[var(--color-admin-ink)] transition focus:border-[var(--color-admin-accent)] focus:outline-none focus:ring-2 focus:ring-[var(--color-admin-accent)]/20"
+                            >
+                            @error('dana_account_number')
+                                <p class="mt-1.5 text-xs font-medium text-red-600">{{ $message }}</p>
+                            @enderror
+                        </div>
+
+                        <div>
+                            <label for="setting_dana_account_name" class="mb-1.5 block text-sm font-medium text-[var(--color-admin-ink)]">Atas Nama</label>
+                            <input
+                                id="setting_dana_account_name"
+                                type="text"
+                                wire:model="dana_account_name"
+                                placeholder="Nama pemilik akun DANA"
+                                class="w-full rounded-lg border border-[var(--color-admin-border)] bg-admin-surface px-3 py-2.5 text-sm text-[var(--color-admin-ink)] transition focus:border-[var(--color-admin-accent)] focus:outline-none focus:ring-2 focus:ring-[var(--color-admin-accent)]/20"
+                            >
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+<style id="rekening-pembayaran-fullwidth-style">
+    #rekening-pembayaran-fullwidth {
+        box-sizing: border-box !important;
+        width: calc(100vw - 40px) !important;
+        max-width: calc(100vw - 40px) !important;
+        min-width: 0 !important;
+        position: relative !important;
+    }
+
+    #rekening-pembayaran-grid {
+        display: grid !important;
+        grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+        gap: 1.25rem !important;
+        width: 100% !important;
+        max-width: none !important;
+        min-width: 0 !important;
+    }
+
+    #rekening-pembayaran-grid > div {
+        width: 100% !important;
+        min-width: 0 !important;
+        box-sizing: border-box !important;
+    }
+
+    @media (max-width: 1023px) {
+        #rekening-pembayaran-fullwidth {
+            width: 100% !important;
+            max-width: 100% !important;
+        }
+    }
+
+    @media (max-width: 767px) {
+        #rekening-pembayaran-grid {
+            grid-template-columns: 1fr !important;
+        }
+    }
+
+    @media (min-width: 768px) and (max-width: 1023px) {
+        #rekening-pembayaran-grid {
+            grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+        }
+    }
+</style>
+{{-- ================= TOMBOL SIMPAN ================= --}}
         <div class="flex justify-end lg:col-span-2">
             <button
                 type="submit"

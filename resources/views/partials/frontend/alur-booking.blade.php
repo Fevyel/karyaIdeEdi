@@ -1,7 +1,7 @@
 {{-- =========================================================
      ALUR BOOKING — tidak lagi memakai panel kosong/slider
      ========================================================= --}}
-<section class="border-b border-[#E7DED2] bg-[#F7F4EF]">
+<section class="bg-[#F7F4EF]">
     <div class="mx-auto max-w-7xl px-5 py-16 sm:px-8 lg:px-10 lg:py-20">
         <div class="max-w-2xl">
             <p class="text-[10px] font-semibold uppercase tracking-[0.22em] text-[#A27A4E]">Cara kerja</p>
@@ -13,7 +13,7 @@
             @php
                 $steps = [
                     ['01', 'Pilih produk', 'Temukan mebel yang kamu suka dari katalog.', 'fa-couch'],
-                    ['02', 'Tanya admin', 'Klik WhatsApp untuk menanyakan ukuran, bahan, stok, harga, atau kebutuhan khusus.', 'fa-comments'],
+                    ['02', 'Tanya admin', 'Klik WhatsApp untuk menanyakan ukuran, bahan, harga, atau kebutuhan khusus.', 'fa-comments'],
                     ['03', 'Admin buat pesanan', 'Admin mencatat data pemesan, jumlah, dan alamat pengantaran.', 'fa-clipboard-list'],
                     ['04', 'Terima tracking', 'Admin mengirim link pribadi untuk melihat status pesanan milikmu.', 'fa-link'],
                 ];

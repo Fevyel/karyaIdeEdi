@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Terms of Service — {{ \App\Models\Setting::current()->site_name }}</title>
+    <title>Terms of Service &mdash; {{ \App\Models\Setting::current()->site_name }}</title>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
 </head>
@@ -12,94 +12,133 @@
 
     @php
         $legalSetting = \App\Models\Setting::current();
-        $legalUpdatedAt = \Illuminate\Support\Facades\Date::parse('2026-08-01')->translatedFormat('d F Y');
         $legalContactEmail = $legalSetting->email ?: 'info@karyaideedi.com';
         $legalGmailLink = $legalSetting->gmailComposeUrl();
         $legalWaLink = $legalSetting->whatsappDigits() ? 'https://wa.me/'.$legalSetting->whatsappDigits() : null;
 
-        $termsSections = [
-            [
+        $termsHero = \App\Models\HomeSection::dataFor('terms-hero', [
+            'eyebrow' => 'Terms of Service',
+            'heading' => 'Ketentuan Layanan',
+            'description' => 'Ketentuan berikut mengatur hubungan Anda dengan '.$legalSetting->site_name.' - mulai dari proses pemesanan custom furniture hingga pengiriman ke tangan Anda.',
+            'updated_date' => '2026-08-01',
+        ]);
+
+        try {
+            $legalUpdatedAt = \Illuminate\Support\Facades\Date::parse($termsHero['updated_date'] ?? '2026-08-01')->translatedFormat('d F Y');
+        } catch (\Throwable $e) {
+            $legalUpdatedAt = \Illuminate\Support\Facades\Date::parse('2026-08-01')->translatedFormat('d F Y');
+        }
+
+        $termsDefaults = [
+            'acceptance' => [
                 'id' => 'penerimaan-ketentuan',
-                'title' => '1. Penerimaan Ketentuan',
                 'icon' => 'fa-file-signature',
-                'body' => [
-                    'Dengan mengakses dan menggunakan situs '.$legalSetting->site_name.', melihat katalog produk, atau mengirimkan formulir booking custom furniture, Anda dianggap telah membaca, memahami, dan menyetujui seluruh ketentuan yang tercantum dalam halaman ini.',
-                ],
+                'title' => '1. Penerimaan Ketentuan',
+                'text' => 'Dengan mengakses dan menggunakan situs '.$legalSetting->site_name.', melihat katalog produk, atau mengirimkan formulir booking custom furniture, Anda dianggap telah membaca, memahami, dan menyetujui seluruh ketentuan yang tercantum dalam halaman ini.',
             ],
-            [
+            'custom-order' => [
                 'id' => 'pesanan-custom',
-                'title' => '2. Proses Pemesanan Custom',
                 'icon' => 'fa-ruler-combined',
-                'body' => [
-                    'Setiap produk pada dasarnya bersifat custom-made (dibuat sesuai pesanan), sehingga:',
-                    [
-                        'Pengiriman formulir booking bukan konfirmasi final — pesanan baru dianggap sah setelah dikonfirmasi kedua belah pihak melalui WhatsApp.',
-                        'Spesifikasi (ukuran, bahan, warna, deskripsi custom) yang Anda kirimkan menjadi acuan utama proses produksi.',
-                        'Perubahan spesifikasi setelah produksi dimulai dapat memengaruhi waktu pengerjaan dan biaya tambahan, dan akan didiskusikan terlebih dahulu.',
-                    ],
+                'title' => '2. Proses Pemesanan Custom',
+                'text' => 'Setiap produk pada dasarnya bersifat custom-made (dibuat sesuai pesanan), sehingga:',
+                'bullets' => [
+                    'Pengiriman formulir booking bukan konfirmasi final - pesanan baru dianggap sah setelah dikonfirmasi kedua belah pihak melalui WhatsApp.',
+                    'Spesifikasi (ukuran, bahan, warna, deskripsi custom) yang Anda kirimkan menjadi acuan utama proses produksi.',
+                    'Perubahan spesifikasi setelah produksi dimulai dapat memengaruhi waktu pengerjaan dan biaya tambahan, dan akan didiskusikan terlebih dahulu.',
                 ],
             ],
-            [
+            'payment' => [
                 'id' => 'harga-pembayaran',
-                'title' => '3. Harga &amp; Pembayaran',
                 'icon' => 'fa-tags',
-                'body' => [
-                    'Harga yang tercantum di katalog merupakan estimasi awal dan dapat berubah menyesuaikan kompleksitas custom, bahan, dan ukuran akhir yang disepakati saat negosiasi via WhatsApp. Skema pembayaran (termasuk uang muka/DP bila berlaku) akan diinformasikan dan disepakati bersama sebelum produksi dimulai — kami tidak memproses pembayaran otomatis melalui situs ini.',
-                ],
+                'title' => '3. Harga & Pembayaran',
+                'text' => 'Harga yang tercantum di katalog merupakan estimasi awal dan dapat berubah menyesuaikan kompleksitas custom, bahan, dan ukuran akhir yang disepakati saat negosiasi via WhatsApp. Skema pembayaran (termasuk uang muka/DP bila berlaku) akan diinformasikan dan disepakati bersama sebelum produksi dimulai - kami tidak memproses pembayaran otomatis melalui situs ini.',
             ],
-            [
+            'delivery' => [
                 'id' => 'pengiriman-waktu',
-                'title' => '4. Waktu Pengerjaan &amp; Pengiriman',
                 'icon' => 'fa-truck-fast',
-                'body' => [
-                    'Estimasi waktu pengerjaan disampaikan saat konfirmasi pesanan dan dapat bervariasi tergantung tingkat kesulitan desain serta antrian produksi yang sedang berjalan. Status terkini dapat dipantau kapan saja melalui halaman Lacak Pesanan menggunakan tautan unik yang diberikan untuk setiap pesanan.',
-                ],
+                'title' => '4. Waktu Pengerjaan & Pengiriman',
+                'text' => 'Estimasi waktu pengerjaan disampaikan saat konfirmasi pesanan dan dapat bervariasi tergantung tingkat kesulitan desain serta antrian produksi yang sedang berjalan. Status terkini dapat dipantau kapan saja melalui halaman Lacak Pesanan menggunakan tautan unik yang diberikan untuk setiap pesanan.',
             ],
-            [
+            'cancellation' => [
                 'id' => 'pembatalan-perubahan',
-                'title' => '5. Pembatalan &amp; Perubahan Pesanan',
                 'icon' => 'fa-ban',
-                'body' => [
-                    'Pembatalan sebelum proses produksi dimulai dapat diajukan melalui WhatsApp dan akan diproses sesuai kesepakatan terkait pengembalian uang muka (bila ada). Setelah produksi berjalan, pembatalan menjadi lebih terbatas mengingat bahan dan waktu kerja yang sudah dialokasikan khusus untuk pesanan Anda — kondisi ini akan dijelaskan secara terbuka saat negosiasi.',
-                ],
+                'title' => '5. Pembatalan & Perubahan Pesanan',
+                'text' => 'Pembatalan sebelum proses produksi dimulai dapat diajukan melalui WhatsApp dan akan diproses sesuai kesepakatan terkait pengembalian uang muka (bila ada). Setelah produksi berjalan, pembatalan menjadi lebih terbatas mengingat bahan dan waktu kerja yang sudah dialokasikan khusus untuk pesanan Anda - kondisi ini akan dijelaskan secara terbuka saat negosiasi.',
             ],
-            [
+            'warranty' => [
                 'id' => 'garansi-retur',
-                'title' => '6. Garansi &amp; Pengembalian',
                 'icon' => 'fa-shield-heart',
-                'body' => [
-                    'Ketentuan lengkap mengenai garansi produk dan kebijakan retur diatur secara khusus pada halaman Profil, bagian Garansi &amp; Pengiriman, agar informasinya selalu konsisten dan mudah ditemukan di satu tempat.',
-                    [
-                        route('profile.index').'#garansi|Lihat ketentuan Garansi',
-                        route('profile.index').'#pengiriman|Lihat ketentuan Pengiriman & Retur',
-                    ],
+                'title' => '6. Garansi & Pengembalian',
+                'text' => 'Ketentuan lengkap mengenai garansi produk dan kebijakan retur diatur secara khusus pada halaman Profil, bagian Garansi & Pengiriman, agar informasinya selalu konsisten dan mudah ditemukan di satu tempat.',
+                'link_labels' => [
+                    'Lihat ketentuan Garansi',
+                    'Lihat ketentuan Pengiriman & Retur',
                 ],
             ],
-            [
+            'copyright' => [
                 'id' => 'hak-kekayaan-intelektual',
-                'title' => '7. Hak Cipta &amp; Konten Situs',
                 'icon' => 'fa-copyright',
-                'body' => [
-                    'Seluruh nama merek, logo, foto produk, dan konten pada situs ini adalah milik '.$legalSetting->site_name.' dan dilindungi hak cipta. Penggunaan, penyalinan, atau reproduksi konten tanpa izin tertulis tidak diperkenankan.',
-                ],
+                'title' => '7. Hak Cipta & Konten Situs',
+                'text' => 'Seluruh nama merek, logo, foto produk, dan konten pada situs ini adalah milik '.$legalSetting->site_name.' dan dilindungi hak cipta. Penggunaan, penyalinan, atau reproduksi konten tanpa izin tertulis tidak diperkenankan.',
             ],
-            [
+            'liability' => [
                 'id' => 'batasan-tanggung-jawab',
-                'title' => '8. Batasan Tanggung Jawab',
                 'icon' => 'fa-scale-balanced',
-                'body' => [
-                    'Kami berupaya menampilkan informasi produk dan harga seakurat mungkin, namun variasi kecil pada warna atau tekstur material alami (kayu) adalah hal wajar dan bukan merupakan cacat produk. Kami tidak bertanggung jawab atas keterlambatan yang disebabkan oleh faktor di luar kendali kami, seperti kendala pihak ekspedisi.',
-                ],
+                'title' => '8. Batasan Tanggung Jawab',
+                'text' => 'Kami berupaya menampilkan informasi produk dan harga seakurat mungkin, namun variasi kecil pada warna atau tekstur material alami (kayu) adalah hal wajar dan bukan merupakan cacat produk. Kami tidak bertanggung jawab atas keterlambatan yang disebabkan oleh faktor di luar kendali kami, seperti kendala pihak ekspedisi.',
             ],
-            [
+            'changes' => [
                 'id' => 'perubahan-ketentuan',
-                'title' => '9. Perubahan Ketentuan',
                 'icon' => 'fa-rotate',
-                'body' => [
-                    'Ketentuan Layanan ini dapat diperbarui sewaktu-waktu untuk menyesuaikan perkembangan layanan kami. Tanggal pembaruan terakhir selalu tercantum pada bagian atas halaman ini.',
-                ],
+                'title' => '9. Perubahan Ketentuan',
+                'text' => 'Ketentuan Layanan ini dapat diperbarui sewaktu-waktu untuk menyesuaikan perkembangan layanan kami. Tanggal pembaruan terakhir selalu tercantum pada bagian atas halaman ini.',
             ],
         ];
+
+        $termsSections = [];
+        foreach ($termsDefaults as $key => $default) {
+            $dataDefaults = [
+                'title' => $default['title'],
+                'text' => $default['text'],
+            ];
+
+            if (isset($default['bullets'])) {
+                $dataDefaults['bullets'] = $default['bullets'];
+            }
+
+            if (isset($default['link_labels'])) {
+                $dataDefaults['link_labels'] = $default['link_labels'];
+            }
+
+            $saved = \App\Models\HomeSection::dataFor('terms-'.$key, $dataDefaults);
+
+            $section = [
+                'id' => $default['id'],
+                'icon' => $default['icon'],
+                'title' => (string) ($saved['title'] ?? $default['title']),
+                'text' => (string) ($saved['text'] ?? $default['text']),
+            ];
+
+            if (isset($default['bullets'])) {
+                $section['bullets'] = array_values(is_array($saved['bullets'] ?? null) ? $saved['bullets'] : $default['bullets']);
+            }
+
+            if (isset($default['link_labels'])) {
+                $labels = array_values(is_array($saved['link_labels'] ?? null) ? $saved['link_labels'] : $default['link_labels']);
+                $section['links'] = [
+                    ['href' => route('profile.index').'#garansi', 'label' => $labels[0] ?? $default['link_labels'][0]],
+                    ['href' => route('profile.index').'#pengiriman', 'label' => $labels[1] ?? $default['link_labels'][1]],
+                ];
+            }
+
+            $termsSections[] = $section;
+        }
+
+        $termsContact = \App\Models\HomeSection::dataFor('terms-contact', [
+            'heading' => 'Butuh Penjelasan Lebih Lanjut?',
+            'description' => 'Tim kami siap membantu menjelaskan ketentuan pemesanan sebelum Anda melanjutkan booking.',
+            'button_label' => 'Hubungi via WhatsApp',
+        ]);
     @endphp
 
     {{-- =====================================================
@@ -112,14 +151,13 @@
         <div class="relative mx-auto max-w-4xl px-6 py-16 text-center sm:px-8 lg:py-20">
             <div class="mx-auto flex w-fit items-center gap-3 rounded-full border border-white/15 bg-white/5 px-4 py-1.5 text-xs font-semibold uppercase tracking-[0.2em] text-admin-accent-strong">
                 <i class="fa-solid fa-file-contract text-[10px]"></i>
-                Terms of Service
+                {{ $termsHero['eyebrow'] }}
             </div>
             <h1 class="mt-5 font-display text-4xl font-semibold leading-tight text-white sm:text-5xl">
-                Ketentuan Layanan
+                {{ $termsHero['heading'] }}
             </h1>
             <p class="mx-auto mt-5 max-w-2xl text-sm leading-relaxed text-white/60 sm:text-base">
-                Ketentuan berikut mengatur hubungan Anda dengan {{ $legalSetting->site_name }} —
-                mulai dari proses pemesanan custom furniture hingga pengiriman ke tangan Anda.
+                {{ $termsHero['description'] }}
             </p>
             <p class="mt-6 text-xs uppercase tracking-[0.15em] text-white/40">
                 Terakhir diperbarui: {{ $legalUpdatedAt }}
@@ -140,6 +178,7 @@
                         <p class="text-[11px] font-semibold uppercase tracking-[0.15em] text-[#6B6E76]">
                             Daftar Isi
                         </p>
+
                         <ul class="mt-4 space-y-3">
                             @foreach ($termsSections as $section)
                                 <li>
@@ -162,34 +201,33 @@
                                     <i class="fa-solid {{ $section['icon'] }}"></i>
                                 </span>
                                 <h2 class="font-display text-xl font-semibold text-[#1A1A1A] sm:text-2xl">
-                                    {!! $section['title'] !!}
+                                    {{ $section['title'] }}
                                 </h2>
                             </div>
 
                             <div class="mt-4 space-y-3 border-l-2 border-admin-accent/20 pl-[3.25rem] sm:pl-[3.25rem]">
-                                @foreach ($section['body'] as $paragraph)
-                                    @if (is_array($paragraph) && str_contains($paragraph[0] ?? '', '|'))
-                                        <div class="flex flex-col gap-2 sm:flex-row sm:gap-4">
-                                            @foreach ($paragraph as $link)
-                                                @php [$linkHref, $linkLabel] = explode('|', $link); @endphp
-                                                <a href="{{ $linkHref }}" class="inline-flex items-center gap-2 rounded-full border border-admin-accent/30 px-4 py-2 text-xs font-semibold text-admin-accent transition-colors duration-300 hover:bg-admin-cream">
-                                                    <i class="fa-solid fa-arrow-right text-[10px]"></i>
-                                                    {{ $linkLabel }}
-                                                </a>
-                                            @endforeach
-                                        </div>
-                                    @elseif (is_array($paragraph))
-                                        <ul class="ml-1 list-disc space-y-2 pl-4 text-sm leading-relaxed text-[#4A423B] sm:text-[15px]">
-                                            @foreach ($paragraph as $point)
-                                                <li>{{ $point }}</li>
-                                            @endforeach
-                                        </ul>
-                                    @else
-                                        <p class="text-sm leading-relaxed text-[#4A423B] sm:text-[15px]">
-                                            {!! $paragraph !!}
-                                        </p>
-                                    @endif
-                                @endforeach
+                                <p class="text-sm leading-relaxed text-[#4A423B] sm:text-[15px]">
+                                    {{ $section['text'] }}
+                                </p>
+
+                                @if (! empty($section['bullets']))
+                                    <ul class="ml-1 list-disc space-y-2 pl-4 text-sm leading-relaxed text-[#4A423B] sm:text-[15px]">
+                                        @foreach ($section['bullets'] as $point)
+                                            <li>{{ $point }}</li>
+                                        @endforeach
+                                    </ul>
+                                @endif
+
+                                @if (! empty($section['links']))
+                                    <div class="flex flex-col gap-2 sm:flex-row sm:gap-4">
+                                        @foreach ($section['links'] as $link)
+                                            <a href="{{ $link['href'] }}" class="inline-flex items-center gap-2 rounded-full border border-admin-accent/30 px-4 py-2 text-xs font-semibold text-admin-accent transition-colors duration-300 hover:bg-admin-cream">
+                                                <i class="fa-solid fa-arrow-right text-[10px]"></i>
+                                                {{ $link['label'] }}
+                                            </a>
+                                        @endforeach
+                                    </div>
+                                @endif
                             </div>
                         </div>
                     @endforeach
@@ -198,11 +236,10 @@
                     <div class="scroll-mt-28 rounded-2xl bg-[#1A1A1A] p-8 text-center sm:p-10">
                         <i class="fa-solid fa-handshake text-2xl text-admin-accent-strong"></i>
                         <h3 class="mt-3 font-display text-xl font-semibold text-white">
-                            Butuh Penjelasan Lebih Lanjut?
+                            {{ $termsContact['heading'] }}
                         </h3>
                         <p class="mx-auto mt-2 max-w-md text-sm leading-relaxed text-white/60">
-                            Tim kami siap membantu menjelaskan ketentuan pemesanan sebelum Anda
-                            melanjutkan booking.
+                            {{ $termsContact['description'] }}
                         </p>
                         <div class="mt-5 flex items-center justify-center gap-2 text-sm text-white/70">
                             @if ($legalGmailLink)
@@ -214,7 +251,7 @@
                         @if ($legalWaLink)
                             <a href="{{ $legalWaLink }}" target="_blank" rel="noopener" class="mt-6 inline-flex items-center gap-2 rounded-full bg-admin-accent px-6 py-2.5 text-sm font-semibold text-white transition-colors duration-300 hover:bg-admin-accent-strong">
                                 <i class="fa-brands fa-whatsapp"></i>
-                                Hubungi via WhatsApp
+                                {{ $termsContact['button_label'] }}
                             </a>
                         @endif
                     </div>

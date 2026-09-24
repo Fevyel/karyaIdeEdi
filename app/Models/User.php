@@ -91,7 +91,6 @@ class User extends Authenticatable
     // bukan baris baru yang dibuat — jadi tidak punya flag is_read
     // sendiri untuk ditandai.
 
-    private const LOW_STOCK_THRESHOLD = 5;
 
     /** Komentar/interaksi yang belum dibuka admin. */
     public function unreadInteraksiCount(): int
@@ -108,16 +107,14 @@ class User extends Authenticatable
     /** Produk yang baru menipis stoknya sejak terakhir dibuka Dashboard. */
     public function unreadDashboardCount(): int
     {
-        return \App\Models\Product::query()
-            ->where('stok', '<=', self::LOW_STOCK_THRESHOLD)
-            ->where('updated_at', '>', $this->dashboard_read_at ?? '1970-01-01')
-            ->count();
+        // Fitur stok produk dinonaktifkan; dipertahankan untuk kompatibilitas pemanggil lama.
+        return 0;
     }
 
     /** Total gabungan — dipakai badge ikon admin di navbar frontend (selalu angka asli, tidak pernah 99+). */
     public function unreadNotificationsCount(): int
     {
-        return $this->unreadInteraksiCount() + $this->unreadPesananCount() + $this->unreadDashboardCount();
+        return $this->unreadInteraksiCount() + $this->unreadPesananCount();
     }
 
     /** Tandai semua komentar yang belum dibaca sebagai sudah dibaca (dipanggil saat membuka menu Interaksi). */

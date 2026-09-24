@@ -1,9 +1,9 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="id" data-site="frontend">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Dokumentasi — {{ \App\Models\Setting::current()->site_name }}</title>
+    <title>Dokumentasi | {{ \App\Models\Setting::current()->site_name }}</title>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
 </head>
@@ -33,9 +33,15 @@
 
         $dokumentasiVideo = null;
 
-        if ($dokumentasiHero['media_type'] === 'video_upload' && $dokumentasiVideoUploadUrl) {
+        // Normalisasi data lama supaya video milik Dokumentasi tetap membaca
+        // field Dokumentasi sendiri. Tidak ada fallback ke media section lain.
+        $dokumentasiMediaType = in_array($dokumentasiHero['media_type'] ?? null, ['video_url', 'video_upload'], true)
+            ? $dokumentasiHero['media_type']
+            : ($dokumentasiVideoUploadUrl ? 'video_upload' : (($dokumentasiHero['video_url'] ?? null) ? 'video_url' : null));
+
+        if ($dokumentasiMediaType === 'video_upload' && $dokumentasiVideoUploadUrl) {
             $dokumentasiVideo = ['provider' => 'direct', 'embed_url' => $dokumentasiVideoUploadUrl];
-        } elseif ($dokumentasiHero['media_type'] === 'video_url' && $dokumentasiHero['video_url']) {
+        } elseif ($dokumentasiMediaType === 'video_url' && ($dokumentasiHero['video_url'] ?? null)) {
             $dokumentasiVideo = \App\Models\HomeSection::classifyVideoUrl($dokumentasiHero['video_url']);
         }
     @endphp
@@ -117,13 +123,13 @@
         {{-- ============ KONTEN: Judul, subjudul, deskripsi ============ --}}
         <div class="relative mx-auto max-w-7xl px-6 py-12 sm:px-8 lg:flex lg:min-h-160 lg:items-center lg:px-10 lg:py-24">
             <div class="max-w-xl animate-fade-in-up">
-                <h1 class="font-display text-3xl font-semibold leading-[1.15] text-[#3D2B1F] sm:text-4xl lg:text-[2.5rem] xl:text-[2.75rem]">
+                <h1 class="font-display text-4xl font-semibold leading-[1.08] text-[#3D2B1F] sm:text-5xl lg:text-6xl">
                     {{ $dokumentasiHero['judul'] }}
                 </h1>
-                <p class="mt-3 font-display text-xl italic text-[#9B6E3E] sm:text-2xl">
+                <p class="mt-4 font-display text-2xl italic leading-snug text-[#9B6E3E] sm:text-3xl lg:text-4xl">
                     {{ $dokumentasiHero['subjudul'] }}
                 </p>
-                <p class="mt-6 max-w-md text-sm leading-relaxed text-[#6B6E76]">
+                <p class="mt-7 max-w-2xl text-base leading-8 text-[#6B6E76] sm:text-lg lg:text-xl">
                     {{ $dokumentasiHero['deskripsi'] }}
                 </p>
             </div>
@@ -131,907 +137,281 @@
     </section>
 
     @php
-        // Galeri "Dokumentasi" (foto & video jejak karya) -- diisi admin lewat
-        // Admin > Edit Web > Dokumentasi, kartu "Galeri Dokumentasi" (section_key
-        // 'dokumentasi' yang SAMA dengan hero di atas, cuma key 'galeri'). Array
-        // kosong kalau admin belum pernah mengisi galeri sama sekali -- section
-        // di bawah ini otomatis tidak tampil (lihat @if di bawah).
-        $dokumentasiGaleri = $dokumentasiHero['galeri'] ?? [];
-    @endphp
-
-    @if (count($dokumentasiGaleri) > 0)
-        {{-- =========================================================
-             GALERI DOKUMENTASI -- gaya "galeri museum digital": tiap
-             foto/video muncul menyamping (kiri/kanan bergantian), tepi yang
-             dekat teks memudar ke putih (mask-image, pola sama dengan hero
-             di atas & "Kunjungi Kami" Beranda), dengan 2 kartu polos di
-             belakangnya untuk kesan "tumpukan foto". Teks dibuat seminim
-             mungkin: cuma nomor urut besar + 1 baris keterangan singkat.
-             Animasi masuknya lewat Alpine, lihat resources/js/dokumentasi-galeri.js.
-             ========================================================= --}}
-        <section class="relative overflow-hidden bg-[#F9F7F2] py-16 sm:py-24">
-            <div class="mx-auto max-w-6xl px-6 sm:px-8 lg:px-10">
-                <p class="mb-12 text-center text-xs font-semibold uppercase tracking-[0.3em] text-[#9B6E3E] sm:mb-20">
-                    Galeri
-                </p>
-
-                <div class="space-y-20 sm:space-y-28">
-                    @foreach ($dokumentasiGaleri as $i => $item)
-                        @php
-                            // Genap = media di kanan (teks di kiri), ganjil = media di kiri (teks di kanan).
-                            $mediaDiKanan = $i % 2 === 0;
-                            // Tepi media yang memudar putih = tepi yang dekat dengan teks.
-                            $maskKe = $mediaDiKanan ? 'left' : 'right';
-                            // Media masuk dari sisi LUAR (menjauhi teks), bukan dari sisi teks.
-                            $translasiAwal = $mediaDiKanan ? 'translate-x-10' : '-translate-x-10';
-                        @endphp
-
-                        <div class="grid items-center gap-10 lg:grid-cols-2 lg:gap-16">
-                            {{-- MEDIA + 2 kartu polos di belakangnya (kesan tumpukan foto) --}}
-                            <div
-                                x-data="dokumentasiGaleriItem()" x-init="init()"
-                                class="relative {{ $mediaDiKanan ? 'lg:order-2' : 'lg:order-1' }}"
-                            >
-                                <div class="absolute inset-4 -z-10 rotate-3 rounded-2xl border-8 border-white bg-[#EFE7D8] shadow-md" aria-hidden="true"></div>
-                                <div class="absolute inset-4 -z-20 -rotate-6 rounded-2xl border-8 border-white bg-[#E4D8C2] shadow-md" aria-hidden="true"></div>
-
-                                <div
-                                    class="relative aspect-4/5 overflow-hidden rounded-2xl border-8 border-white shadow-2xl transition-all duration-1000 ease-out sm:aspect-16/10"
-                                    :class="masuk ? 'opacity-100 translate-x-0' : 'opacity-0 {{ $translasiAwal }}'"
-                                    style="-webkit-mask-image: linear-gradient(to {{ $maskKe }}, black 78%, transparent 100%); mask-image: linear-gradient(to {{ $maskKe }}, black 78%, transparent 100%);"
-                                >
-                                    @if (($item['tipe'] ?? 'foto') === 'video')
-                                        <video
-                                            src="{{ \Illuminate\Support\Facades\Storage::disk('public')->url($item['path']) }}"
-                                            class="h-full w-full object-cover"
-                                            autoplay muted loop playsinline preload="metadata"
-                                            x-data x-init="$el.muted = true; $el.volume = 0; $el.addEventListener('volumechange', () => { $el.muted = true; $el.volume = 0; })"
-                                        ></video>
-                                    @else
-                                        <img
-                                            src="{{ \Illuminate\Support\Facades\Storage::disk('public')->url($item['path']) }}"
-                                            alt="{{ $item['keterangan'] ?: 'Dokumentasi '.\App\Models\Setting::current()->site_name }}"
-                                            class="h-full w-full object-cover"
-                                            loading="lazy"
-                                        >
-                                    @endif
-                                </div>
-                            </div>
-
-                            {{-- TEKS: seminim mungkin -- nomor urut + 1 baris keterangan (opsional) --}}
-                            <div class="{{ $mediaDiKanan ? 'lg:order-1' : 'lg:order-2' }}">
-                                <span class="font-display text-5xl font-semibold text-[#E4D8C2] sm:text-6xl">
-                                    {{ str_pad($i + 1, 2, '0', STR_PAD_LEFT) }}
-                                </span>
-                                @if (! empty($item['keterangan']))
-                                    <p class="mt-2 max-w-xs text-sm text-[#6B6E76]">
-                                        {{ $item['keterangan'] }}
-                                    </p>
-                                @endif
-                            </div>
-                        </div>
-                    @endforeach
-                </div>
-            </div>
-        </section>
-    @endif
-
-    {{--
-        ==========================================================
-        SECTION TAMBAHAN: DOKUMENTASI 1, 2, 3
-        ==========================================================
-        3 section TAMBAHAN yang ditaruh DI BAWAH hero + galeri di atas.
-        Hero dan galeri di atas TIDAK diubah sama sekali oleh fitur ini.
-
-          1. DOKUMENTASI 1 — Pita Berjalan (marquee)
-             Teks di KANAN, media (foto + video) berjalan terus dari
-             kanan ke kiri di KIRI. Pola loop-nya sama persis dengan
-             pita "FURNITUR TOKO MEBEL • KARYA IDE-EDI" di atas footer
-             (partials/frontend/marquee-brand.blade.php), bedanya isi
-             pita ini foto & video, bukan teks.
-             Sumber data: section_key 'dokumentasi-1'.
-
-          2. DOKUMENTASI 2 — Video Wall Mosaic
-             Dinding media gelap ala ruang pamer: ubin besar-kecil,
-             video/foto looping, klik ubin untuk zoom (lightbox).
-             Sumber data: section_key 'dokumentasi-2'.
-
-          3. DOKUMENTASI 3 — 3D Tilt Card Stack
-             Kartu foto/video bertumpuk yang "mengipas" miring 3D saat
-             masuk layar, dan menegak + terangkat saat disentuh kursor.
-             Sumber data: section_key 'dokumentasi-3'.
-
-        Semuanya diisi dari Admin > Edit Web > Dokumentasi, tab
-        "Dokumentasi 1/2/3".
-
-        CATATAN — SUARA VIDEO:
-        SEMUA video di halaman ini MUTE PERMANEN (atribut `muted` +
-        dikunci ulang lewat listener `volumechange`). Ini galeri, bukan
-        pemutar video — jadi tidak ada tombol volume sama sekali.
-
-        CATATAN CSS/JS:
-        Style & script ketiga section SENGAJA self-contained (inline
-        <style> + x-data literal), persis pola marquee-brand.blade.php,
-        supaya langsung jalan tanpa perlu `npm run build` dan tidak
-        menambah class Tailwind baru. Semua nama class diawali `kie-dok`.
-        ==========================================================
-    --}}
-
-    @php
-        // ============ Ambil data tiap section tambahan ============
-        $dok1 = \App\Models\HomeSection::dataFor('dokumentasi-1', [
-            'judul' => 'Jejak Proses',
-            'subjudul' => 'Pita Karya',
-            'deskripsi' => 'Cuplikan foto dan video yang berjalan terus, dari pemilihan bahan sampai furnitur siap dipakai di rumah pelanggan.',
-            'marquee_speed' => 45,
+        // =========================================================
+        // GALERI VIDEO PREMIUM â€” isi utama halaman Dokumentasi.
+        // HERO di atas SENGAJA tidak disentuh.
+        // Sumber data utama: section_key 'dokumentasi-3' dari Edit Web.
+        // Kalau belum ada item di sana, fallback ke galeri lama (khusus
+        // item bertipe video). Kalau masih kosong juga, section video tidak ditampilkan.
+        // =========================================================
+        $dokVideoSection = \App\Models\HomeSection::dataFor('dokumentasi-3', [
+            'judul' => 'Galeri Video',
+            'subjudul' => 'Dokumentasi Proses & Hasil',
+            'deskripsi' => 'Lihat lebih dekat proses pengerjaan, detail finishing, hingga hasil akhir furnitur yang kami kerjakan.',
             'items' => [],
         ]);
 
-        $dok2 = \App\Models\HomeSection::dataFor('dokumentasi-2', [
-            'judul' => 'Dinding Karya',
-            'subjudul' => 'Video Wall',
-            'deskripsi' => 'Potongan proses, detail sambungan, dan hasil akhir yang kami rekam langsung dari bengkel. Ketuk salah satu bidang untuk melihatnya lebih besar.',
-            'items' => [],
-        ]);
 
-        $dok3 = \App\Models\HomeSection::dataFor('dokumentasi-3', [
-            'judul' => 'Arsip Pilihan',
-            'subjudul' => 'Kartu Karya',
-            'deskripsi' => 'Beberapa karya yang paling sering ditanyakan pelanggan. Arahkan kursor ke salah satu kartu untuk melihatnya lebih dekat.',
-            'items' => [],
-        ]);
-
-        // ============ Isi dummy sementara (dari internet) ============
-        // Dipakai HANYA kalau slot di admin masih kosong semua. Begitu admin
-        // mengunggah foto/video sendiri, isi dummy ini tidak dipakai lagi.
-        $dokDummyFoto = fn (string $seed) => 'https://picsum.photos/seed/'.$seed.'/900/1200';
-        $dokDummyVideo = [
-            'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerJoyrides.mp4',
-            'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4',
-            'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4',
-            'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerMeltdowns.mp4',
-        ];
-
-        // Menyeragamkan 1 baris data admin ATAU 1 baris dummy jadi:
-        // ['tipe' => 'foto|video', 'src' => URL, 'keterangan' => '...'].
-        $dokBentukMedia = function (array $item) {
+        $dokVideoBentukItem = function (array $item) {
             $src = isset($item['path']) && $item['path']
                 ? \Illuminate\Support\Facades\Storage::disk('public')->url($item['path'])
                 : ($item['url'] ?? null);
 
-            if (! $src) {
+            if (! $src || ($item['tipe'] ?? null) !== 'video') {
                 return null;
             }
 
             return [
-                'tipe' => ($item['tipe'] ?? 'foto') === 'video' ? 'video' : 'foto',
                 'src' => $src,
                 'keterangan' => trim((string) ($item['keterangan'] ?? '')),
             ];
         };
 
-        $dokPilihMedia = function ($tersimpan, array $dummy) use ($dokBentukMedia) {
-            $tersimpan = is_array($tersimpan) ? array_values(array_filter($tersimpan, 'is_array')) : [];
-            $sumber = count($tersimpan) > 0 ? $tersimpan : $dummy;
+        $dokVideoFromDok3 = array_values(array_filter(array_map(
+            $dokVideoBentukItem,
+            is_array($dokVideoSection['items'] ?? null) ? $dokVideoSection['items'] : []
+        )));
 
-            return array_values(array_filter(array_map($dokBentukMedia, $sumber)));
-        };
+        $dokVideoFromLegacyGallery = array_values(array_filter(array_map(
+            $dokVideoBentukItem,
+            is_array($dokumentasiHero['galeri'] ?? null) ? $dokumentasiHero['galeri'] : []
+        )));
 
-        $dok1Media = $dokPilihMedia($dok1['items'] ?? [], [
-            ['tipe' => 'foto', 'url' => $dokDummyFoto('kie-dok1-a'), 'keterangan' => 'Pemilihan bahan kayu'],
-            ['tipe' => 'video', 'url' => $dokDummyVideo[0], 'keterangan' => 'Proses pengamplasan'],
-            ['tipe' => 'foto', 'url' => $dokDummyFoto('kie-dok1-b'), 'keterangan' => 'Detail sambungan'],
-            ['tipe' => 'foto', 'url' => $dokDummyFoto('kie-dok1-c'), 'keterangan' => 'Finishing natural'],
-            ['tipe' => 'video', 'url' => $dokDummyVideo[1], 'keterangan' => 'Perakitan lemari'],
-            ['tipe' => 'foto', 'url' => $dokDummyFoto('kie-dok1-d'), 'keterangan' => 'Hasil akhir di ruang tamu'],
-        ]);
+        $dokVideoItems = count($dokVideoFromDok3) > 0
+            ? $dokVideoFromDok3
+            : $dokVideoFromLegacyGallery;
 
-        $dok2Media = $dokPilihMedia($dok2['items'] ?? [], [
-            ['tipe' => 'video', 'url' => $dokDummyVideo[0], 'keterangan' => 'Bengkel pagi hari'],
-            ['tipe' => 'foto', 'url' => $dokDummyFoto('kie-dok2-a'), 'keterangan' => 'Kursi jati'],
-            ['tipe' => 'foto', 'url' => $dokDummyFoto('kie-dok2-b'), 'keterangan' => 'Meja makan'],
-            ['tipe' => 'video', 'url' => $dokDummyVideo[2], 'keterangan' => 'Pahat tangan'],
-            ['tipe' => 'foto', 'url' => $dokDummyFoto('kie-dok2-c'), 'keterangan' => 'Rak dinding'],
-            ['tipe' => 'foto', 'url' => $dokDummyFoto('kie-dok2-d'), 'keterangan' => 'Kabinet dapur'],
-            ['tipe' => 'foto', 'url' => $dokDummyFoto('kie-dok2-e'), 'keterangan' => 'Interior kamar'],
-        ]);
-
-        $dok3Media = $dokPilihMedia($dok3['items'] ?? [], [
-            ['tipe' => 'foto', 'url' => $dokDummyFoto('kie-dok3-a'), 'keterangan' => 'Lemari pakaian custom'],
-            ['tipe' => 'video', 'url' => $dokDummyVideo[3], 'keterangan' => 'Proses finishing'],
-            ['tipe' => 'foto', 'url' => $dokDummyFoto('kie-dok3-b'), 'keterangan' => 'Set ruang tamu'],
-            ['tipe' => 'foto', 'url' => $dokDummyFoto('kie-dok3-c'), 'keterangan' => 'Meja kerja minimalis'],
-            ['tipe' => 'foto', 'url' => $dokDummyFoto('kie-dok3-d'), 'keterangan' => 'Kitchen set'],
-        ]);
-
-        // Kecepatan pita berjalan (detik per putaran). Makin besar = makin pelan.
-        $dok1Speed = max(15, min(180, (int) ($dok1['marquee_speed'] ?? 45)));
+        $dokVideoCount = count($dokVideoItems);
     @endphp
 
-    {{-- =========================================================
-         DOKUMENTASI 1 — pita media berjalan (kiri) + teks (kanan)
-         ========================================================= --}}
-    <section class="kie-dok1" id="dokumentasi-1">
-        <div class="kie-dok1__inner">
+    @if ($dokVideoCount > 0)
+        <section class="relative overflow-hidden bg-[#F7F4EF] py-18 sm:py-20 lg:py-24">
+            <div class="pointer-events-none absolute -left-32 top-16 h-48 w-48 rounded-full bg-[#E7D7C2]/45 blur-3xl"></div>
+            <div class="pointer-events-none absolute -right-24 bottom-8 h-44 w-44 rounded-full bg-[#D7C2A8]/30 blur-3xl"></div>
 
-            {{-- KIRI: pita foto & video berjalan kanan -> kiri, loop mulus.
-                 Track berisi 2 grup ISINYA IDENTIK lalu digeser 0 -> -50%,
-                 sama persis dengan marquee-brand.blade.php. --}}
-            <div class="kie-dok1__rail" style="--kie-dok1-speed: {{ $dok1Speed }}s;" aria-hidden="true">
-                <div class="kie-dok1__track">
-                    @foreach ([1, 2] as $grup)
-                        <div class="kie-dok1__group">
-                            @foreach ($dok1Media as $media)
-                                <figure class="kie-dok1__card">
-                                    @if ($media['tipe'] === 'video')
-                                        {{-- MUTE PERMANEN. --}}
-                                        <video
-                                            src="{{ $media['src'] }}"
-                                            autoplay muted loop playsinline preload="metadata"
-                                            x-data x-init="$el.muted = true; $el.volume = 0; $el.addEventListener('volumechange', () => { $el.muted = true; $el.volume = 0; })"
-                                        ></video>
-                                        <span class="kie-dok1__badge"><i class="fa-solid fa-play"></i></span>
-                                    @else
-                                        <img src="{{ $media['src'] }}" alt="{{ $media['keterangan'] ?: 'Dokumentasi' }}" loading="lazy">
-                                    @endif
-
-                                    @if ($media['keterangan'] !== '')
-                                        <figcaption class="kie-dok1__cap">{{ $media['keterangan'] }}</figcaption>
-                                    @endif
-                                </figure>
-                            @endforeach
+            <div
+                x-data="{
+                    open: false,
+                    activeSrc: '',
+                    activeTitle: '',
+                    activeNumber: '',
+                    show(src, title, number) {
+                        this.activeSrc = src;
+                        this.activeTitle = title;
+                        this.activeNumber = number;
+                        this.open = true;
+                        document.body.classList.add('overflow-hidden');
+                    },
+                    close() {
+                        this.open = false;
+                        this.activeSrc = '';
+                        this.activeTitle = '';
+                        this.activeNumber = '';
+                        document.body.classList.remove('overflow-hidden');
+                    }
+                }"
+                x-on:keydown.escape.window="close()"
+                class="relative mx-auto max-w-7xl px-6 sm:px-8 lg:px-10"
+            >
+                <div class="flex flex-col gap-8 lg:flex-row lg:items-end lg:justify-between">
+                    <div class="max-w-2xl">
+                        <div class="mb-4 flex items-center gap-3">
+                            <span class="h-px w-10 bg-[#B68A5B]"></span>
+                            <p class="text-[11px] font-semibold uppercase tracking-[0.42em] text-[#B07A43] sm:text-xs">
+                                {{ $dokVideoSection['subjudul'] }}
+                            </p>
                         </div>
+
+                        <h2 class="font-display text-4xl font-semibold leading-none text-[#3D2B1F] sm:text-5xl lg:text-[4rem]">
+                            {{ $dokVideoSection['judul'] }}
+                        </h2>
+
+                        <p class="mt-6 max-w-2xl text-base leading-9 text-[#6E6357] sm:text-lg">
+                            {{ $dokVideoSection['deskripsi'] }}
+                        </p>
+                    </div>
+
+                    <div class="flex flex-wrap gap-3 lg:justify-end">
+                        <div class="inline-flex items-center gap-3 rounded-full border border-[#D7C4AD] bg-white/85 px-5 py-3 shadow-[0_14px_40px_-32px_rgba(61,43,31,0.45)] backdrop-blur">
+                            <span class="flex h-10 w-10 items-center justify-center rounded-full bg-[#4B2F1F] text-white">
+                                <i class="fa-solid fa-film text-sm"></i>
+                            </span>
+                            <div>
+                                <p class="text-[10px] font-semibold uppercase tracking-[0.28em] text-[#9F8B74]">Koleksi</p>
+                                <p class="text-lg font-semibold text-[#3D2B1F]">{{ $dokVideoCount }} Video</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-10 h-px w-full bg-linear-to-r from-[#DCCEBB] via-[#CDB89D] to-transparent"></div>
+
+                <div class="mt-9 grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-4">
+                    @foreach ($dokVideoItems as $i => $video)
+                        @php
+                            $nomorVideo = str_pad($i + 1, 2, '0', STR_PAD_LEFT);
+                            $judulVideo = $video['keterangan'] ?: 'Video Dokumentasi '.$nomorVideo;
+                        @endphp
+
+                        <button
+                            type="button"
+                            x-on:click="show(@js($video['src']), @js($judulVideo), @js($nomorVideo))"
+                            class="group relative overflow-hidden rounded-4xl border border-[#4E3324]/18 bg-[#EADCCB] text-left shadow-[0_26px_70px_-48px_rgba(61,43,31,0.62)] transition duration-300 hover:-translate-y-1.5 hover:shadow-[0_30px_80px_-42px_rgba(61,43,31,0.72)] focus:outline-none focus:ring-2 focus:ring-[#9B6E3E]/30"
+                        >
+                            <div class="relative aspect-video overflow-hidden bg-[#D8C0A6]">
+                                <video
+                                    src="{{ $video['src'] }}"
+                                    class="absolute inset-0 h-full w-full object-cover transition duration-500 group-hover:scale-[1.04]"
+                                    autoplay muted loop playsinline preload="metadata"
+                                    x-data x-init="$el.muted = true; $el.volume = 0; $el.addEventListener('volumechange', () => { $el.muted = true; $el.volume = 0; })"
+                                ></video>
+
+                                <div class="absolute inset-0 bg-linear-to-t from-[#160E09]/90 via-[#160E09]/25 to-[#160E09]/10"></div>
+                                <div class="absolute inset-0 bg-linear-to-br from-[#6D4426]/24 via-transparent to-[#0F0906]/16"></div>
+
+                                <div class="absolute left-4 right-4 top-4 flex items-start justify-between gap-3">
+                                    <span class="inline-flex min-w-12 items-center justify-center rounded-full border border-white/20 bg-black/28 px-3 py-2 text-xs font-semibold tracking-[0.16em] text-white backdrop-blur">
+                                        {{ $nomorVideo }}
+                                    </span>
+
+                                    <span class="inline-flex items-center gap-2 rounded-full border border-white/16 bg-black/28 px-3 py-2 text-[11px] font-semibold uppercase tracking-[0.2em] text-white backdrop-blur">
+                                        <span class="h-1.5 w-1.5 rounded-full bg-[#E8BE84]"></span>
+                                        Video
+                                    </span>
+                                </div>
+
+                                <div class="absolute inset-0 flex items-center justify-center">
+                                    <span class="flex h-14 w-14 items-center justify-center rounded-full border border-white/28 bg-white/12 text-white shadow-lg backdrop-blur-md transition duration-300 group-hover:scale-110 group-hover:bg-white/20">
+                                        <i class="fa-solid fa-play text-sm"></i>
+                                    </span>
+                                </div>
+
+                                <div class="absolute inset-x-0 bottom-0 p-5 sm:p-6">
+                                    <p class="text-[11px] font-semibold uppercase tracking-[0.34em] text-[#E7C89A]">
+                                        Dokumentasi Karya
+                                    </p>
+                                    <h3 class="mt-2 line-clamp-2 text-xl font-semibold leading-snug text-white">
+                                        {{ $judulVideo }}
+                                    </h3>
+                                </div>
+                            </div>
+                        </button>
                     @endforeach
                 </div>
-            </div>
 
-            {{-- KANAN: teks --}}
-            <div class="kie-dok1__text">
-                <p class="kie-dok1__eyebrow">{{ $dok1['subjudul'] }}</p>
-                <h2 class="kie-dok1__judul">{{ $dok1['judul'] }}</h2>
-                <p class="kie-dok1__desc">{{ $dok1['deskripsi'] }}</p>
-            </div>
-        </div>
-    </section>
+                <div class="mt-8 flex items-center justify-center gap-4 text-center text-sm text-[#9A7E61]">
+                    <span class="hidden h-px w-14 bg-[#D9C9B4] sm:block"></span>
+                    <p>Klik video untuk melihat dalam ukuran lebih besar</p>
+                    <span class="hidden h-px w-14 bg-[#D9C9B4] sm:block"></span>
+                </div>
 
-    <style>
-        .kie-dok1 {
-            position: relative;
-            overflow: hidden;
-            background: #F9F7F2;
-            padding: 3.5rem 0;
-        }
-
-        .kie-dok1__inner {
-            margin: 0 auto;
-            display: grid;
-            max-width: 80rem;
-            gap: 2.5rem;
-            align-items: center;
-            padding: 0 1.5rem;
-        }
-
-        @media (min-width: 1024px) {
-            .kie-dok1 { padding: 5.5rem 0; }
-            .kie-dok1__inner {
-                grid-template-columns: 1.05fr 0.95fr;
-                gap: 3.5rem;
-                padding: 0 2.5rem;
-            }
-        }
-
-        .kie-dok1__rail {
-            position: relative;
-            overflow: hidden;
-            padding: 0.5rem 0;
-            -webkit-mask-image: linear-gradient(to right, transparent 0%, black 9%, black 91%, transparent 100%);
-            mask-image: linear-gradient(to right, transparent 0%, black 9%, black 91%, transparent 100%);
-        }
-
-        .kie-dok1__track {
-            display: flex;
-            width: max-content;
-            gap: 1rem;
-            animation: kie-dok1-scroll var(--kie-dok1-speed, 45s) linear infinite;
-            will-change: transform;
-        }
-
-        .kie-dok1__group {
-            display: flex;
-            flex-shrink: 0;
-            gap: 1rem;
-        }
-
-        .kie-dok1__card {
-            position: relative;
-            margin: 0;
-            flex: none;
-            width: clamp(148px, 19vw, 212px);
-            aspect-ratio: 3 / 4;
-            overflow: hidden;
-            border-radius: 1rem;
-            background: #EFE7D8;
-            box-shadow: 0 18px 35px -18px rgba(42, 27, 18, 0.55);
-        }
-
-        .kie-dok1__card img,
-        .kie-dok1__card video {
-            display: block;
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-
-        .kie-dok1__badge {
-            position: absolute;
-            top: 0.6rem;
-            right: 0.6rem;
-            display: flex;
-            height: 1.75rem;
-            width: 1.75rem;
-            align-items: center;
-            justify-content: center;
-            border-radius: 9999px;
-            background: rgba(0, 0, 0, 0.45);
-            color: #fff;
-            font-size: 0.6rem;
-            backdrop-filter: blur(4px);
-        }
-
-        .kie-dok1__cap {
-            position: absolute;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            padding: 1.5rem 0.75rem 0.6rem;
-            font-size: 0.7rem;
-            line-height: 1.3;
-            color: #fff;
-            background: linear-gradient(to top, rgba(20, 13, 9, 0.8), transparent);
-        }
-
-        .kie-dok1__eyebrow {
-            font-size: 0.7rem;
-            font-weight: 600;
-            letter-spacing: 0.3em;
-            text-transform: uppercase;
-            color: #9B6E3E;
-        }
-
-        .kie-dok1__judul {
-            margin-top: 0.75rem;
-            font-family: var(--font-display, Georgia, serif);
-            font-size: clamp(1.75rem, 3vw, 2.5rem);
-            font-weight: 600;
-            line-height: 1.15;
-            color: #3D2B1F;
-        }
-
-        .kie-dok1__desc {
-            margin-top: 1.2rem;
-            max-width: 32rem;
-            font-size: 0.9rem;
-            line-height: 1.75;
-            color: #6B6E76;
-        }
-
-        @keyframes kie-dok1-scroll {
-            from { transform: translateX(0); }
-            to   { transform: translateX(calc(-50% - 0.5rem)); }
-        }
-
-        @media (prefers-reduced-motion: reduce) {
-            .kie-dok1__track { animation: none; }
-        }
-    </style>
-
-    {{-- =========================================================
-         DOKUMENTASI 2 — Video Wall Mosaic (klik ubin untuk zoom)
-         ========================================================= --}}
-    <section
-        class="kie-dok2"
-        id="dokumentasi-2"
-        x-data="{
-            buka: false,
-            aktif: null,
-            tampilkan(item) { this.aktif = item; this.buka = true; document.body.style.overflow = 'hidden'; },
-            tutup() { this.buka = false; this.aktif = null; document.body.style.overflow = ''; }
-        }"
-        x-on:keydown.escape.window="tutup()"
-    >
-        <div class="kie-dok2__head">
-            <p class="kie-dok2__eyebrow">{{ $dok2['subjudul'] }}</p>
-            <h2 class="kie-dok2__judul">{{ $dok2['judul'] }}</h2>
-            <p class="kie-dok2__desc">{{ $dok2['deskripsi'] }}</p>
-        </div>
-
-        <div class="kie-dok2__grid">
-            @foreach ($dok2Media as $i => $media)
-                <button
-                    type="button"
-                    class="kie-dok2__tile kie-dok2__tile--{{ ($i % 7) + 1 }}"
-                    x-on:click="tampilkan(@js($media))"
-                    aria-label="Perbesar {{ $media['keterangan'] ?: 'dokumentasi '.($i + 1) }}"
+                <div
+                    x-show="open"
+                    x-transition.opacity
+                    x-cloak
+                    class="fixed inset-0 z-100 flex items-center justify-center bg-[#120C08]/78 px-4 py-6 backdrop-blur-sm"
                 >
-                    @if ($media['tipe'] === 'video')
-                        {{-- MUTE PERMANEN. --}}
-                        <video
-                            src="{{ $media['src'] }}"
-                            autoplay muted loop playsinline preload="metadata"
-                            x-data x-init="$el.muted = true; $el.volume = 0; $el.addEventListener('volumechange', () => { $el.muted = true; $el.volume = 0; })"
-                        ></video>
-                        <span class="kie-dok2__badge"><i class="fa-solid fa-play"></i></span>
-                    @else
-                        <img src="{{ $media['src'] }}" alt="{{ $media['keterangan'] ?: 'Dokumentasi' }}" loading="lazy">
-                    @endif
+                    <div class="absolute inset-0" x-on:click="close()"></div>
 
-                    <span class="kie-dok2__veil">
-                        <span class="kie-dok2__cap">{{ $media['keterangan'] ?: 'Lihat lebih besar' }}</span>
-                        <span class="kie-dok2__zoom"><i class="fa-solid fa-up-right-and-down-left-from-center"></i></span>
-                    </span>
-                </button>
-            @endforeach
-        </div>
-
-        {{-- Lightbox / zoom --}}
-        <div class="kie-dok2__lightbox" x-show="buka" x-cloak x-transition.opacity x-on:click.self="tutup()">
-            <button type="button" class="kie-dok2__close" x-on:click="tutup()" aria-label="Tutup">
-                <i class="fa-solid fa-xmark"></i>
-            </button>
-
-            <template x-if="aktif && aktif.tipe === 'video'">
-                <div class="kie-dok2__stageItem">
-                    <video
-                        :src="aktif.src"
-                        autoplay muted loop playsinline
-                        x-init="$el.muted = true; $el.volume = 0; $el.addEventListener('volumechange', () => { $el.muted = true; $el.volume = 0; })"
-                    ></video>
-                    <p class="kie-dok2__lightcap" x-text="aktif.keterangan"></p>
-                </div>
-            </template>
-
-            <template x-if="aktif && aktif.tipe !== 'video'">
-                <div class="kie-dok2__stageItem">
-                    <img :src="aktif.src" :alt="aktif.keterangan || 'Dokumentasi'">
-                    <p class="kie-dok2__lightcap" x-text="aktif.keterangan"></p>
-                </div>
-            </template>
-        </div>
-    </section>
-
-    <style>
-        [x-cloak] { display: none !important; }
-
-        .kie-dok2 {
-            position: relative;
-            background: #1C1512;
-            color: #F3EBE1;
-            padding: 4rem 0;
-        }
-
-        @media (min-width: 1024px) {
-            .kie-dok2 { padding: 6rem 0; }
-        }
-
-        .kie-dok2__head {
-            margin: 0 auto 2.75rem;
-            max-width: 46rem;
-            padding: 0 1.5rem;
-            text-align: center;
-        }
-
-        .kie-dok2__eyebrow {
-            font-size: 0.7rem;
-            font-weight: 600;
-            letter-spacing: 0.3em;
-            text-transform: uppercase;
-            color: #C9A566;
-        }
-
-        .kie-dok2__judul {
-            margin-top: 0.75rem;
-            font-family: var(--font-display, Georgia, serif);
-            font-size: clamp(1.75rem, 3vw, 2.5rem);
-            font-weight: 600;
-            color: #F7F1E7;
-        }
-
-        .kie-dok2__desc {
-            margin: 1rem auto 0;
-            max-width: 36rem;
-            font-size: 0.875rem;
-            line-height: 1.75;
-            color: rgba(243, 235, 225, 0.65);
-        }
-
-        .kie-dok2__grid {
-            margin: 0 auto;
-            display: grid;
-            max-width: 82rem;
-            grid-template-columns: repeat(2, minmax(0, 1fr));
-            grid-auto-rows: 118px;
-            gap: 0.6rem;
-            padding: 0 1.5rem;
-        }
-
-        @media (min-width: 640px) {
-            .kie-dok2__grid {
-                grid-template-columns: repeat(4, minmax(0, 1fr));
-                grid-auto-rows: 150px;
-                gap: 0.8rem;
-            }
-        }
-
-        @media (min-width: 1024px) {
-            .kie-dok2__grid {
-                grid-template-columns: repeat(6, minmax(0, 1fr));
-                grid-auto-rows: 168px;
-                gap: 1rem;
-                padding: 0 2.5rem;
-            }
-        }
-
-        .kie-dok2__tile {
-            position: relative;
-            display: block;
-            height: 100%;
-            width: 100%;
-            overflow: hidden;
-            padding: 0;
-            border: 1px solid rgba(201, 165, 102, 0.18);
-            border-radius: 0.9rem;
-            background: #120D0B;
-            cursor: zoom-in;
-        }
-
-        .kie-dok2__tile img,
-        .kie-dok2__tile video {
-            display: block;
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            transition: transform 0.7s cubic-bezier(0.22, 1, 0.36, 1);
-        }
-
-        .kie-dok2__tile:hover img,
-        .kie-dok2__tile:hover video { transform: scale(1.07); }
-
-        /* Ubin pertama & keempat dibuat besar supaya mosaiknya tidak monoton. */
-        .kie-dok2__tile--1 { grid-column: span 2; grid-row: span 2; }
-        .kie-dok2__tile--4 { grid-column: span 2; grid-row: span 2; }
-
-        @media (min-width: 1024px) {
-            .kie-dok2__tile--1 { grid-column: span 3; grid-row: span 2; }
-            .kie-dok2__tile--2 { grid-column: span 3; grid-row: span 1; }
-            .kie-dok2__tile--3 { grid-column: span 3; grid-row: span 1; }
-            .kie-dok2__tile--4 { grid-column: span 2; grid-row: span 2; }
-            .kie-dok2__tile--5 { grid-column: span 2; grid-row: span 1; }
-            .kie-dok2__tile--6 { grid-column: span 2; grid-row: span 1; }
-            .kie-dok2__tile--7 { grid-column: span 4; grid-row: span 1; }
-        }
-
-        .kie-dok2__badge {
-            position: absolute;
-            top: 0.6rem;
-            right: 0.6rem;
-            display: flex;
-            height: 1.75rem;
-            width: 1.75rem;
-            align-items: center;
-            justify-content: center;
-            border-radius: 9999px;
-            background: rgba(0, 0, 0, 0.45);
-            color: #fff;
-            font-size: 0.6rem;
-            backdrop-filter: blur(4px);
-        }
-
-        .kie-dok2__veil {
-            position: absolute;
-            inset: 0;
-            display: flex;
-            align-items: flex-end;
-            justify-content: space-between;
-            gap: 0.5rem;
-            padding: 0.75rem;
-            background: linear-gradient(to top, rgba(18, 13, 11, 0.85), rgba(18, 13, 11, 0) 55%);
-            opacity: 0;
-            transition: opacity 0.4s ease;
-            text-align: left;
-        }
-
-        .kie-dok2__tile:hover .kie-dok2__veil,
-        .kie-dok2__tile:focus-visible .kie-dok2__veil { opacity: 1; }
-
-        .kie-dok2__cap {
-            font-size: 0.72rem;
-            line-height: 1.35;
-            color: #F7F1E7;
-        }
-
-        .kie-dok2__zoom {
-            flex-shrink: 0;
-            color: #C9A566;
-            font-size: 0.7rem;
-        }
-
-        .kie-dok2__lightbox {
-            position: fixed;
-            inset: 0;
-            z-index: 60;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 1.5rem;
-            background: rgba(12, 8, 6, 0.92);
-            backdrop-filter: blur(6px);
-        }
-
-        .kie-dok2__stageItem {
-            max-width: min(92vw, 68rem);
-            max-height: 86vh;
-            text-align: center;
-        }
-
-        .kie-dok2__stageItem img,
-        .kie-dok2__stageItem video {
-            max-width: min(92vw, 68rem);
-            max-height: 78vh;
-            border-radius: 0.9rem;
-            box-shadow: 0 40px 80px -30px rgba(0, 0, 0, 0.9);
-        }
-
-        .kie-dok2__lightcap {
-            margin-top: 1rem;
-            font-size: 0.8rem;
-            color: rgba(243, 235, 225, 0.75);
-        }
-
-        .kie-dok2__close {
-            position: absolute;
-            top: 1.25rem;
-            right: 1.25rem;
-            display: flex;
-            height: 2.75rem;
-            width: 2.75rem;
-            align-items: center;
-            justify-content: center;
-            border-radius: 9999px;
-            border: 1px solid rgba(201, 165, 102, 0.35);
-            background: rgba(255, 255, 255, 0.06);
-            color: #F7F1E7;
-            transition: background 0.25s ease;
-        }
-
-        .kie-dok2__close:hover { background: rgba(255, 255, 255, 0.16); }
-    </style>
-
-    {{-- =========================================================
-         DOKUMENTASI 3 — 3D Tilt Card Stack
-         ========================================================= --}}
-    <section class="kie-dok3" id="dokumentasi-3">
-        <div class="kie-dok3__head">
-            <p class="kie-dok3__eyebrow">{{ $dok3['subjudul'] }}</p>
-            <h2 class="kie-dok3__judul">{{ $dok3['judul'] }}</h2>
-            <p class="kie-dok3__desc">{{ $dok3['deskripsi'] }}</p>
-        </div>
-
-        {{-- Kartu "mengipas" begitu section masuk layar (IntersectionObserver),
-             lalu ikut miring halus mengikuti posisi kursor di atas panggung. --}}
-        <div
-            class="kie-dok3__stage"
-            x-data="{
-                masuk: false,
-                ry: 0,
-                rx: 0,
-                init() {
-                    new IntersectionObserver((e) => { if (e[0].isIntersecting) { this.masuk = true; } }, { threshold: 0.25 }).observe(this.$el);
-                },
-                gerak(ev) {
-                    const r = this.$el.getBoundingClientRect();
-                    this.ry = (((ev.clientX - r.left) / r.width) - 0.5) * 10;
-                    this.rx = (0.5 - ((ev.clientY - r.top) / r.height)) * 6;
-                },
-                reset() { this.ry = 0; this.rx = 0; }
-            }"
-            x-on:mousemove="gerak($event)"
-            x-on:mouseleave="reset()"
-        >
-            <div class="kie-dok3__deck" :style="`transform: rotateX(${rx}deg) rotateY(${ry}deg)`">
-                @foreach ($dok3Media as $i => $media)
-                    @php
-                        $dok3Total = max(count($dok3Media) - 1, 1);
-                        // Sudut & ketinggian kartu dihitung simetris dari tengah tumpukan.
-                        $dok3Posisi = $i - ($dok3Total / 2);
-                        $dok3Putar = round($dok3Posisi * -9, 2);
-                        $dok3Naik = round(abs($dok3Posisi) * 14, 2);
-                    @endphp
-                    <figure
-                        class="kie-dok3__card"
-                        style="--kie-dok3-rot: {{ $dok3Putar }}deg; --kie-dok3-lift: {{ $dok3Naik }}px; --kie-dok3-delay: {{ $i * 90 }}ms; z-index: {{ 20 - $i }};"
-                        :class="masuk ? 'is-masuk' : ''"
+                    <div
+                        x-show="open"
+                        x-transition:enter="transition ease-out duration-300"
+                        x-transition:enter-start="opacity-0 translate-y-6 scale-[0.98]"
+                        x-transition:enter-end="opacity-100 translate-y-0 scale-100"
+                        x-transition:leave="transition ease-in duration-200"
+                        x-transition:leave-start="opacity-100 translate-y-0 scale-100"
+                        x-transition:leave-end="opacity-0 translate-y-4 scale-[0.98]"
+                        class="relative z-10 w-full max-w-5xl overflow-hidden rounded-4xl border border-white/12 bg-[#17100D] shadow-[0_30px_100px_-36px_rgba(0,0,0,0.7)]"
                     >
-                        @if ($media['tipe'] === 'video')
-                            {{-- MUTE PERMANEN. --}}
-                            <video
-                                src="{{ $media['src'] }}"
-                                autoplay muted loop playsinline preload="metadata"
-                                x-data x-init="$el.muted = true; $el.volume = 0; $el.addEventListener('volumechange', () => { $el.muted = true; $el.volume = 0; })"
-                            ></video>
-                            <span class="kie-dok3__badge"><i class="fa-solid fa-play"></i></span>
-                        @else
-                            <img src="{{ $media['src'] }}" alt="{{ $media['keterangan'] ?: 'Dokumentasi' }}" loading="lazy">
-                        @endif
+                        <div class="flex items-center justify-between gap-4 border-b border-white/10 px-5 py-4 sm:px-6">
+                            <div class="min-w-0">
+                                <p class="text-[11px] font-semibold uppercase tracking-[0.3em] text-[#D4B083]" x-text="'Video ' + activeNumber"></p>
+                                <h3 class="mt-1 truncate text-lg font-semibold text-white sm:text-xl" x-text="activeTitle"></h3>
+                            </div>
 
-                        <figcaption class="kie-dok3__cap">
-                            <span class="kie-dok3__num">{{ str_pad($i + 1, 2, '0', STR_PAD_LEFT) }}</span>
-                            <span>{{ $media['keterangan'] ?: 'Karya Ide Edi' }}</span>
-                        </figcaption>
-                    </figure>
-                @endforeach
+                            <button
+                                type="button"
+                                x-on:click="close()"
+                                class="inline-flex h-11 w-11 items-center justify-center rounded-full border border-white/12 bg-white/6 text-white transition hover:bg-white/12"
+                            >
+                                <i class="fa-solid fa-xmark text-lg"></i>
+                            </button>
+                        </div>
+
+                        <div class="bg-black p-3 sm:p-4">
+                            <div class="overflow-hidden rounded-3xl bg-black">
+                                <video
+                                    x-bind:src="activeSrc"
+                                    class="aspect-video w-full bg-black"
+                                    controls autoplay playsinline
+                                ></video>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
-        </div>
-    </section>
+        </section>
+    @endif
 
-    <style>
-        .kie-dok3 {
-            position: relative;
-            overflow: hidden;
-            background: #F7F4EF;
-            padding: 4rem 0 5rem;
+    @php
+        // GALERI FOTO PREMIUM â€” data baru section_key 'dokumentasi-foto'.
+        // Fallback ke galeri lama hanya untuk menjaga foto existing sebelum
+        // admin pertama kali menekan Simpan di tab Galeri Foto yang baru.
+        $dokFotoSection = \App\Models\HomeSection::dataFor('dokumentasi-foto', [
+            'judul' => 'Momen Karya dalam Bingkai',
+            'subjudul' => 'Galeri Foto',
+            'deskripsi' => 'Dokumentasi visual yang menampilkan proses, detail pengerjaan, hingga hasil akhir furnitur secara lebih dekat, bersih, dan profesional.',
+            'items' => [],
+        ]);
+        $dokPhotoBentukItem = function (array $item) {
+            $src = isset($item['path']) && $item['path'] ? \Illuminate\Support\Facades\Storage::disk('public')->url($item['path']) : ($item['url'] ?? null);
+            if (! $src || ($item['tipe'] ?? null) !== 'foto') return null;
+            return ['src' => $src, 'keterangan' => trim((string) ($item['keterangan'] ?? ''))];
+        };
+        $dokPhotoItems = array_values(array_filter(array_map($dokPhotoBentukItem, is_array($dokFotoSection['items'] ?? null) ? $dokFotoSection['items'] : [])));
+        if ($dokPhotoItems === []) {
+            $dokPhotoItems = array_values(array_filter(array_map($dokPhotoBentukItem, is_array($dokumentasiHero['galeri'] ?? null) ? $dokumentasiHero['galeri'] : [])));
         }
+        $dokPhotoCount = count($dokPhotoItems);
+    @endphp
 
-        @media (min-width: 1024px) {
-            .kie-dok3 { padding: 6rem 0 7rem; }
-        }
+    @if ($dokPhotoCount > 0)
+        <section class="relative overflow-hidden border-t border-[#E7DCCF] bg-white py-18 sm:py-20 lg:py-24">
+            <div class="pointer-events-none absolute inset-x-0 top-0 h-20 bg-linear-to-b from-[#F6EFE6]/85 to-transparent"></div>
+            <div x-data="{open:false,activeSrc:'',activeTitle:'',activeNumber:'',show(src,title,n){this.activeSrc=src;this.activeTitle=title;this.activeNumber=n;this.open=true;document.body.classList.add('overflow-hidden')},close(){this.open=false;document.body.classList.remove('overflow-hidden')}}" x-on:keydown.escape.window="close()" class="relative mx-auto max-w-7xl px-6 sm:px-8 lg:px-10">
+                <div class="grid gap-8 lg:grid-cols-[minmax(0,1.05fr)_21rem] lg:items-end">
+                    <div><div class="mb-4 flex items-center gap-3"><span class="h-px w-10 bg-[#C39058]"></span><p class="text-[11px] font-semibold uppercase tracking-[0.42em] text-[#BC8651] sm:text-xs">{{ $dokFotoSection['subjudul'] }}</p></div><h2 class="font-display text-4xl font-semibold leading-none text-[#3D2B1F] sm:text-5xl lg:text-[3.8rem]">{{ $dokFotoSection['judul'] }}</h2><p class="mt-6 max-w-2xl text-base leading-9 text-[#6E6357] sm:text-lg">{{ $dokFotoSection['deskripsi'] }}</p></div>
+                    <div class="rounded-4xl border border-[#E2D2BF] bg-[#FCFAF7] p-5 shadow-[0_18px_50px_-38px_rgba(61,43,31,0.35)]"><div class="flex items-center gap-4"><span class="flex h-12 w-12 items-center justify-center rounded-full bg-[#4B2F1F] text-white"><i class="fa-solid fa-camera-retro"></i></span><div><p class="text-[10px] font-semibold uppercase tracking-[0.28em] text-[#AA8E71]">Portofolio</p><p class="text-lg font-semibold text-[#3D2B1F]">{{ $dokPhotoCount }} Foto Pilihan</p></div></div><div class="mt-4 h-px bg-linear-to-r from-[#E1D2BF] to-transparent"></div><p class="mt-4 text-sm leading-7 text-[#7A6B5E]">Disusun seperti editorial gallery agar dokumentasi terasa estetik, mewah, dan profesional.</p></div>
+                </div>
+                <div class="mt-10 grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-4" style="grid-auto-rows:220px;">
+                    @foreach ($dokPhotoItems as $i => $photo)
+                        @php
+                            $n = str_pad($i + 1, 2, '0', STR_PAD_LEFT); $title = $photo['keterangan'] ?: 'Foto Dokumentasi '.$n; $sisa = $dokPhotoCount % 4;
+                            $isLast = $i === $dokPhotoCount - 1;
+                            $layout = match ($i % 6) {0 => 'md:col-span-2 md:row-span-2',1 => 'xl:row-span-2',2 => '',3 => '',4 => 'md:col-span-2',default => ''};
+                            if ($isLast && $sisa === 1) $layout = 'md:col-span-2 xl:col-span-4 md:row-span-2';
+                        @endphp
+                        <button type="button" x-on:click="show(@js($photo['src']),@js($title),@js($n))" class="group relative {{ $layout }} overflow-hidden rounded-4xl border border-[#E7DACB] bg-[#F3E6D5] text-left shadow-[0_22px_60px_-40px_rgba(61,43,31,0.4)] transition duration-300 hover:-translate-y-1">
+                            <img src="{{ $photo['src'] }}" alt="{{ $title }}" class="absolute inset-0 h-full w-full object-cover transition duration-700 group-hover:scale-[1.05]" loading="lazy"><div class="absolute inset-0 bg-linear-to-t from-[#140D08]/88 via-[#140D08]/22 to-transparent"></div>
+                            <div class="absolute left-4 right-4 top-4 flex justify-between"><span class="rounded-full border border-white/18 bg-black/24 px-3 py-2 text-xs font-semibold text-white backdrop-blur">{{ $n }}</span><span class="rounded-full border border-white/15 bg-white/10 px-3 py-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-white backdrop-blur"><i class="fa-solid fa-image mr-1"></i> Foto</span></div>
+                            <div class="absolute inset-x-0 bottom-0 p-5 sm:p-6"><p class="text-[11px] font-semibold uppercase tracking-[0.34em] text-[#E8C692]">Dokumentasi Visual</p><h3 class="mt-2 line-clamp-2 text-xl font-semibold text-white">{{ $title }}</h3></div>
+                        </button>
+                    @endforeach
+                </div>
+                <div class="mt-8 flex items-center justify-center gap-4 text-sm text-[#9A7E61]"><span class="hidden h-px w-14 bg-[#D9C9B4] sm:block"></span><p>Klik foto untuk melihat dalam ukuran lebih besar</p><span class="hidden h-px w-14 bg-[#D9C9B4] sm:block"></span></div>
+                <div x-show="open" x-transition.opacity x-cloak class="fixed inset-0 z-100 flex items-center justify-center bg-[#120C08]/80 px-4 py-6 backdrop-blur-sm"><div class="absolute inset-0" x-on:click="close()"></div><div class="relative z-10 w-full max-w-6xl overflow-hidden rounded-4xl bg-[#17110E]"><div class="flex items-center justify-between border-b border-white/10 px-6 py-4"><div><p class="text-[11px] uppercase tracking-[0.3em] text-[#D4B083]" x-text="'Foto '+activeNumber"></p><h3 class="mt-1 text-xl font-semibold text-white" x-text="activeTitle"></h3></div><button type="button" x-on:click="close()" class="h-11 w-11 rounded-full border border-white/12 text-white"><i class="fa-solid fa-xmark"></i></button></div><div class="bg-[#120C08] p-4"><img x-bind:src="activeSrc" x-bind:alt="activeTitle" class="max-h-[78vh] w-full rounded-3xl object-contain"></div></div></div>
+            </div>
+        </section>
+    @endif
 
-        .kie-dok3__head {
-            margin: 0 auto 1rem;
-            max-width: 46rem;
-            padding: 0 1.5rem;
-            text-align: center;
-        }
-
-        .kie-dok3__eyebrow {
-            font-size: 0.7rem;
-            font-weight: 600;
-            letter-spacing: 0.3em;
-            text-transform: uppercase;
-            color: #9B6E3E;
-        }
-
-        .kie-dok3__judul {
-            margin-top: 0.75rem;
-            font-family: var(--font-display, Georgia, serif);
-            font-size: clamp(1.75rem, 3vw, 2.5rem);
-            font-weight: 600;
-            color: #3D2B1F;
-        }
-
-        .kie-dok3__desc {
-            margin: 1rem auto 0;
-            max-width: 36rem;
-            font-size: 0.875rem;
-            line-height: 1.75;
-            color: #6B6E76;
-        }
-
-        .kie-dok3__stage {
-            perspective: 1400px;
-            padding: 3.5rem 1rem 1rem;
-            overflow-x: auto;
-            scrollbar-width: none;
-        }
-
-        .kie-dok3__stage::-webkit-scrollbar { display: none; }
-
-        .kie-dok3__deck {
-            display: flex;
-            justify-content: center;
-            align-items: flex-end;
-            width: max-content;
-            min-width: 100%;
-            padding: 0 1.5rem 2rem;
-            transform-style: preserve-3d;
-            transition: transform 0.5s ease-out;
-        }
-
-        .kie-dok3__card {
-            position: relative;
-            margin: 0 0 0 -2.75rem;
-            width: clamp(158px, 19vw, 248px);
-            aspect-ratio: 3 / 4;
-            flex-shrink: 0;
-            overflow: hidden;
-            border: 7px solid #fff;
-            border-radius: 1.1rem;
-            background: #EFE7D8;
-            box-shadow: 0 28px 55px -22px rgba(42, 27, 18, 0.65);
-            transform-style: preserve-3d;
-
-            /* Posisi awal: tumpukan rata & rebah, sebelum masuk layar. */
-            opacity: 0;
-            transform: translateY(2.5rem) rotate(0deg) rotateY(0deg);
-            transition:
-                transform 0.85s cubic-bezier(0.22, 1, 0.36, 1) var(--kie-dok3-delay, 0ms),
-                opacity 0.7s ease var(--kie-dok3-delay, 0ms),
-                box-shadow 0.45s ease;
-        }
-
-        .kie-dok3__card:first-child { margin-left: 0; }
-
-        /* Posisi akhir: mengipas miring 3D. */
-        .kie-dok3__card.is-masuk {
-            opacity: 1;
-            transform:
-                translateY(calc(var(--kie-dok3-lift, 0px) * -1))
-                rotate(var(--kie-dok3-rot, 0deg))
-                rotateY(calc(var(--kie-dok3-rot, 0deg) * -0.9));
-        }
-
-        /* Disentuh kursor: menegak, maju ke depan, dan naik. */
-        .kie-dok3__deck:hover .kie-dok3__card.is-masuk { filter: saturate(0.85) brightness(0.95); }
-
-        .kie-dok3__card.is-masuk:hover {
-            z-index: 30 !important;
-            filter: none;
-            transform: translateY(-2.75rem) rotate(0deg) rotateY(0deg) translateZ(90px) scale(1.04);
-            box-shadow: 0 45px 80px -25px rgba(42, 27, 18, 0.7);
-            transition-delay: 0ms;
-        }
-
-        .kie-dok3__card img,
-        .kie-dok3__card video {
-            display: block;
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-
-        .kie-dok3__badge {
-            position: absolute;
-            top: 0.6rem;
-            right: 0.6rem;
-            display: flex;
-            height: 1.75rem;
-            width: 1.75rem;
-            align-items: center;
-            justify-content: center;
-            border-radius: 9999px;
-            background: rgba(0, 0, 0, 0.45);
-            color: #fff;
-            font-size: 0.6rem;
-            backdrop-filter: blur(4px);
-        }
-
-        .kie-dok3__cap {
-            position: absolute;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            display: flex;
-            align-items: baseline;
-            gap: 0.5rem;
-            padding: 2rem 0.8rem 0.75rem;
-            font-size: 0.72rem;
-            line-height: 1.35;
-            color: #fff;
-            background: linear-gradient(to top, rgba(20, 13, 9, 0.85), transparent);
-        }
-
-        .kie-dok3__num {
-            font-family: var(--font-display, Georgia, serif);
-            font-size: 1.05rem;
-            font-weight: 600;
-            color: #C9A566;
-        }
-
-        @media (prefers-reduced-motion: reduce) {
-            .kie-dok3__card,
-            .kie-dok3__deck { transition: none; }
-        }
-    </style>
-
-    @include('partials.frontend.footer')
+@include('partials.frontend.footer')
 </body>
 </html>
+
+
+
+
+
+
+
+

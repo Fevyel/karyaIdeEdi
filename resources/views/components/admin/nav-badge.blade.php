@@ -52,7 +52,7 @@ new class extends Component
             'interaksi' => $user->unreadInteraksiCount(),
             'pesanan' => $user->unreadPesananCount(),
             'dashboard' => $user->unreadDashboardCount(),
-            default => 0,
+default => 0,
         };
     }
 

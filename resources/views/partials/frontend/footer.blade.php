@@ -31,8 +31,6 @@
        Craftsmen" -> /pengrajin-kami (konten & foto masih DUMMY, lihat
        catatan di view-nya), "Sustainability" -> /keberlanjutan
        (halaman generik soal kualitas/custom furniture), "Careers" ->
-       /karier (belum ada lowongan, arahkan ke WhatsApp),
-       "Shipping & Returns" -> Profil#pengiriman (section baru,
        ditaruh persis di bawah section Garansi — bukan halaman
        terpisah), "Warranty" -> Profil#garansi (section Garansi,
        isinya klaim yang sama dengan homepage: Garansi Retur 30 Hari).
@@ -71,12 +69,10 @@
         ['label' => 'About Us', 'href' => route('profile.index')],
         ['label' => 'Our Craftsmen', 'href' => route('craftsmen.index')],
         ['label' => 'Sustainability', 'href' => route('sustainability.index')],
-        ['label' => 'Careers', 'href' => route('careers.index')],
     ];
 
     $footerSupport = [
         ['label' => 'Order Status', 'href' => route('tracking.index')],
-        ['label' => 'Shipping & Returns', 'href' => route('profile.index').'#pengiriman'],
         ['label' => 'Track Your Order', 'href' => route('tracking.index')],
         ['label' => 'Warranty', 'href' => route('profile.index').'#garansi'],
         ['label' => 'Contact Us', 'href' => $footerWaLink ?? '#'],
@@ -199,21 +195,14 @@
             </div>
 
             {{-- Badge metode pembayaran -- generik, mengikuti pola visual referensi --}}
+                                    {{-- Badge metode pembayaran: memakai file logo OFFICIAL yang disimpan lokal --}}
+                        {{-- Badge metode pembayaran -- ukuran + warna dipertahankan seperti versi awal --}}
+                        {{-- Badge metode pembayaran -- ukuran & warna asli, logo resmi --}}
             <div class="flex items-center gap-1.5">
-                <span class="flex h-5 w-8 items-center justify-center overflow-hidden rounded-sm bg-[#4A4A4A]">
-                    <i class="fa-brands fa-cc-visa text-[10px] text-[#1A1A1A]/70"></i>
-                </span>
-                <span class="flex h-5 w-8 items-center justify-center overflow-hidden rounded-sm bg-[#4A4A4A]">
-                    <i class="fa-brands fa-cc-mastercard text-[10px] text-[#1A1A1A]/70"></i>
-</span>
-                <span class="flex h-5 w-8 items-center justify-center overflow-hidden rounded-sm bg-[#4A4A4A]">
-                    <i class="fa-brands fa-apple-pay text-[10px] text-[#1A1A1A]/70"></i>
-                </span>
-                <span class="flex h-5 w-8 items-center justify-center overflow-hidden rounded-sm bg-[#4A4A4A]">
-                    <i class="fa-brands fa-paypal text-[10px] text-[#1A1A1A]/70"></i>
-                </span>
+                <a href="{{ route('payment.transfer', 'bca') }}" class="flex h-5 w-8 items-center justify-center overflow-hidden rounded-sm bg-[#4A4A4A]" aria-label="Pembayaran via BCA" title="Pembayaran via BCA"><img src="{{ asset('images/payment-official/bca.png') }}" alt="BCA" style="display:block;max-width:56px;max-height:23px;width:auto;height:auto;object-fit:contain;"></a>
+                <a href="{{ route('payment.transfer', 'bri') }}" class="flex h-5 w-8 items-center justify-center overflow-hidden rounded-sm bg-[#4A4A4A]" aria-label="Pembayaran via BRI" title="Pembayaran via BRI"><img src="{{ asset('images/payment-official/bri.png') }}" alt="Bank BRI" style="display:block;max-width:27px;max-height:12px;width:auto;height:auto;object-fit:contain;"></a>
+                <a href="{{ route('payment.transfer', 'dana') }}" class="flex h-5 w-8 items-center justify-center overflow-hidden rounded-sm bg-[#4A4A4A]" aria-label="Pembayaran via DANA" title="Pembayaran via DANA"><img src="{{ asset('images/payment-official/dana.svg') }}" alt="DANA" style="display:block;max-width:27px;max-height:12px;width:auto;height:auto;object-fit:contain;"></a>
             </div>
-        </div>
     </div>
 </footer>
 

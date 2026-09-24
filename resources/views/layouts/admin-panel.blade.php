@@ -24,7 +24,7 @@
             Garis aksen emas: SENGAJA ditaruh di sini, sebagai anak langsung
             <body>, BUKAN di dalam <header>. <header> memakai backdrop-blur-xl,
             dan backdrop-filter membuat browser menganggap header sebagai
-            containing block baru â€” akibatnya `fixed inset-x-0` jadi relatif
+            containing block baru Ã¢â‚¬â€ akibatnya `fixed inset-x-0` jadi relatif
             terhadap header (tidak full-width, terpotong di sisi sidebar),
             bukan relatif terhadap viewport. Ditaruh di luar semua ancestor
             ber-filter/transform supaya `fixed` benar-benar relatif ke
@@ -43,7 +43,7 @@
                 {{-- garis aksen emas tipis di tepi kanan sidebar --}}
                 <div class="pointer-events-none absolute inset-y-0 right-0 w-px bg-linear-to-b from-transparent via-admin-gold/30 to-transparent"></div>
 
-                {{-- logo lockup â€” sumber tunggal: partials.logo (Pengaturan > Identitas Website) --}}
+                {{-- logo lockup Ã¢â‚¬â€ sumber tunggal: partials.logo (Pengaturan > Identitas Website) --}}
                 @php $siteSetting = \App\Models\Setting::current(); @endphp
                 <div class="relative flex h-18 shrink-0 items-center gap-3 border-b border-admin-sidebar-border bg-admin-sidebar-ink/3 px-6">
                     @include('partials.logo', [
@@ -92,7 +92,6 @@
                                 $navItem('admin.transactions', 'fa-receipt', 'Pesanan'),
                                 $navItem('admin.transactions.history', 'fa-clock-rotate-left', 'History Pesanan'),
                                 $navItem('admin.customers', 'fa-users', 'Pelanggan'),
-                                $navItem('admin.reports', 'fa-chart-column', 'Laporan'),
                             ];
                         @endphp
 
@@ -132,7 +131,7 @@
                                         <livewire:admin.nav-badge type="dashboard" :active="$item['active']" :key="'nav-badge-dashboard'" />
                                     @elseif ($item['route'] === 'admin.transactions')
                                         <livewire:admin.nav-badge type="pesanan" :active="$item['active']" :key="'nav-badge-pesanan'" />
-                                    @endif
+@endif
                                 </a>
                             </li>
                         @endforeach
@@ -173,7 +172,7 @@
                             </li>
                         @endforeach
 
-                        {{-- Interaksi â€” moderasi komentar/testimoni pembeli --}}
+                        {{-- Interaksi Ã¢â‚¬â€ moderasi komentar/testimoni pembeli --}}
                         <li>
                             <a
                                 href="{{ route('admin.interaksi') }}"
@@ -377,12 +376,12 @@
             BUG FIX: sidebar admin (menu Dashboard/Produk/Kategori/.../Interaksi)
             punya scroll sendiri (overflow-y-auto). Setiap kali pindah halaman
             lewat wire:navigate, seluruh <body> dimuat ulang dari server supaya
-            badge notifikasi selalu segar â€” efek sampingnya, tanpa kode ini,
+            badge notifikasi selalu segar Ã¢â‚¬â€ efek sampingnya, tanpa kode ini,
             posisi scroll sidebar ikut ke-reset ke paling atas setiap navigasi.
 
             Simpan posisi scroll sidebar sesaat SEBELUM navigasi dimulai
             (livewire:navigate), lalu kembalikan lagi begitu halaman baru
-            selesai dimuat (livewire:navigated) â€” jadi sidebar terasa "diam"
+            selesai dimuat (livewire:navigated) Ã¢â‚¬â€ jadi sidebar terasa "diam"
             seperti dashboard modern (TikTok/Facebook/Discord), walau
             sebenarnya di-render ulang dari server tiap pindah menu.
         --}}

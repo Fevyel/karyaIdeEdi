@@ -270,7 +270,7 @@ new #[Layout('layouts::admin-panel')] #[Title('Pesanan')] class extends Componen
             return;
         }
 
-        session()->flash('status', 'Pesanan dibatalkan. Stok dikembalikan dan antrean dirapatkan otomatis.');
+        session()->flash('status', 'Pesanan dibatalkan dan antrean dirapatkan otomatis.');
         $this->closeDetail();
     }
 
@@ -338,9 +338,6 @@ new #[Layout('layouts::admin-panel')] #[Title('Pesanan')] class extends Componen
             // custom_deskripsi di bawah.
             'product_id' => ['nullable', 'required_if:order_type,tetap', Rule::exists('products', 'id')->where('status', 'aktif')],
             'order_type' => ['required', Rule::in(Transaction::ORDER_TYPES)],
-            'custom_tinggi' => ['required_if:order_type,custom', 'nullable', 'numeric', 'min:0.01', 'max:9999.99'],
-            'custom_lebar' => ['required_if:order_type,custom', 'nullable', 'numeric', 'min:0.01', 'max:9999.99'],
-            'custom_panjang' => ['required_if:order_type,custom', 'nullable', 'numeric', 'min:0.01', 'max:9999.99'],
             'custom_harga_satuan' => ['required_if:order_type,custom', 'nullable', 'numeric', 'min:1'],
             'custom_deskripsi' => ['required_if:order_type,custom', 'nullable', 'string', 'max:2000'],
             'quantity' => [
@@ -384,12 +381,6 @@ new #[Layout('layouts::admin-panel')] #[Title('Pesanan')] class extends Componen
             'whatsapp.digits_between' => 'Nomor WhatsApp harus berupa angka saja (tanpa spasi/simbol), 10-15 digit.',
             'product_id.required_if' => 'Produk wajib dipilih untuk pesanan tetap.',
             'product_id.exists' => 'Produk yang dipilih tidak valid atau sudah tidak aktif.',
-            'custom_tinggi.required_if' => 'Tinggi wajib diisi untuk pesanan custom.',
-            'custom_tinggi.numeric' => 'Tinggi harus berupa angka.',
-            'custom_lebar.required_if' => 'Lebar wajib diisi untuk pesanan custom.',
-            'custom_lebar.numeric' => 'Lebar harus berupa angka.',
-            'custom_panjang.required_if' => 'Panjang wajib diisi untuk pesanan custom.',
-            'custom_panjang.numeric' => 'Panjang harus berupa angka.',
             'custom_harga_satuan.required_if' => 'Harga hasil diskusi dengan customer wajib diisi untuk pesanan custom.',
             'custom_harga_satuan.numeric' => 'Harga harus berupa angka.',
             'custom_harga_satuan.min' => 'Harga harus lebih besar dari 0.',
@@ -929,7 +920,7 @@ new #[Layout('layouts::admin-panel')] #[Title('Pesanan')] class extends Componen
                                 <button
                                     type="button"
                                     wire:click="cancelTransaction({{ $detailItem->id }})"
-                                    wire:confirm="Batalkan pesanan {{ $detailItem->order_code }}? Stok akan dikembalikan dan antrean dirapatkan."
+                                    wire:confirm="Batalkan pesanan {{ $detailItem->order_code }}? Antrean akan dirapatkan otomatis."
                                     class="mt-3 w-full rounded-full border border-admin-danger px-5 py-2.5 text-sm font-semibold text-admin-danger transition-colors duration-200 hover:bg-admin-danger/10"
                                 >
                                     <i class="fa-solid fa-ban mr-1.5"></i> Batalkan Pesanan
@@ -1095,28 +1086,13 @@ new #[Layout('layouts::admin-panel')] #[Title('Pesanan')] class extends Componen
                             >
                                 <option value="">Pilih produk...</option>
                                 @foreach ($produkList as $produkItem)
-                                    <option value="{{ $produkItem->id }}">{{ $produkItem->nama }} &mdash; Stok {{ $produkItem->stok }}</option>
+                                    <option value="{{ $produkItem->id }}">{{ $produkItem->nama }}</option>
                                 @endforeach
                             </select>
                             <x-icon-arrow direction="chevron-down" size="text-[10px]" class="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-admin-ink-soft" />
                         </div>
                         @error('product_id')<p class="mt-1.5 flex items-center gap-1 text-xs font-medium text-red-600"><i class="fa-solid fa-circle-exclamation"></i> {{ $message }}</p>@enderror
 
-                        {{-- Khusus pesanan custom: produk boleh dikosongkan, jadi admin
-                             menjelaskan sendiri bahan/warna/finishing/dll yang sudah
-                             didiskusikan dengan customer di sini. --}}
-                        @if ($order_type === 'custom')
-                            <div class="mt-3">
-                                <label class="mb-1.5 block text-xs font-semibold text-admin-ink">Deskripsi Custom</label>
-                                <textarea
-                                    wire:model="custom_deskripsi"
-                                    rows="3"
-                                    placeholder="Mis. bahan kayu jati, warna natural, finishing doff, dll sesuai hasil diskusi dengan customer"
-                                    class="w-full rounded-xl border border-admin-border bg-admin-canvas px-4 py-2.5 text-sm text-admin-ink placeholder:text-admin-ink-soft focus:border-admin-accent focus:outline-none focus:ring-2 focus:ring-admin-accent/15"
-                                ></textarea>
-                                @error('custom_deskripsi')<p class="mt-1.5 flex items-center gap-1 text-xs font-medium text-red-600"><i class="fa-solid fa-circle-exclamation"></i> {{ $message }}</p>@enderror
-                            </div>
-                        @endif
                     </div>
 
                     {{-- Tetap / Custom: pesanan sesuai harga produk yang sudah ditetapkan,
@@ -1136,46 +1112,27 @@ new #[Layout('layouts::admin-panel')] #[Title('Pesanan')] class extends Componen
                         @error('order_type')<p class="mt-1.5 flex items-center gap-1 text-xs font-medium text-red-600"><i class="fa-solid fa-circle-exclamation"></i> {{ $message }}</p>@enderror
                     </div>
 
-                    {{-- Field khusus pesanan custom: ukuran mebel + harga hasil diskusi dengan customer. --}}
+                    {{-- Field khusus pesanan custom: deskripsi & harga hasil diskusi dengan customer. --}}
                     @if ($order_type === 'custom')
-                        <div class="rounded-2xl border border-admin-border bg-admin-canvas p-4">
-                            <div class="mb-3 flex items-center gap-2">
-                                <span class="flex h-7 w-7 items-center justify-center rounded-lg bg-admin-accent/10 text-admin-accent">
-                                    <i class="fa-solid fa-ruler-combined text-xs"></i>
-                                </span>
-                                <div>
-                                    <p class="text-xs font-semibold text-admin-ink">Detail Custom</p>
-                                    <p class="text-[11px] text-admin-ink-soft">Ukuran mebel dan harga hasil diskusi dengan customer.</p>
-                                </div>
-                            </div>
+                        <div>
+                            <label class="mb-1.5 block text-xs font-semibold text-admin-ink">Deskripsi Custom</label>
+                            <textarea
+                                wire:model="custom_deskripsi"
+                                rows="3"
+                                placeholder="Mis. bahan kayu jati, warna natural, finishing doff, dll sesuai hasil diskusi dengan customer"
+                                class="w-full rounded-xl border border-admin-border bg-admin-canvas px-4 py-2.5 text-sm text-admin-ink placeholder:text-admin-ink-soft focus:border-admin-accent focus:outline-none focus:ring-2 focus:ring-admin-accent/15"
+                            ></textarea>
+                            @error('custom_deskripsi')<p class="mt-1.5 flex items-center gap-1 text-xs font-medium text-red-600"><i class="fa-solid fa-circle-exclamation"></i> {{ $message }}</p>@enderror
+                        </div>
 
-                            <div class="grid grid-cols-3 gap-3">
-                                <div>
-                                    <label class="mb-1.5 block text-xs font-semibold text-admin-ink">Tinggi (cm)</label>
-                                    <input type="number" step="0.01" min="0" wire:model="custom_tinggi" placeholder="0" class="w-full rounded-xl border border-admin-border bg-admin-surface px-3 py-2.5 text-sm text-admin-ink placeholder:text-admin-ink-soft focus:border-admin-accent focus:outline-none focus:ring-2 focus:ring-admin-accent/15">
-                                    @error('custom_tinggi')<p class="mt-1.5 text-xs font-medium text-red-600">{{ $message }}</p>@enderror
-                                </div>
-                                <div>
-                                    <label class="mb-1.5 block text-xs font-semibold text-admin-ink">Lebar (cm)</label>
-                                    <input type="number" step="0.01" min="0" wire:model="custom_lebar" placeholder="0" class="w-full rounded-xl border border-admin-border bg-admin-surface px-3 py-2.5 text-sm text-admin-ink placeholder:text-admin-ink-soft focus:border-admin-accent focus:outline-none focus:ring-2 focus:ring-admin-accent/15">
-                                    @error('custom_lebar')<p class="mt-1.5 text-xs font-medium text-red-600">{{ $message }}</p>@enderror
-                                </div>
-                                <div>
-                                    <label class="mb-1.5 block text-xs font-semibold text-admin-ink">Panjang (cm)</label>
-                                    <input type="number" step="0.01" min="0" wire:model="custom_panjang" placeholder="0" class="w-full rounded-xl border border-admin-border bg-admin-surface px-3 py-2.5 text-sm text-admin-ink placeholder:text-admin-ink-soft focus:border-admin-accent focus:outline-none focus:ring-2 focus:ring-admin-accent/15">
-                                    @error('custom_panjang')<p class="mt-1.5 text-xs font-medium text-red-600">{{ $message }}</p>@enderror
-                                </div>
+                        <div>
+                            <label class="mb-1.5 block text-xs font-semibold text-admin-ink">Harga Hasil Diskusi dengan Customer</label>
+                            <div class="relative">
+                                <span class="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-sm text-admin-ink-soft">Rp</span>
+                                <input type="number" step="1" min="0" wire:model.live="custom_harga_satuan" placeholder="0" class="w-full rounded-xl border border-admin-border bg-admin-canvas py-2.5 pl-10 pr-4 text-sm text-admin-ink placeholder:text-admin-ink-soft focus:border-admin-accent focus:outline-none focus:ring-2 focus:ring-admin-accent/15">
                             </div>
-
-                            <div class="mt-3">
-                                <label class="mb-1.5 block text-xs font-semibold text-admin-ink">Harga Hasil Diskusi dengan Customer</label>
-                                <div class="relative">
-                                    <span class="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-sm text-admin-ink-soft">Rp</span>
-                                    <input type="number" step="1" min="0" wire:model.live="custom_harga_satuan" placeholder="0" class="w-full rounded-xl border border-admin-border bg-admin-surface py-2.5 pl-10 pr-4 text-sm text-admin-ink placeholder:text-admin-ink-soft focus:border-admin-accent focus:outline-none focus:ring-2 focus:ring-admin-accent/15">
-                                </div>
-                                <p class="mt-1 text-[11px] text-admin-ink-soft">Harga satuan per item, bukan total. Menggantikan harga baku produk khusus untuk pesanan ini.</p>
-                                @error('custom_harga_satuan')<p class="mt-1.5 text-xs font-medium text-red-600">{{ $message }}</p>@enderror
-                            </div>
+                            <p class="mt-1 text-[11px] text-admin-ink-soft">Harga satuan per item, bukan total. Menggantikan harga baku produk khusus untuk pesanan ini.</p>
+                            @error('custom_harga_satuan')<p class="mt-1.5 text-xs font-medium text-red-600">{{ $message }}</p>@enderror
                         </div>
                     @endif
 
@@ -1211,7 +1168,6 @@ new #[Layout('layouts::admin-panel')] #[Title('Pesanan')] class extends Componen
                                 <p class="truncate text-sm font-semibold text-admin-ink">{{ $selectedProduct->nama }}</p>
                                 <p class="text-xs text-admin-ink-soft">
                                     Harga satuan: <span class="font-semibold text-admin-ink">Rp{{ number_format($hargaSatuanPreview, 0, ',', '.') }}</span>
-                                    &middot; Stok: {{ $selectedProduct->stok }}
                                 </p>
                             </div>
                         </div>

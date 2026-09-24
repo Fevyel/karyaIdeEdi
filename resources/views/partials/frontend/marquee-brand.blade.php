@@ -2,8 +2,9 @@
     ==========================================================
     MARQUEE BRAND — pita teks berjalan tepat di atas footer
     ==========================================================
-    Rectangle fullwidth dengan tulisan "KARYA IDE-EDI" berulang yang
-    bergerak terus (loop mulus, kanan ke kiri).
+    Rectangle fullwidth dengan tulisan "FURNITUR TOKO MEBEL" dan
+    "KARYA IDE-EDI" bergantian (dipisah titik) yang bergerak terus
+    (loop mulus, kanan ke kiri).
 
     Sengaja self-contained (CSS-nya inline di file ini) supaya langsung
     jalan tanpa perlu `npm run build`, dan nama class-nya diawali
@@ -23,8 +24,8 @@
     ==========================================================
 --}}
 @php
-    $marqueeText = 'KARYA IDE-EDI';
-    $marqueeRepeat = 26; // jumlah pengulangan per grup; cukup untuk layar sangat lebar (4K)
+    $marqueeTexts = ['FURNITUR TOKO MEBEL', 'KARYA IDE-EDI'];
+    $marqueeRepeat = 14; // jumlah pengulangan pasangan teks per grup; cukup untuk layar sangat lebar (4K)
 @endphp
 
 <div class="kie-marquee" aria-hidden="true">
@@ -32,8 +33,10 @@
         @foreach ([1, 2] as $group)
             <div class="kie-marquee__group">
                 @for ($i = 0; $i < $marqueeRepeat; $i++)
-                    <span class="kie-marquee__item">{{ $marqueeText }}</span>
-                    <span class="kie-marquee__dot">&bull;</span>
+                    @foreach ($marqueeTexts as $marqueeText)
+                        <span class="kie-marquee__item">{{ $marqueeText }}</span>
+                        <span class="kie-marquee__dot">&bull;</span>
+                    @endforeach
                 @endfor
             </div>
         @endforeach
@@ -42,7 +45,7 @@
 
 <style>
     .kie-marquee {
-        --kie-marquee-speed: 70s;
+        --kie-marquee-speed: 90s;
         --kie-marquee-bg: #C9A566;
         --kie-marquee-ink: #2A1B12;
 
@@ -95,4 +98,9 @@
             animation: none;
         }
     }
+</style>
+
+<style>
+/* KIE slow running strip */
+[class~="kie-marquee"]{animation-duration:120s !important;}
 </style>

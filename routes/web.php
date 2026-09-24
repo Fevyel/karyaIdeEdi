@@ -85,25 +85,64 @@ Route::get('/produk/{product:slug}', function (\App\Models\Product $product) {
 // Profil
 Route::view('/profil', 'pages.frontend.profil')->name('profile.index');
 
-// Koleksi pembeli â€” disimpan di browser/perangkat, tanpa akun dan tanpa mengubah database.
+// Koleksi pembeli Ã¢â‚¬â€ disimpan di browser/perangkat, tanpa akun dan tanpa mengubah database.
 Route::view('/favorit', 'pages.frontend.favorit')->name('favorites.index');
 Route::view('/keranjang', 'pages.frontend.keranjang')->name('cart.index');
 
 // Dipanggil dari Keranjang (resources/js/app.js) untuk cek produk mana yang
 // pesanannya sudah diinput admin DAN sudah dikonfirmasi berasal dari
 // perangkat yang sama (pakai cookie device yang sama dengan fitur Lacak
-// Pesanan) â€” lihat app/Http/Controllers/CartStatusController.php.
+// Pesanan) Ã¢â‚¬â€ lihat app/Http/Controllers/CartStatusController.php.
 Route::get('/keranjang/status', [CartStatusController::class, 'check'])->name('cart.status');
 
 // Halaman statis kolom "Company" di footer.
 // Our Craftsmen: konten & foto masih dummy (belum ada data tukang asli),
-// tandanya ada di komentar dalam masing-masing view â€” ganti begitu ada
+// tandanya ada di komentar dalam masing-masing view Ã¢â‚¬â€ ganti begitu ada
 // data & foto asli dari pemilik toko.
 Route::view('/pengrajin-kami', 'pages.frontend.pengrajin')->name('craftsmen.index');
 Route::view('/keberlanjutan', 'pages.frontend.keberlanjutan')->name('sustainability.index');
-Route::view('/karier', 'pages.frontend.karier')->name('careers.index');
 
-// Legal â€” Privacy Policy, Terms of Service, Cookies.
+Route::get('/pembayaran/{method}', function (string $method) {
+    $setting = \App\Models\Setting::current();
+
+    $methods = [
+        'bca' => [
+            'key' => 'bca',
+            'label' => 'BCA',
+            'type' => 'Transfer Bank',
+            'number_label' => 'Nomor Rekening',
+            'number' => (string) $setting->bca_account_number,
+            'account_name' => (string) $setting->bca_account_name,
+            'logo' => 'images/payment-official/bca.png',
+        ],
+        'bri' => [
+            'key' => 'bri',
+            'label' => 'Bank BRI',
+            'type' => 'Transfer Bank',
+            'number_label' => 'Nomor Rekening',
+            'number' => (string) $setting->bri_account_number,
+            'account_name' => (string) $setting->bri_account_name,
+            'logo' => 'images/payment-official/bri.png',
+        ],
+        'dana' => [
+            'key' => 'dana',
+            'label' => 'DANA',
+            'type' => 'E-Wallet',
+            'number_label' => 'Nomor DANA',
+            'number' => (string) $setting->dana_account_number,
+            'account_name' => (string) $setting->dana_account_name,
+            'logo' => 'images/payment-official/dana.svg',
+        ],
+    ];
+
+    abort_unless(isset($methods[$method]), 404);
+
+    return view('pages.frontend.payment-transfer', [
+        'siteSetting' => $setting,
+        'paymentMethod' => $methods[$method],
+    ]);
+})->whereIn('method', ['bca', 'bri', 'dana'])->name('payment.transfer');
+// Legal Ã¢â‚¬â€ Privacy Policy, Terms of Service, Cookies.
 Route::view('/kebijakan-privasi', 'pages.frontend.privacy-policy')->name('legal.privacy');
 Route::view('/ketentuan-layanan', 'pages.frontend.terms-of-service')->name('legal.terms');
 Route::view('/kebijakan-cookie', 'pages.frontend.cookies')->name('legal.cookies');
@@ -165,9 +204,7 @@ Route::prefix('admin')->name('admin.')->middleware('auth')->group(function () {
     Route::livewire('/pesanan', 'pages::admin.pesanan')->name('transactions');
     Route::livewire('/pesanan/history', 'pages::admin.history-pesanan')->name('transactions.history');
     Route::livewire('/pelanggan', 'pages::admin.pelanggan')->name('customers');
-    Route::livewire('/laporan', 'pages::admin.laporan')->name('reports');
-    Route::livewire('/edit-web', 'pages::admin.edit-web')->name('website-editor');
-    Route::livewire('/pengaturan', 'pages::admin.pengaturan')->name('settings');
+    Route::livewire('/edit-web', 'pages::admin.edit-web')->name('website-editor');    Route::livewire('/pengaturan', 'pages::admin.pengaturan')->name('settings');
 
     Route::post('/theme', ThemeController::class)->name('theme.update');
     Route::post('/logout', LogoutController::class)->name('logout');

@@ -233,10 +233,10 @@
                                         href="{{ $waNumber ? 'https://wa.me/'.$waNumber.'?text='.urlencode('Halo, saya ingin memesan produk "'.$product->nama.'" sebanyak 1 pcs.') : '#' }}"
                                         data-booking-link
                                         @if ($waNumber) target="_blank" rel="noopener" @endif
-                                        class="h-10 flex flex-1 items-center justify-center rounded-md bg-[#F28A22] px-5 text-[11px] font-semibold text-white transition hover:bg-[#DD7614] {{ (int) $product->stok < 1 ? 'pointer-events-none cursor-not-allowed opacity-50' : '' }}"
+                                        class="h-10 flex flex-1 items-center justify-center rounded-md bg-[#F28A22] px-5 text-[11px] font-semibold text-white transition hover:bg-[#DD7614]"
                                         @unless ($waNumber) title="Nomor WhatsApp belum diisi di Admin > Pengaturan" onclick="event.preventDefault()" @endunless
                                     >
-                                        {{ (int) $product->stok < 1 ? 'Stok Habis' : 'Pesan Sekarang' }}
+                                        Pesan Sekarang
                                     </a>
                                 </div>
                                 <p class="mt-2 text-[10px] text-[#A1988E]">Jumlah yang dipilih akan disertakan saat menghubungi admin via WhatsApp.</p>
@@ -306,7 +306,7 @@
                  referensi Figma. Isi tiap tab murni dari data produk
                  yang memang ada di database (tidak mengarang data):
                  - Description  : deskripsi_lengkap / deskripsi_pendek
-                 - Specification: berat, dimensi (p/l/t), kategori, stok
+                 - Specification: berat, dimensi (p/l/t), kategori
                  - Reviews      : testimonial approved + aktif milik produk ini
             ====================================================== --}}
             <section class="bg-white" x-data="{ tab: 'description' }">
@@ -361,7 +361,6 @@
                                     'Dimensi (P x L x T)' => ($product->panjang || $product->lebar || $product->tinggi)
                                         ? number_format((float) $product->panjang, 0, ',', '.').' x '.number_format((float) $product->lebar, 0, ',', '.').' x '.number_format((float) $product->tinggi, 0, ',', '.').' cm'
                                         : null,
-                                    'Stok' => $product->stok !== null ? $product->stok.' unit' : null,
                                 ])->filter();
                             @endphp
 

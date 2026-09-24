@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 260 72" role="img" aria-label="BANK BRI">
+  <rect width="260" height="72" rx="12" fill="white"/>
+  <g transform="translate(18 14)" fill="none" stroke="#0b5fae" stroke-width="5" stroke-linejoin="round">
+    <path d="M4 2h30c7 0 12 5 12 12s-5 12-12 12H16"/>
+    <path d="M4 2v44h30c7 0 12-5 12-12s-5-12-12-12H16"/>
+    <path d="M16 12v24"/>
+  </g>
+  <text x="78" y="31" font-family="Arial, Helvetica, sans-serif" font-size="16" font-weight="700" fill="#0b5fae" letter-spacing="2">BANK</text>
+  <text x="78" y="52" font-family="Arial, Helvetica, sans-serif" font-size="28" font-weight="900" fill="#0b5fae" letter-spacing="1">BRI</text>
+</svg>

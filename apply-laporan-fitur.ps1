@@ -1,3 +1,137 @@
+# ============================================================
+# FITUR: Aktivasi halaman Admin > Laporan (real data, bukan placeholder)
+#
+# Sebelumnya: resources/views/pages/admin/laporan.blade.php cuma
+# nampilin partial "Fitur ini akan segera hadir" (placeholder).
+#
+# Sekarang: halaman Laporan dihitung 100%% dari data transaksi asli
+# (tabel transactions/products/categories), yaitu:
+#   - Filter periode: 7/30/90 hari, bulan ini, bulan lalu, tahun ini,
+#     sepanjang waktu, atau kustom (pilih tanggal sendiri).
+#   - Ringkasan: Pendapatan, Pesanan Selesai, Produk Terjual,
+#     Rata-rata Nilai Pesanan -- semua HANYA dari transaksi
+#     status completed (konsisten dengan cara Dashboard menghitung
+#     "Pendapatan Bulan Ini", supaya angka di Laporan tidak pernah
+#     beda sendiri dari Dashboard).
+#   - Grafik Penjualan per periode (otomatis per hari/bulan/tahun
+#     tergantung panjang rentang tanggal yang dipilih).
+#   - Status Pesanan: breakdown SEMUA status (pending, confirmed,
+#     processing, preparing, completed, cancelled) supaya laporan
+#     tidak cuma menampilkan sisi "bagus"-nya saja.
+#   - Komposisi Kategori (donut, gaya sama seperti Dashboard).
+#   - Produk Terlaris (top 10, dari transaksi completed).
+#   - Ekspor Laporan -> tombol download CSV. Angka di file CSV
+#     dihitung dari method PHP yang SAMA PERSIS dengan yang
+#     menampilkan angka di layar (buildReportData()), jadi file
+#     yang diunduh dijamin tidak akan pernah beda dengan yang
+#     terlihat di halaman.
+#
+# TIDAK ADA dependency baru yang ditambahkan (composer.json /
+# package.json tidak disentuh) -- ekspor CSV pakai
+# response()->streamDownload() bawaan Laravel.
+#
+# File yang diubah HANYA:
+#   resources/views/pages/admin/laporan.blade.php
+# (isinya diganti total dari placeholder jadi laporan asli).
+# Tidak ada file lain yang disentuh.
+#
+# Cara pakai (dari VS Code integrated terminal, di root project):
+#   .\apply-laporan-fitur.ps1
+#
+# Setelah itu buka /admin/laporan -- tidak perlu npm run build
+# (semua class Tailwind yang dipakai sudah ada/kepakai di halaman
+# lain seperti Dashboard & Pesanan, jadi sudah ke-compile). Kalau
+# kamu jalankan "npm run build" (build produksi, bukan "npm run dev"),
+# dan halaman terlihat belum ke-style, jalankan ulang build itu.
+# ============================================================
+
+$ErrorActionPreference = "Stop"
+
+function Backup-File {
+    param([string]$Path)
+    $stamp = Get-Date -Format "yyyyMMdd-HHmmss"
+    $backupPath = "$Path.bak-before-laporan-fitur-$stamp"
+    Copy-Item -Path $Path -Destination $backupPath -Force
+    Write-Host "  Backup dibuat: $backupPath" -ForegroundColor DarkGray
+    return $backupPath
+}
+
+function Replace-ExactlyOnce {
+    param(
+        [string]$Path,
+        [string]$Old,
+        [string]$New,
+        [bool]$UseBom
+    )
+
+    $content = [System.IO.File]::ReadAllText((Join-Path (Get-Location) $Path))
+
+    $occurrences = ([regex]::Matches($content, [regex]::Escape($Old))).Count
+    if ($occurrences -eq 0) {
+        Write-Host "[ERROR] Isi file placeholder yang saya kira ada di $Path TIDAK ditemukan." -ForegroundColor Red
+        Write-Host "        Kemungkinan file ini sudah pernah diubah sebelumnya -- SAYA BERHENTI, tidak ada yang diubah." -ForegroundColor Red
+        exit 1
+    }
+    if ($occurrences -gt 1) {
+        Write-Host "[ERROR] Isi yang mau diganti muncul $occurrences kali di $Path (harusnya cuma 1)." -ForegroundColor Red
+        Write-Host "        SAYA BERHENTI supaya tidak salah ganti bagian yang lain." -ForegroundColor Red
+        exit 1
+    }
+
+    Backup-File -Path $Path | Out-Null
+
+    $newContent = $content.Replace($Old, $New)
+    $encoding = New-Object System.Text.UTF8Encoding($UseBom)
+    [System.IO.File]::WriteAllText((Join-Path (Get-Location) $Path), $newContent, $encoding)
+
+    Write-Host "  OK -- $Path sudah di-patch." -ForegroundColor Green
+}
+
+Write-Host "==============================================" -ForegroundColor Cyan
+Write-Host " Aktivasi halaman Admin > Laporan" -ForegroundColor Cyan
+Write-Host "==============================================" -ForegroundColor Cyan
+Write-Host ""
+
+if (-not (Test-Path ".\artisan")) {
+    Write-Host "[ERROR] Jalankan script ini dari folder root project (yang ada file 'artisan')." -ForegroundColor Red
+    exit 1
+}
+
+$targetPath = "resources\views\pages\admin\laporan.blade.php"
+
+if (-not (Test-Path $targetPath)) {
+    Write-Host "[ERROR] File tidak ditemukan: $targetPath" -ForegroundColor Red
+    exit 1
+}
+
+Write-Host "[1/1] Mengganti isi laporan.blade.php (placeholder -> laporan asli) ..." -ForegroundColor Yellow
+
+$old = @'
+<?php
+
+use Livewire\Attributes\Layout;
+use Livewire\Attributes\Title;
+use Livewire\Component;
+
+new #[Layout('layouts::admin-panel')] #[Title('Laporan')] class extends Component
+{
+    //
+};
+?>
+
+@include('partials.admin.placeholder', [
+    'icon' => 'fa-chart-column',
+    'heading' => 'Laporan',
+    'description' => 'Ringkasan penjualan, produk terlaris, dan performa toko dari waktu ke waktu.',
+    'features' => [
+        'Grafik penjualan periode',
+        'Ekspor laporan',
+        'Produk terlaris',
+    ],
+])
+'@
+
+$new = @'
 <?php
 
 use App\Models\Transaction;
@@ -11,7 +145,7 @@ new #[Layout('layouts::admin-panel')] #[Title('Laporan')] class extends Componen
     /** Opsi periode yang valid untuk filter laporan. */
     private const PERIODS = ['7', '30', '90', 'this_month', 'last_month', 'this_year', 'all', 'custom'];
 
-    /** Periode aktif â€” default 30 hari terakhir. */
+    /** Periode aktif — default 30 hari terakhir. */
     public string $period = '30';
 
     /** Tanggal mulai & selesai untuk periode 'custom' (dari <input type="date">, format Y-m-d). */
@@ -52,7 +186,7 @@ new #[Layout('layouts::admin-panel')] #[Title('Laporan')] class extends Componen
         return 'Rp'.number_format($value, 0, ',', '.');
     }
 
-    /** Warna & label badge status â€” konsisten dengan halaman Pesanan/History Pesanan. */
+    /** Warna & label badge status — konsisten dengan halaman Pesanan/History Pesanan. */
     private function statusStyle(string $status): array
     {
         return match ($status) {
@@ -93,7 +227,7 @@ new #[Layout('layouts::admin-panel')] #[Title('Laporan')] class extends Componen
         };
     }
 
-    /** Tanggal transaksi paling lama â€” dipakai sebagai titik awal periode "Sepanjang Waktu". */
+    /** Tanggal transaksi paling lama — dipakai sebagai titik awal periode "Sepanjang Waktu". */
     private function earliestTransactionDate(): Carbon
     {
         $earliest = Transaction::query()->oldest('created_at')->value('created_at');
@@ -129,12 +263,12 @@ new #[Layout('layouts::admin-panel')] #[Title('Laporan')] class extends Componen
             $end = $now->copy()->endOfDay();
         }
 
-        return [$start, $end, 'Kustom: '.$start->translatedFormat('d M Y').' â€“ '.$end->translatedFormat('d M Y')];
+        return [$start, $end, 'Kustom: '.$start->translatedFormat('d M Y').' – '.$end->translatedFormat('d M Y')];
     }
 
     /**
      * Bangun titik-titik grafik penjualan (pendapatan transaksi completed)
-     * sepanjang rentang tanggal â€” otomatis dikelompokkan per hari (<=31 hari),
+     * sepanjang rentang tanggal — otomatis dikelompokkan per hari (<=31 hari),
      * per bulan (<=730 hari), atau per tahun (di atas itu), supaya grafik
      * tetap terbaca baik untuk periode pendek maupun "Sepanjang Waktu".
      *
@@ -208,7 +342,7 @@ new #[Layout('layouts::admin-panel')] #[Title('Laporan')] class extends Componen
 
     /**
      * Kumpulkan seluruh data laporan untuk satu rentang tanggal. Dipakai
-     * bersama oleh with() (tampilan layar) dan export() (unduhan CSV) â€”
+     * bersama oleh with() (tampilan layar) dan export() (unduhan CSV) —
      * supaya keduanya SELALU menghitung dari logika yang persis sama dan
      * angka yang tampil di layar tidak pernah berbeda dengan file yang
      * diunduh.
@@ -338,7 +472,7 @@ new #[Layout('layouts::admin-panel')] #[Title('Laporan')] class extends Componen
 
     /**
      * Ekspor laporan periode aktif sebagai file CSV (ringkasan + daftar
-     * lengkap Produk Terlaris) â€” dihitung dari method yang SAMA dengan
+     * lengkap Produk Terlaris) — dihitung dari method yang SAMA dengan
      * yang menampilkan angka di layar (buildReportData()), supaya file
      * yang diunduh tidak pernah berbeda dengan yang terlihat admin.
      */
@@ -624,3 +758,12 @@ new #[Layout('layouts::admin-panel')] #[Title('Laporan')] class extends Componen
         </div>
     </div>
 </div>
+'@
+
+Replace-ExactlyOnce -Path $targetPath -Old $old -New $new -UseBom $false
+
+Write-Host ""
+Write-Host "==============================================" -ForegroundColor Cyan
+Write-Host " SELESAI! Buka /admin/laporan untuk melihat hasilnya." -ForegroundColor Cyan
+Write-Host " (php artisan serve masih boleh tetap jalan, tidak perlu restart)" -ForegroundColor Cyan
+Write-Host "==============================================" -ForegroundColor Cyan

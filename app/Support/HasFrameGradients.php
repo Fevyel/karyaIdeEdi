@@ -27,6 +27,10 @@ trait HasFrameGradients
 
     public array $nilaiKamiGradient = FrameBackground::DEFAULT_GRADIENT;
 
+    public array $whyChooseUsGradient = FrameBackground::DEFAULT_GRADIENT;
+
+    public array $ourCraftsmenHeroGradient = FrameBackground::DEFAULT_GRADIENT;
+
     /**
      * Isi state gradasi sebuah section dari data yang tersimpan (dipanggil di mount()).
      */
@@ -135,7 +139,7 @@ trait HasFrameGradients
     private function frameGradientProperty(string $section): string
     {
         abort_unless(
-            in_array($section, ['mission', 'produkUnggulan', 'kategori', 'testimoni', 'lokasi', 'sejarah', 'tentangKami2', 'nilaiKami'], true),
+            in_array($section, ['mission', 'produkUnggulan', 'kategori', 'testimoni', 'lokasi', 'sejarah', 'tentangKami2', 'nilaiKami', 'whyChooseUs', 'ourCraftsmenHero'], true),
             404,
         );
 

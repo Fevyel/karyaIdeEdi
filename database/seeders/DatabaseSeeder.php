@@ -2,7 +2,6 @@
 
 namespace Database\Seeders;
 
-use App\Models\User;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
@@ -11,19 +10,13 @@ class DatabaseSeeder extends Seeder
     use WithoutModelEvents;
 
     /**
-     * Seed the application's database.
+     * Production-safe: tidak menyisipkan akun, kategori, testimoni,
+     * atau data contoh apa pun ke database aktif.
+     *
+     * Data operasional dikelola melalui panel Admin.
      */
     public function run(): void
     {
-        // User::factory(10)->create();
-
-        User::factory()->create([
-            'name' => 'Test User',
-            'email' => 'test@example.com',
-        ]);
-
-        $this->call(AdminUserSeeder::class);
-        $this->call(CategorySeeder::class);
-        $this->call(TestimonialSeeder::class);
+        $this->command?->info('Production-safe seeder: tidak ada data demo yang ditambahkan.');
     }
 }

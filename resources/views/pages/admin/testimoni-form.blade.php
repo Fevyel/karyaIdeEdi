@@ -16,6 +16,10 @@ new #[Layout('layouts::admin-panel')] class extends Component
 
     public string $jabatan = '';
 
+    public string $provinsi = '';
+
+    public string $kabupaten = '';
+
     public int $rating = 5;
 
     public string $comment = '';
@@ -44,6 +48,8 @@ new #[Layout('layouts::admin-panel')] class extends Component
             $this->testimonialId = $testimonial->id;
             $this->customer_name = $testimonial->customer_name;
             $this->jabatan = (string) $testimonial->jabatan;
+            $this->provinsi = (string) $testimonial->provinsi;
+            $this->kabupaten = (string) $testimonial->kabupaten;
             $this->rating = $testimonial->rating ?? 5;
             $this->comment = $testimonial->comment;
             $this->is_active = $testimonial->is_active;
@@ -75,6 +81,8 @@ new #[Layout('layouts::admin-panel')] class extends Component
         return [
             'customer_name' => ['required', 'string', 'max:255'],
             'jabatan' => ['nullable', 'string', 'max:255'],
+            'provinsi' => ['nullable', 'string', 'max:255'],
+            'kabupaten' => ['nullable', 'string', 'max:255'],
             'rating' => ['required', 'integer', 'min:1', 'max:5'],
             'comment' => ['required', 'string', 'max:2000'],
             'urutan' => ['required', 'integer', 'min:0'],
@@ -132,6 +140,8 @@ new #[Layout('layouts::admin-panel')] class extends Component
 
         $testimonial->customer_name = $this->customer_name;
         $testimonial->jabatan = $this->jabatan !== '' ? $this->jabatan : null;
+        $testimonial->provinsi = $this->provinsi !== '' ? $this->provinsi : null;
+        $testimonial->kabupaten = $this->kabupaten !== '' ? $this->kabupaten : null;
         $testimonial->rating = $this->rating;
         $testimonial->comment = $this->comment;
         $testimonial->is_active = $this->is_active;
@@ -242,6 +252,28 @@ new #[Layout('layouts::admin-panel')] class extends Component
                         class="w-full rounded-lg border {{ $errors->has('jabatan') ? 'border-red-400' : 'border-admin-border' }} bg-admin-surface px-3 py-2.5 text-sm text-admin-ink transition focus:border-admin-accent focus:outline-none focus:ring-2 focus:ring-admin-accent/20 "
                     >
                     @error('jabatan')<p class="mt-1.5 flex items-center gap-1 text-xs font-medium text-red-600"><i class="fa-solid fa-circle-exclamation"></i> {{ $message }}</p>@enderror
+                </div>
+
+                <div>
+                    <label for="provinsi" class="mb-1.5 block text-sm font-medium text-admin-ink">
+                        Provinsi <span class="font-normal text-admin-ink-soft">(opsional)</span>
+                    </label>
+                    <input
+                        id="provinsi" type="text" wire:model="provinsi" placeholder="mis. Jawa Tengah"
+                        class="w-full rounded-lg border {{ $errors->has('provinsi') ? 'border-red-400' : 'border-admin-border' }} bg-admin-surface px-3 py-2.5 text-sm text-admin-ink transition focus:border-admin-accent focus:outline-none focus:ring-2 focus:ring-admin-accent/20 "
+                    >
+                    @error('provinsi')<p class="mt-1.5 flex items-center gap-1 text-xs font-medium text-red-600"><i class="fa-solid fa-circle-exclamation"></i> {{ $message }}</p>@enderror
+                </div>
+
+                <div>
+                    <label for="kabupaten" class="mb-1.5 block text-sm font-medium text-admin-ink">
+                        Kabupaten/Kota <span class="font-normal text-admin-ink-soft">(opsional)</span>
+                    </label>
+                    <input
+                        id="kabupaten" type="text" wire:model="kabupaten" placeholder="mis. Semarang"
+                        class="w-full rounded-lg border {{ $errors->has('kabupaten') ? 'border-red-400' : 'border-admin-border' }} bg-admin-surface px-3 py-2.5 text-sm text-admin-ink transition focus:border-admin-accent focus:outline-none focus:ring-2 focus:ring-admin-accent/20 "
+                    >
+                    @error('kabupaten')<p class="mt-1.5 flex items-center gap-1 text-xs font-medium text-red-600"><i class="fa-solid fa-circle-exclamation"></i> {{ $message }}</p>@enderror
                 </div>
 
                 <div>

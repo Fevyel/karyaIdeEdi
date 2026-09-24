@@ -23,9 +23,24 @@
     ];
 
     $featureList = \App\Models\HomeSection::dataFor('keunggulan', ['items' => $featureDefaults])['items'];
+
+    // Section ini tipis (~100px), lebih tipis dari jangkauan frame-seam di
+    // layar besar (140px, 70px tiap sisi) -- kalau tetap solid putih polos
+    // (bg-admin-surface), gradasi frame-seam dari section tetangga (Hero
+    // krem & Sejak Berdiri krem) belum tentu sempat "ketemu" di tengah,
+    // jadi masih nyisa inti putih pekat yang kelihatan seperti batas/garis
+    // tegas. Supaya PASTI nyambung berapa pun tinggi section ini (tidak
+    // bergantung ke perhitungan tinggi frame-seam lagi), background section
+    // ini sendiri dibuat gradasi tipis: krem Hero -> putih -> krem Sejak
+    // Berdiri. Kalau $bgFrom/$bgTo tidak dikirim (pemakaian lain di luar
+    // Beranda, kalau ada), tetap fallback ke bg-admin-surface polos seperti
+    // semula -- tidak ada yang berubah untuk pemakaian itu.
+    $featureBgStyle = ($bgFrom ?? null) && ($bgTo ?? null)
+        ? 'background: linear-gradient(to bottom in oklch, '.$bgFrom.' 0%, #FFFFFF 25%, #FFFFFF 75%, '.$bgTo.' 100%);'
+        : null;
 @endphp
 
-<section class="bg-admin-surface">
+<section @class(['bg-admin-surface' => ! $featureBgStyle]) style="{{ $featureBgStyle }}">
     <div class="mx-auto grid max-w-7xl grid-cols-1 gap-y-6 px-6 py-8 sm:grid-cols-3 sm:divide-x sm:divide-admin-border sm:px-8 lg:px-10">
         @foreach ($featureList as $feature)
             <div class="flex items-start gap-3 sm:px-8 sm:first:pl-0 sm:last:pr-0">

@@ -12,7 +12,7 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
  * Testimoni pelanggan.
  *
  * Dua jalur mengisi tabel yang sama (TIDAK ada tabel testimoni terpisah):
- * - "Interaksi": komentar (untuk sekarang: dummy, nanti dari pembeli asli)
+ * - "Interaksi": komentar asli dari pembeli melalui halaman Lacak Pesanan
  *   masuk dengan approval_status = pending -> admin menyetujui (approved)
  *   atau menolak (rejected) lewat menu Interaksi.
  * - Menu "Testimoni": admin membuat testimoni langsung (nama, foto,
@@ -33,6 +33,8 @@ class Testimonial extends Model
         'parent_id',
         'customer_name',
         'is_name_masked',
+        'provinsi',
+        'kabupaten',
         'foto',
         'photos',
         'jabatan',
@@ -78,6 +80,21 @@ class Testimonial extends Model
             ->filter(fn ($word) => $word !== '')
             ->map(fn ($word) => mb_substr($word, 0, 1).str_repeat('*', max(mb_strlen($word) - 1, 1)))
             ->implode(' ');
+    }
+
+    /**
+     * Alamat asal pembeli untuk ditampilkan di kartu testimoni publik,
+     * format "Kabupaten/Kota, Provinsi". Keduanya opsional — kalau cuma
+     * salah satu yang diisi, cukup itu saja yang ditampilkan. Kalau
+     * dua-duanya kosong, return null (view cukup cek null untuk sembunyikan
+     * baris alamat sepenuhnya, sama seperti pola foto/photos yang opsional).
+     */
+    public function displayAddress(): ?string
+    {
+        $parts = collect([$this->kabupaten, $this->provinsi])
+            ->filter(fn ($part) => filled($part));
+
+        return $parts->isEmpty() ? null : $parts->implode(', ');
     }
 
     public function product(): BelongsTo

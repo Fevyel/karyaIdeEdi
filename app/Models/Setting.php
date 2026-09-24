@@ -17,8 +17,14 @@ use Illuminate\Support\Facades\Storage;
  * @property string|null $tiktok_url
  * @property string|null $facebook_url
  * @property string|null $alamat
+ * @property string|null $bca_account_number
+ * @property string|null $bca_account_name
+ * @property string|null $bri_account_number
+ * @property string|null $bri_account_name
+ * @property string|null $dana_account_number
+ * @property string|null $dana_account_name
  */
-#[Fillable(['site_name', 'tagline', 'logo_path', 'email', 'whatsapp', 'instagram_url', 'tiktok_url', 'facebook_url', 'alamat'])]
+#[Fillable(['site_name', 'tagline', 'logo_path', 'email', 'whatsapp', 'instagram_url', 'tiktok_url', 'facebook_url', 'alamat', 'bca_account_number', 'bca_account_name', 'bri_account_number', 'bri_account_name', 'dana_account_number', 'dana_account_name'])]
 class Setting extends Model
 {
     /**

@@ -41,6 +41,7 @@ new class extends Component
     {
         $user = auth()->user();
 
+
         return $user ? $user->unreadNotificationsCount() : 0;
     }
 
@@ -56,7 +57,6 @@ new class extends Component
         $groups = [
             ['icon' => 'fa-comment-dots', 'label' => 'Interaksi Baru', 'count' => $user->unreadInteraksiCount()],
             ['icon' => 'fa-cart-shopping', 'label' => 'Pesanan Baru', 'count' => $user->unreadPesananCount()],
-            ['icon' => 'fa-triangle-exclamation', 'label' => 'Stok Menipis', 'count' => $user->unreadDashboardCount()],
         ];
 
         return array_values(array_filter($groups, fn (array $g) => $g['count'] > 0));

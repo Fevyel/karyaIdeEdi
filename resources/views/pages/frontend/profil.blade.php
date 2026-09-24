@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="id" data-site="frontend">
 <head>
     <meta charset="utf-8">
@@ -197,6 +197,10 @@
         // Atribut style hanya dihasilkan kalau warna khusus dipakai.
         $tk2Style = fn (string $key): string => $tk2PakaiWarnaKhusus ? 'color: '.$tk2Colors[$key].';' : '';
     @endphp
+
+    {{-- Frame seam: Hero Profil (bg-white, tidak punya opsi warna) -> Tentang Kami 2 --}}
+    @include('partials.frontend.frame-seam', ['from' => '#FFFFFF', 'to' => $tk2Frame['base']])
+
     <section
         class="{{ $tk2PakaiWarnaKhusus ? '' : 'bg-admin-cream/40' }}"
         @if ($tk2PakaiWarnaKhusus) style="background: {{ $tk2Frame['css'] }};" @endif
@@ -301,6 +305,10 @@
         // Atribut style hanya dihasilkan kalau warna khusus dipakai.
         $sejarahStyle = fn (string $key): string => $sejarahPakaiWarnaKhusus ? 'color: '.$sejarahColors[$key].';' : '';
     @endphp
+
+    {{-- Frame seam: Tentang Kami 2 -> Sejarah --}}
+    @include('partials.frontend.frame-seam', ['from' => $tk2Frame['base'], 'to' => $sejarahBase])
+
     <section
         id="sejarah"
         class="{{ $sejarahPakaiWarnaKhusus ? '' : 'bg-white' }}"
@@ -397,6 +405,10 @@
         // Atribut style hanya dihasilkan kalau warna khusus dipakai.
         $nilaiStyle = fn (string $key): string => $nilaiPakaiWarnaKhusus ? 'color: '.$nilaiColors[$key].';' : '';
     @endphp
+
+    {{-- Frame seam: Sejarah -> Nilai Kami --}}
+    @include('partials.frontend.frame-seam', ['from' => $sejarahBase, 'to' => $nilaiFrame['base']])
+
     <section
         class="{{ $nilaiPakaiWarnaKhusus ? '' : 'bg-admin-cream' }}"
         @if ($nilaiPakaiWarnaKhusus) style="background: {{ $nilaiFrame['css'] }};" @endif
@@ -497,36 +509,94 @@
 
     {{-- =====================================================
          D. WHY CHOOSE US
+         Bisa diedit admin lewat Admin > Edit Web > Tentang Kami > Why Choose Us
+         (section_key 'why-choose-us-profil' di tabel home_sections, lihat
+         pages/admin/edit-web.blade.php method saveWhyChooseUs()). Yang bisa
+         diedit: warna frame (warna polos + gradasi opsional), isi teks (label
+         kecil, judul, paragraf, teks 5 kartu), dan ikon tiap kartu.
+
+         Belum pernah diedit = tampilan PERSIS seperti sebelumnya (latar cokelat
+         gelap bg-[#221B14], teks bawaan). Nilai bawaan di bawah HARUS sama
+         dengan whyChooseUsDefaults() di edit-web.
     ====================================================== --}}
-    <section class="bg-[#221B14]">
+    @php
+        $whyProfil = \App\Models\HomeSection::dataFor('why-choose-us-profil', [
+            'bg_color' => null,
+            'eyebrow' => 'Why Choose Us',
+            'heading' => 'Kenapa memilih '.$profileSetting->site_name.'?',
+            'description' => "Kami ingin proses memilih furniture terasa mudah dan tenang \u{2014} dari melihat produk sampai memutuskan yang paling cocok untuk ruang Anda.",
+            'items' => [
+                ['icon' => 'fa-layer-group', 'text' => 'Produk pilihan'],
+                ['icon' => 'fa-circle-info', 'text' => 'Informasi produk yang jelas'],
+                ['icon' => 'fa-cart-shopping', 'text' => 'Proses pemesanan mudah'],
+                ['icon' => 'fa-headset', 'text' => 'Dukungan pelanggan'],
+                ['icon' => 'fa-couch', 'text' => 'Pengalaman belanja yang nyaman'],
+            ],
+        ]);
+
+        // 5 kartu poin. Nama ikon dijaga hanya berbentuk "fa-xxx".
+        $whyProfilPoints = collect($whyProfil['items'])->take(5)->map(fn ($item) => [
+            'icon' => is_string($item['icon'] ?? null) && preg_match('/^fa-[a-z0-9-]+$/', $item['icon']) === 1 ? $item['icon'] : 'fa-circle-check',
+            'text' => (string) ($item['text'] ?? ''),
+        ])->all();
+
+        // Latar: bawaan class Tailwind lama (cokelat gelap). Warna khusus/gradasi hanya kalau admin memilihnya.
+        $whyProfilFrame = \App\Support\FrameBackground::resolve($whyProfil['bg_color'] ?? null, $whyProfil['bg_gradient'] ?? null, '#221B14');
+        $whyProfilPakaiWarnaKhusus = $whyProfilFrame['is_gradient'] || \App\Support\FrameBackground::hex($whyProfil['bg_color'] ?? null) !== null;
+
+        $whyProfilTerang = function (string $hex): bool {
+            $hex = ltrim($hex, '#');
+
+            $r = hexdec(substr($hex, 0, 2)) / 255;
+            $g = hexdec(substr($hex, 2, 2)) / 255;
+            $b = hexdec(substr($hex, 4, 2)) / 255;
+
+            $linearize = fn (float $c): float => $c <= 0.03928 ? $c / 12.92 : (($c + 0.055) / 1.055) ** 2.4;
+
+            return (0.2126 * $linearize($r) + 0.7152 * $linearize($g) + 0.0722 * $linearize($b)) > 0.5;
+        };
+
+        // Teks bawaan section ini terang (untuk latar gelap). Hanya kalau admin memilih
+        // frame TERANG, teks & kartu diganti gelap supaya tetap kebaca.
+        $whyProfilTerangMode = $whyProfilPakaiWarnaKhusus && $whyProfilTerang($whyProfilFrame['base']);
+        $whyProfilWarna = [
+            'ink' => '#1A1208',
+            'muted' => 'rgba(26, 18, 8, 0.68)',
+            'accent' => '#7A4F26',
+            'line' => 'rgba(26, 18, 8, 0.12)',
+            'card' => 'rgba(255, 255, 255, 0.7)',
+            'chip' => 'rgba(122, 79, 38, 0.14)',
+        ];
+
+        // Atribut style hanya dihasilkan kalau perlu (selain itu tampilan bawaan tidak disentuh).
+        $whyProfilGaya = fn (string $css): string => $whyProfilTerangMode ? ' style="'.e($css).'"' : '';
+    @endphp
+
+    {{-- Frame seam: Nilai Kami -> Why Choose Us --}}
+    @include('partials.frontend.frame-seam', ['from' => $nilaiFrame['base'], 'to' => $whyProfilFrame['base']])
+
+    <section class="{{ $whyProfilPakaiWarnaKhusus ? '' : 'bg-[#221B14]' }}"@if ($whyProfilPakaiWarnaKhusus) style="background: {{ $whyProfilFrame['css'] }};" @endif>
         <div class="mx-auto grid max-w-7xl grid-cols-1 items-center gap-12 px-6 py-16 max-sm:gap-8 max-sm:py-12 sm:px-8 lg:grid-cols-2 lg:gap-16 lg:px-10 lg:py-24">
             <div data-reveal>
-                <div class="flex items-center gap-3 text-xs font-semibold uppercase tracking-[0.2em] text-admin-gold">
-                    <span class="h-px w-8 bg-admin-gold"></span>
-                    Why Choose Us
+                <div class="flex items-center gap-3 text-xs font-semibold uppercase tracking-[0.2em] text-admin-gold"{!! $whyProfilGaya('color: '.$whyProfilWarna['accent'].';') !!}>
+                    <span class="h-px w-8 bg-admin-gold"{!! $whyProfilGaya('background: '.$whyProfilWarna['accent'].';') !!}></span>
+                    {{ $whyProfil['eyebrow'] }}
                 </div>
-                <h2 class="mt-5 font-display text-3xl leading-tight text-white sm:text-4xl">
-                    Kenapa memilih {{ $profileSetting->site_name }}?
+                <h2 class="mt-5 font-display text-3xl leading-tight text-white sm:text-4xl"{!! $whyProfilGaya('color: '.$whyProfilWarna['ink'].';') !!}>
+                    {{ $whyProfil['heading'] }}
                 </h2>
-                <p class="mt-5 max-w-md text-sm leading-relaxed text-white/60 sm:text-base">
-                    Kami ingin proses memilih furniture terasa mudah dan tenang — dari
-                    melihat produk sampai memutuskan yang paling cocok untuk ruang Anda.
+                <p class="mt-5 max-w-md text-sm leading-relaxed text-white/60 sm:text-base"{!! $whyProfilGaya('color: '.$whyProfilWarna['muted'].';') !!}>
+                    {{ $whyProfil['description'] }}
                 </p>
             </div>
 
             <div class="grid grid-cols-1 gap-4 sm:grid-cols-2" data-reveal style="transition-delay:.1s">
-                @foreach ([
-                    ['icon' => 'fa-layer-group', 'text' => 'Produk pilihan'],
-                    ['icon' => 'fa-circle-info', 'text' => 'Informasi produk yang jelas'],
-                    ['icon' => 'fa-cart-shopping', 'text' => 'Proses pemesanan mudah'],
-                    ['icon' => 'fa-headset', 'text' => 'Dukungan pelanggan'],
-                    ['icon' => 'fa-couch', 'text' => 'Pengalaman belanja yang nyaman'],
-                ] as $point)
-                    <div class="flex items-center gap-3 rounded-xl border border-white/10 bg-white/4 px-4 py-3.5">
-                        <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-admin-gold/15 text-admin-gold">
+                @foreach ($whyProfilPoints as $point)
+                    <div class="flex items-center gap-3 rounded-xl border border-white/10 bg-white/4 px-4 py-3.5"{!! $whyProfilGaya('border-color: '.$whyProfilWarna['line'].'; background: '.$whyProfilWarna['card'].';') !!}>
+                        <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-admin-gold/15 text-admin-gold"{!! $whyProfilGaya('background: '.$whyProfilWarna['chip'].'; color: '.$whyProfilWarna['accent'].';') !!}>
                             <i class="fa-solid {{ $point['icon'] }} text-sm"></i>
                         </span>
-                        <p class="text-sm font-medium text-white">{{ $point['text'] }}</p>
+                        <p class="text-sm font-medium text-white"{!! $whyProfilGaya('color: '.$whyProfilWarna['ink'].';') !!}>{{ $point['text'] }}</p>
                     </div>
                 @endforeach
             </div>

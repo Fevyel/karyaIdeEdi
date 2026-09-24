@@ -33,7 +33,7 @@
             'Dikerjakan pengrajin berpengalaman dengan standar rapi dan presisi.',
         ],
         'image_path' => null,
-        'media_type' => 'photo',
+        'media_type' => 'video_url',
         'video_url' => null,
         'video_path' => null,
     ];
@@ -57,9 +57,17 @@
 
     $keahlianVideo = null;
 
-    if ($keahlianData['media_type'] === 'video_upload' && $keahlianVideoUploadUrl) {
+    // Normalisasi data lama: sebelumnya section ini pernah memakai media_type
+    // "photo". Kalau file video upload sudah ada, file itu tetap harus dianggap
+    // milik "Kenapa Pilih Kami" dan dirender di Beranda, bukan jatuh ke fallback
+    // foto atau ikut terbawa ke section lain.
+    $keahlianMediaType = in_array($keahlianData['media_type'] ?? null, ['video_url', 'video_upload'], true)
+        ? $keahlianData['media_type']
+        : ($keahlianVideoUploadUrl ? 'video_upload' : (($keahlianData['video_url'] ?? null) ? 'video_url' : null));
+
+    if ($keahlianMediaType === 'video_upload' && $keahlianVideoUploadUrl) {
         $keahlianVideo = ['provider' => 'direct', 'embed_url' => $keahlianVideoUploadUrl];
-    } elseif ($keahlianData['media_type'] === 'video_url' && $keahlianData['video_url']) {
+    } elseif ($keahlianMediaType === 'video_url' && ($keahlianData['video_url'] ?? null)) {
         $keahlianVideo = \App\Models\HomeSection::classifyVideoUrl($keahlianData['video_url']);
     }
 @endphp

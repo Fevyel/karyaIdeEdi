@@ -73,7 +73,7 @@
         @endif
     </div>
 
-    <div class="absolute right-3 top-3 z-10 flex flex-col gap-2">
+    <div class="absolute right-4 top-4 z-10 flex flex-row gap-2">
         <button
             type="button"
             aria-label="Tambahkan {{ $product->nama }} ke favorit"
