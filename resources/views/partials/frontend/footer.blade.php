@@ -1,6 +1,6 @@
-{{--
+﻿{{--
     ==========================================================
-    FOOTER — Homepage Karya Ide Edi
+    FOOTER â€” Homepage Karya Ide Edi
     ==========================================================
     Layout & struktur mengikuti referensi Figma sedekat mungkin:
     background gelap, brand + 3 kolom (masing-masing 5 item persis
@@ -31,7 +31,7 @@
        Craftsmen" -> /pengrajin-kami (konten & foto masih DUMMY, lihat
        catatan di view-nya), "Sustainability" -> /keberlanjutan
        (halaman generik soal kualitas/custom furniture), "Careers" ->
-       ditaruh persis di bawah section Garansi — bukan halaman
+       ditaruh persis di bawah section Garansi â€” bukan halaman
        terpisah), "Warranty" -> Profil#garansi (section Garansi,
        isinya klaim yang sama dengan homepage: Garansi Retur 30 Hari).
        "Press" DIHAPUS dari kolom ini atas instruksi eksplisit (skip,
@@ -74,7 +74,6 @@
     $footerSupport = [
         ['label' => 'Order Status', 'href' => route('tracking.index')],
         ['label' => 'Track Your Order', 'href' => route('tracking.index')],
-        ['label' => 'Warranty', 'href' => route('profile.index').'#garansi'],
         ['label' => 'Contact Us', 'href' => $footerWaLink ?? '#'],
     ];
 @endphp
@@ -183,12 +182,12 @@
         </div>
 
         {{-- ============ BOTTOM BAR ============ --}}
-        <div class="mt-12 flex flex-col items-center gap-4 border-t border-white/10 pt-6 sm:flex-row sm:justify-between">
+        <div data-kie-footer-bottom class="mt-12 flex flex-col items-center gap-4 border-t border-white/10 pt-6 sm:flex-row sm:justify-between">
             <p class="text-[11px] uppercase tracking-wide text-white/40">
                 &copy; {{ now()->year }} {{ $footerSetting->site_name }}. All rights reserved.
             </p>
 
-            <div class="flex items-center gap-6">
+            <div data-kie-footer-legal class="flex items-center gap-6">
                 <a href="{{ route('legal.privacy') }}" class="text-[11px] uppercase tracking-wide text-white/40 transition-colors duration-300 hover:text-white/70">Privacy Policy</a>
                 <a href="{{ route('legal.terms') }}" class="text-[11px] uppercase tracking-wide text-white/40 transition-colors duration-300 hover:text-white/70">Terms of Service</a>
                 <a href="{{ route('legal.cookies') }}" class="text-[11px] uppercase tracking-wide text-white/40 transition-colors duration-300 hover:text-white/70">Cookies</a>
@@ -198,7 +197,7 @@
                                     {{-- Badge metode pembayaran: memakai file logo OFFICIAL yang disimpan lokal --}}
                         {{-- Badge metode pembayaran -- ukuran + warna dipertahankan seperti versi awal --}}
                         {{-- Badge metode pembayaran -- ukuran & warna asli, logo resmi --}}
-            <div class="flex items-center gap-1.5">
+            <div data-kie-footer-payments class="flex items-center gap-1.5">
                 <a href="{{ route('payment.transfer', 'bca') }}" class="flex h-5 w-8 items-center justify-center overflow-hidden rounded-sm bg-[#4A4A4A]" aria-label="Pembayaran via BCA" title="Pembayaran via BCA"><img src="{{ asset('images/payment-official/bca.png') }}" alt="BCA" style="display:block;max-width:56px;max-height:23px;width:auto;height:auto;object-fit:contain;"></a>
                 <a href="{{ route('payment.transfer', 'bri') }}" class="flex h-5 w-8 items-center justify-center overflow-hidden rounded-sm bg-[#4A4A4A]" aria-label="Pembayaran via BRI" title="Pembayaran via BRI"><img src="{{ asset('images/payment-official/bri.png') }}" alt="Bank BRI" style="display:block;max-width:27px;max-height:12px;width:auto;height:auto;object-fit:contain;"></a>
                 <a href="{{ route('payment.transfer', 'dana') }}" class="flex h-5 w-8 items-center justify-center overflow-hidden rounded-sm bg-[#4A4A4A]" aria-label="Pembayaran via DANA" title="Pembayaran via DANA"><img src="{{ asset('images/payment-official/dana.svg') }}" alt="DANA" style="display:block;max-width:27px;max-height:12px;width:auto;height:auto;object-fit:contain;"></a>

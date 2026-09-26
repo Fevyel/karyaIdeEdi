@@ -33,7 +33,230 @@
 <body class="min-h-screen bg-white font-sans text-[#2A211B] antialiased">
     @include('partials.frontend.navbar')
 
-    @php
+{{-- KIE-PROFILE-HERO-MOBILE-FIX:START --}}
+<style>
+    /*
+     * Tentang Kami - mobile/tablet.
+     * Desktop >=1024px tidak disentuh.
+     *
+     * V2:
+     * - Hero dipendekkan lagi.
+     * - Area kosong di bawah foto dipotong.
+     * - Seam/garis antar section dihilangkan total pada non-desktop.
+     */
+
+    @media (max-width: 1023.98px) {
+        html[data-site='frontend'] section[data-kie-profile-hero] {
+            min-height: 34rem !important;
+            height: auto !important;
+            align-items: flex-start !important;
+            overflow: hidden !important;
+
+            border-bottom: 0 !important;
+            box-shadow: none !important;
+            outline: 0 !important;
+
+            /* overlap 1px untuk menutup hairline browser */
+            margin-bottom: -1px !important;
+        }
+
+        html[data-site='frontend']
+        section[data-kie-profile-hero]
+        > [data-kie-profile-hero-content] {
+            padding-top: 3rem !important;
+            padding-bottom: 4rem !important;
+        }
+
+        /*
+         * Fade bawah dibuat lebih singkat daripada versi sebelumnya,
+         * sehingga Hero tidak terasa memanjang, tetapi foto tetap
+         * menghilang lembut ke putih.
+         */
+        html[data-site='frontend'] [data-kie-profile-bottom-fade] {
+            background:
+                linear-gradient(
+                    180deg,
+                    transparent 0%,
+                    transparent 50%,
+                    rgba(255,255,255,.12) 62%,
+                    rgba(255,255,255,.44) 73%,
+                    rgba(255,255,255,.78) 84%,
+                    #FFFFFF 96%,
+                    #FFFFFF 100%
+                ) !important;
+        }
+
+        /*
+         * HILANGKAN seam tanpa syarat di non-desktop.
+         * Sebelumnya hanya disembunyikan pada background default sehingga
+         * pada kondisi tertentu garis tipis masih terlihat.
+         */
+        html[data-site='frontend'] [data-kie-profile-hero-seam] {
+            display: none !important;
+            height: 0 !important;
+            min-height: 0 !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            border: 0 !important;
+            overflow: hidden !important;
+        }
+
+        /*
+         * Section berikutnya menempel langsung pada Hero tanpa border/hairline.
+         */
+        html[data-site='frontend'] [data-kie-profile-next-section] {
+            margin-top: 0 !important;
+            border-top: 0 !important;
+            outline: 0 !important;
+            box-shadow: none !important;
+        }
+
+        html[data-site='frontend']
+        [data-kie-profile-next-section][data-default-bg='1'] {
+            background:
+                linear-gradient(
+                    180deg,
+                    #FFFFFF 0,
+                    #FFFFFF .35rem,
+                    rgba(251,248,243,.18) 1.6rem,
+                    rgba(251,248,243,.34) 3.4rem,
+                    rgba(251,248,243,.40) 5.2rem
+                ) !important;
+        }
+    }
+
+    /* MOBILE */
+    @media (max-width: 639.98px) {
+        html[data-site='frontend'] section[data-kie-profile-hero] {
+            min-height: 31.5rem !important;
+        }
+
+        html[data-site='frontend']
+        section[data-kie-profile-hero]
+        > [data-kie-profile-hero-content] {
+            padding-top: 2.7rem !important;
+            padding-bottom: 3.35rem !important;
+        }
+
+        html[data-site='frontend'] [data-kie-profile-bottom-fade] {
+            background:
+                linear-gradient(
+                    180deg,
+                    transparent 0%,
+                    transparent 47%,
+                    rgba(255,255,255,.12) 59%,
+                    rgba(255,255,255,.46) 71%,
+                    rgba(255,255,255,.82) 84%,
+                    #FFFFFF 96%,
+                    #FFFFFF 100%
+                ) !important;
+        }
+    }
+
+    /* HP KECIL */
+    @media (max-width: 374.98px) {
+        html[data-site='frontend'] section[data-kie-profile-hero] {
+            min-height: 30rem !important;
+        }
+
+        html[data-site='frontend']
+        section[data-kie-profile-hero]
+        > [data-kie-profile-hero-content] {
+            padding-top: 2.4rem !important;
+            padding-bottom: 3rem !important;
+        }
+    }
+</style>
+{{-- KIE-PROFILE-HERO-MOBILE-FIX:END --}}
+
+{{-- KIE-PROFILE-DIVIDER-FINAL:START --}}
+<style>
+    /*
+     * Final anti-hairline untuk sambungan Hero Tentang Kami.
+     * Hanya non-desktop; desktop tetap seperti desain sekarang.
+     */
+    @media (max-width: 1023.98px) {
+        html[data-site='frontend'] section[data-kie-profile-hero] {
+            border-bottom: 0 !important;
+            outline: 0 !important;
+            box-shadow: none !important;
+
+            /*
+             * Overlap beberapa pixel untuk menutup garis subpixel/browser
+             * yang masih terlihat pada batas antar-section.
+             */
+            margin-bottom: -4px !important;
+        }
+
+        html[data-site='frontend'] [data-kie-profile-hero-seam] {
+            display: none !important;
+            width: 0 !important;
+            height: 0 !important;
+            min-height: 0 !important;
+            max-height: 0 !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            border: 0 !important;
+            outline: 0 !important;
+            box-shadow: none !important;
+            overflow: hidden !important;
+        }
+
+        html[data-site='frontend'] [data-kie-profile-next-section] {
+            position: relative !important;
+            z-index: 2 !important;
+
+            margin-top: 0 !important;
+            border-top: 0 !important;
+            outline: 0 !important;
+            box-shadow: none !important;
+        }
+
+        /*
+         * Untuk background default, tutup sambungan dengan lapisan putih
+         * tipis di atas section berikutnya. Ini hanya penutup hairline,
+         * bukan garis baru.
+         */
+        html[data-site='frontend']
+        [data-kie-profile-next-section][data-default-bg='1']::before {
+            content: "" !important;
+            position: absolute !important;
+
+            left: 0 !important;
+            right: 0 !important;
+            top: -6px !important;
+
+            height: 12px !important;
+            background: #FFFFFF !important;
+
+            border: 0 !important;
+            outline: 0 !important;
+            box-shadow: none !important;
+
+            pointer-events: none !important;
+            z-index: 5 !important;
+        }
+
+        /*
+         * Biarkan putih bertahan sedikit lebih lama sebelum masuk krem
+         * supaya transisinya benar-benar seamless.
+         */
+        html[data-site='frontend']
+        [data-kie-profile-next-section][data-default-bg='1'] {
+            background:
+                linear-gradient(
+                    180deg,
+                    #FFFFFF 0,
+                    #FFFFFF 1.6rem,
+                    rgba(251,248,243,.14) 2.7rem,
+                    rgba(251,248,243,.28) 4.4rem,
+                    rgba(251,248,243,.40) 6.4rem
+                ) !important;
+        }
+    }
+</style>
+{{-- KIE-PROFILE-DIVIDER-FINAL:END --}}
+@php
         $profileSetting = \App\Models\Setting::current();
         $profileWaNumber = $profileSetting->whatsappDigits();
 
@@ -76,9 +299,9 @@
          Foto tetap $profilHeroImageUrl (foto asli upload admin via
          Edit Web > Tentang Kami), fallback kursi.png.
     ====================================================== --}}
-    <section class="relative isolate flex min-h-[560px] items-center overflow-hidden bg-white sm:min-h-[620px] lg:min-h-[700px]">
+    <section data-kie-profile-hero class="relative isolate flex min-h-[560px] items-center overflow-hidden bg-white sm:min-h-[620px] lg:min-h-[700px]">
         {{-- Foto latar — satu section penuh (FULL, edge-to-edge) --}}
-        <div class="absolute inset-0 -z-10">
+        <div data-kie-profile-hero-media class="absolute inset-0 -z-10">
             <img
                 src="{{ $profilHeroImageUrl }}"
                 alt="Furniture {{ $profileSetting->site_name }}"
@@ -91,21 +314,21 @@
                  visual (bukan kotak yang "ditempel" di atasnya). Di mobile area
                  terangnya dibikin lebih lebar (karena section-nya sempit),
                  di desktop cuma nutup ±55% kiri. --}}
-            <div class="absolute inset-0 lg:hidden" style="background: linear-gradient(180deg, rgba(255,255,255,.97) 0%, rgba(255,255,255,.9) 38%, rgba(255,255,255,.55) 60%, transparent 78%);"></div>
+            <div data-kie-profile-mobile-scrim class="absolute inset-0 lg:hidden" style="background: linear-gradient(180deg, rgba(255,255,255,.97) 0%, rgba(255,255,255,.9) 38%, rgba(255,255,255,.55) 60%, transparent 78%);"></div>
             <div class="absolute inset-0 hidden lg:block" style="background: linear-gradient(100deg, rgba(255,255,255,.96) 0%, rgba(255,255,255,.9) 30%, rgba(255,255,255,.55) 48%, transparent 66%);"></div>
 
             {{-- Gradasi hilang di BAWAH — SATU-SATUNYA hal yang sengaja disamakan
                  dengan pola Hero Beranda (linear-gradient transparan di atas,
                  perlahan jadi solid di paling bawah), warna akhirnya putih
                  (bukan krem $heroBgColor punya Beranda). --}}
-            <div class="absolute inset-0" style="background: linear-gradient(180deg, transparent 0%, transparent 55%, rgba(255,255,255,.35) 78%, rgba(255,255,255,.78) 92%, #FFFFFF 100%);"></div>
+            <div data-kie-profile-bottom-fade class="absolute inset-0" style="background: linear-gradient(180deg, transparent 0%, transparent 55%, rgba(255,255,255,.35) 78%, rgba(255,255,255,.78) 92%, #FFFFFF 100%);"></div>
         </div>
 
         {{-- Teks & CTA — langsung di atas scrim (BUKAN kartu/kotak), rata KIRI.
              Warna gelap, rata kiri, tombol solid hitam + outline abu seperti
              desain awal -- ini yang bikin halaman ini kelihatan "Tentang Kami",
              bukan Beranda (yang teksnya putih & center di atas vignette gelap). --}}
-        <div class="animate-fade-in-up relative z-10 w-full px-6 py-16 sm:px-8 sm:py-20 lg:px-10 lg:py-24" data-reveal>
+        <div data-kie-profile-hero-content class="animate-fade-in-up relative z-10 w-full px-6 py-16 sm:px-8 sm:py-20 lg:px-10 lg:py-24" data-reveal>
             <div class="flex items-center gap-3 text-xs font-semibold uppercase tracking-[0.2em] text-admin-accent">
                 <span class="h-px w-8 bg-admin-accent"></span>
                 Tentang Kami
@@ -199,9 +422,16 @@
     @endphp
 
     {{-- Frame seam: Hero Profil (bg-white, tidak punya opsi warna) -> Tentang Kami 2 --}}
-    @include('partials.frontend.frame-seam', ['from' => '#FFFFFF', 'to' => $tk2Frame['base']])
+    <div
+        data-kie-profile-hero-seam
+        data-default-next-bg="{{ $tk2PakaiWarnaKhusus ? '0' : '1' }}"
+    >
+        @include('partials.frontend.frame-seam', ['from' => '#FFFFFF', 'to' => $tk2Frame['base']])
+    </div>
 
     <section
+        data-kie-profile-next-section
+        data-default-bg="{{ $tk2PakaiWarnaKhusus ? '0' : '1' }}"
         class="{{ $tk2PakaiWarnaKhusus ? '' : 'bg-admin-cream/40' }}"
         @if ($tk2PakaiWarnaKhusus) style="background: {{ $tk2Frame['css'] }};" @endif
     >
@@ -571,9 +801,6 @@
         // Atribut style hanya dihasilkan kalau perlu (selain itu tampilan bawaan tidak disentuh).
         $whyProfilGaya = fn (string $css): string => $whyProfilTerangMode ? ' style="'.e($css).'"' : '';
     @endphp
-
-    {{-- Frame seam: Nilai Kami -> Why Choose Us --}}
-    @include('partials.frontend.frame-seam', ['from' => $nilaiFrame['base'], 'to' => $whyProfilFrame['base']])
 
     <section class="{{ $whyProfilPakaiWarnaKhusus ? '' : 'bg-[#221B14]' }}"@if ($whyProfilPakaiWarnaKhusus) style="background: {{ $whyProfilFrame['css'] }};" @endif>
         <div class="mx-auto grid max-w-7xl grid-cols-1 items-center gap-12 px-6 py-16 max-sm:gap-8 max-sm:py-12 sm:px-8 lg:grid-cols-2 lg:gap-16 lg:px-10 lg:py-24">
