@@ -1,4 +1,4 @@
-﻿/**
+/**
  * ==========================================================
  * SortableJS (drag & drop kategori — Prioritas 2)
  * ==========================================================
@@ -279,27 +279,30 @@ document.addEventListener('paste', (event) => {
             notify('Produk sedang tidak tersedia.');
             return;
         }
+        const cart = read(CART_KEY);
+        const existing = cart.find((item) => Number(item.id) === product.id);
+
+        // Sudah ada di keranjang -> klik tombol ini lagi berarti membatalkan/
+        // menghapus dari keranjang, BUKAN menambah jumlahnya. Menambah jumlah
+        // produk yang sudah ada di keranjang hanya lewat tombol +/- di halaman
+        // Keranjang.
+        if (existing) {
+            write(CART_KEY, cart.filter((item) => Number(item.id) !== product.id).slice(0, 50));
+            syncBadges();
+            notify('Produk dihapus dari keranjang.');
+            if (document.querySelector('[data-store-page="cart"]')) renderCart();
+            return;
+        }
+
         const quantitySource = el.dataset.cartQuantitySource
             ? document.querySelector(`[${el.dataset.cartQuantitySource}] [data-quantity-display]`)
             : null;
         const requested = Math.max(1, Number(quantitySource?.textContent || 1));
-        const cart = read(CART_KEY);
-        const existing = cart.find((item) => Number(item.id) === product.id);
-        if (existing) {
-            existing.quantity = Math.min(product.stock, Number(existing.quantity || 0) + requested);
-            Object.assign(existing, product);
-        } else {
-            cart.unshift({ ...product, quantity: Math.min(product.stock, requested) });
-        }
+        cart.unshift({ ...product, quantity: Math.min(product.stock, requested) });
         write(CART_KEY, cart.slice(0, 50));
 
         syncBadges();
-
-        notify(
-            existing
-                ? 'Jumlah produk di keranjang diperbarui.'
-                : 'Produk masuk ke keranjang.'
-        );
+        notify('Produk masuk ke keranjang.');
         if (document.querySelector('[data-store-page="cart"]')) renderCart();
     };
 
@@ -315,7 +318,7 @@ document.addEventListener('paste', (event) => {
         if (!list || !empty) return;
         const favorites = read(FAVORITES_KEY);
         empty.classList.toggle('hidden', favorites.length > 0);
-        list.innerHTML = favorites.length ? `<div class="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">${favorites.map((item) => `
+        list.innerHTML = favorites.length ? `<div data-kie-favorites-grid class="grid grid-cols-2 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">${favorites.map((item) => `
             <article class="group overflow-hidden rounded-[22px] border border-[#E7DED2] bg-white shadow-[0_18px_60px_-35px_rgba(42,33,27,.25)]">
                 <div class="relative aspect-square bg-[#F5F5F1]">${imageMarkup(item)}
                     <button type="button" data-remove-favorite="${Number(item.id)}" class="absolute right-3 top-3 flex h-9 w-9 items-center justify-center rounded-full bg-white/95 text-[#B65C4A] shadow-sm hover:bg-[#B65C4A] hover:text-white"><i class="fa-solid fa-heart text-xs"></i></button>
@@ -376,7 +379,7 @@ document.addEventListener('paste', (event) => {
                             <button type="button" data-cart-remove="${Number(item.id)}" class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[#9A8E82] hover:bg-[#F8EEE5] hover:text-[#B65C4A]" aria-label="Hapus dari keranjang"><i class="fa-solid fa-trash-can text-[10px]"></i></button>
                         </div>
                         <div class="mt-4 flex flex-wrap items-center justify-between gap-3">
-                            <div class="inline-flex h-9 items-center overflow-hidden rounded-md border border-[#E3DED7]"><button type="button" data-cart-minus="${Number(item.id)}" class="flex h-full w-8 items-center justify-center text-[#7A6E63] hover:bg-[#F8F4EF]">−</button><span class="flex w-8 justify-center text-xs font-semibold">${Number(item.quantity)}</span><button type="button" data-cart-plus="${Number(item.id)}" class="flex h-full w-8 items-center justify-center text-[#7A6E63] hover:bg-[#F8F4EF]">+</button></div>
+                            <div class="inline-flex h-9 items-center overflow-hidden rounded-md border border-[#E3DED7]"><button type="button" data-cart-minus="${Number(item.id)}" class="flex h-full w-8 items-center justify-center text-[#7A6E63] hover:bg-[#F8F4EF]"><i class="fa-solid fa-minus text-[9px]"></i></button><span class="flex w-8 justify-center text-xs font-semibold">${Number(item.quantity)}</span><button type="button" data-cart-plus="${Number(item.id)}" class="flex h-full w-8 items-center justify-center text-[#7A6E63] hover:bg-[#F8F4EF]">+</button></div>
                             <p class="text-sm font-semibold text-[#2A211B]">${money(Number(item.price) * Number(item.quantity))}</p>
                         </div>
                     </div>
