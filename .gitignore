@@ -34,3 +34,6 @@ temp-*-patch/
 
 # Compiled Blade view cache
 /storage/framework/views/*.php
+
+# Local maintenance scripts
+/tools/
