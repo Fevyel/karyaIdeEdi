@@ -6,8 +6,32 @@
     <title>Keranjang &mdash; {{ \App\Models\Setting::current()->site_name }}</title>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+
+
+{{-- KIE-CART-QUANTITY-ICON-FIX:START --}}
+<style>
+    @media (max-width: 639.98px) {
+        html[data-site='frontend'] body[data-kie-cart-page]
+        [data-cart-list] [data-cart-minus]::before,
+        html[data-site='frontend'] body[data-kie-cart-page]
+        [data-cart-list] [data-cart-plus]::before {
+            content: none !important;
+            display: none !important;
+        }
+
+        html[data-site='frontend'] body[data-kie-cart-page]
+        [data-cart-list] [data-cart-minus] > i,
+        html[data-site='frontend'] body[data-kie-cart-page]
+        [data-cart-list] [data-cart-plus] > i {
+            display: inline-block !important;
+            font-size: 9px !important;
+            line-height: 1 !important;
+        }
+    }
+</style>
+{{-- KIE-CART-QUANTITY-ICON-FIX:END --}}
 </head>
-<body class="min-h-screen bg-[#FAF7F2] font-sans antialiased text-[#2A211B]">
+<body data-kie-cart-page class="min-h-screen bg-[#FAF7F2] font-sans antialiased text-[#2A211B]">
     @include('partials.frontend.navbar')
 
     <main data-store-page="cart" data-wa-number="{{ $waNumber ?? \App\Models\Setting::current()->whatsappDigits() }}" class="mx-auto min-h-[70vh] max-w-7xl px-5 py-12 sm:px-8 lg:px-10 lg:py-16">

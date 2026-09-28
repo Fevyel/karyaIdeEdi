@@ -138,7 +138,7 @@
         @if ($products->isEmpty())
             <p class="mt-10 text-sm" style="color: {{ $produkUnggulanColors['link'] }};">Belum ada produk yang tersedia saat ini.</p>
         @else
-            <div class="mt-10 grid grid-cols-2 gap-4 sm:grid-cols-2 sm:gap-8 lg:grid-cols-3">
+            <div data-kie-home-products-grid data-kie-home-products-slider class="mt-10 grid grid-cols-2 gap-4 sm:grid-cols-2 sm:gap-8 lg:grid-cols-3">
                 @foreach ($products as $product)
                     @include('partials.frontend.product-card', ['product' => $product, 'cardTextColors' => $produkUnggulanColors])
                 @endforeach

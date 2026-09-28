@@ -186,7 +186,7 @@
                             @endphp
 
                             <div class="mt-7" data-product-quantity data-max-stock="{{ max(0, (int) $product->stok) }}" data-wa-number="{{ $waNumber }}" data-product-name="{{ $product->nama }}">
-                                <div class="flex items-center gap-2.5">
+                                <div data-kie-product-actions class="flex items-center gap-2.5">
                                     <div class="inline-flex h-10 shrink-0 items-center overflow-hidden rounded-md border border-[#E3DED7] bg-white">
                                         <button type="button" data-quantity-minus class="flex h-full w-8 items-center justify-center text-[#7A6E63] transition hover:bg-[#F8F4EF] disabled:cursor-not-allowed disabled:opacity-40" aria-label="Kurangi jumlah">
                                             <i class="fa-solid fa-minus text-[9px]"></i>
@@ -314,7 +314,7 @@
                     <div class="border-t border-[#EEEAE5]"></div>
 
                     <div class="pt-5">
-                        <div class="flex items-center gap-8 border-b border-[#F0ECE7]">
+                        <div data-kie-product-tabs class="flex items-center gap-8 border-b border-[#F0ECE7]">
                             <button
                                 type="button"
                                 @click="tab = 'description'"

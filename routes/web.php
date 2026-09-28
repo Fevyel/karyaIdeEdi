@@ -203,7 +203,6 @@ Route::prefix('admin')->name('admin.')->middleware('auth')->group(function () {
     Route::livewire('/kategori/{category}/edit', 'pages::admin.kategori-form')->name('categories.edit');
     Route::livewire('/pesanan', 'pages::admin.pesanan')->name('transactions');
     Route::livewire('/pesanan/history', 'pages::admin.history-pesanan')->name('transactions.history');
-    Route::livewire('/pelanggan', 'pages::admin.pelanggan')->name('customers');
     Route::livewire('/edit-web', 'pages::admin.edit-web')->name('website-editor');    Route::livewire('/pengaturan', 'pages::admin.pengaturan')->name('settings');
 
     Route::post('/theme', ThemeController::class)->name('theme.update');

@@ -152,6 +152,19 @@ new #[Layout('layouts::admin-panel')] class extends Component
             // disetujui -- tidak melalui alur moderasi menu Interaksi.
             $testimonial->approval_status = 'approved';
             $testimonial->is_read_admin = true;
+
+            /*
+             * AUTO_FEATURE_HOME_ON_CREATE
+             * Testimoni yang dibuat langsung dari Admin otomatis mengisi
+             * slot Beranda kalau jumlah testimoni unggulan masih < 3.
+             * Kalau 3 slot sudah penuh, perilaku lama tetap berlaku:
+             * admin bisa memilih/ganti slot lewat tombol bintang di daftar.
+             */
+            $testimonial->is_featured_home = Testimonial::query()
+                ->approved()
+                ->active()
+                ->featuredHome()
+                ->count() < 3;
         }
 
         $testimonial->save();

@@ -6,17 +6,129 @@
     <title>Testimoni — {{ \App\Models\Setting::current()->site_name }}</title>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+
+{{-- KIE-TESTIMONIAL-PAGE-MOBILE-COMPACT:START --}}
+<style>
+    @media (max-width: 639.98px) {
+        html[data-site='frontend']
+        body[data-kie-testimonial-page]
+        select[data-kie-testimonial-sort] {
+            width: 8.4rem !important;
+            min-width: 8.4rem !important;
+            max-width: 8.4rem !important;
+
+            height: 1.8rem !important;
+            min-height: 1.8rem !important;
+
+            padding: 0 1.45rem 0 .5rem !important;
+            border-radius: .45rem !important;
+
+            font-size: 10.5px !important;
+            line-height: 1 !important;
+        }
+
+        html[data-site='frontend']
+        body[data-kie-testimonial-page]
+        select[data-kie-testimonial-sort] option {
+            font-size: 10.5px !important;
+        }
+
+        html[data-site='frontend']
+        body[data-kie-testimonial-page]
+        :has(> select[data-kie-testimonial-sort]) {
+            gap: .35rem !important;
+            font-size: 9.5px !important;
+            line-height: 1 !important;
+        }
+
+        html[data-site='frontend']
+        body[data-kie-testimonial-page]
+        [data-kie-testimonial-empty] {
+            min-height: 0 !important;
+            height: auto !important;
+
+            margin-top: .75rem !important;
+            padding: .9rem .85rem !important;
+
+            border-radius: .9rem !important;
+        }
+
+        html[data-site='frontend']
+        body[data-kie-testimonial-page]
+        [data-kie-testimonial-empty] .mt-8 {
+            margin-top: .6rem !important;
+        }
+
+        html[data-site='frontend']
+        body[data-kie-testimonial-page]
+        [data-kie-testimonial-empty] .mt-6 {
+            margin-top: .5rem !important;
+        }
+
+        html[data-site='frontend']
+        body[data-kie-testimonial-page]
+        [data-kie-testimonial-empty] .mt-4 {
+            margin-top: .4rem !important;
+        }
+
+        html[data-site='frontend']
+        body[data-kie-testimonial-page]
+        [data-kie-testimonial-empty]
+        :is(.h-14, .h-16, .w-14, .w-16) {
+            width: 2rem !important;
+            height: 2rem !important;
+            min-width: 2rem !important;
+            min-height: 2rem !important;
+            border-radius: .65rem !important;
+        }
+
+        html[data-site='frontend']
+        body[data-kie-testimonial-page]
+        [data-kie-testimonial-empty] .fa-quote-left,
+        html[data-site='frontend']
+        body[data-kie-testimonial-page]
+        [data-kie-testimonial-empty] .fa-quote-right {
+            font-size: .72rem !important;
+        }
+
+        html[data-site='frontend']
+        body[data-kie-testimonial-page]
+        [data-kie-testimonial-empty] h2,
+        html[data-site='frontend']
+        body[data-kie-testimonial-page]
+        [data-kie-testimonial-empty] h3 {
+            font-size: .92rem !important;
+            line-height: 1.2 !important;
+        }
+
+        html[data-site='frontend']
+        body[data-kie-testimonial-page]
+        [data-kie-testimonial-empty] p {
+            font-size: .68rem !important;
+            line-height: 1.45 !important;
+        }
+    }
+</style>
+{{-- KIE-TESTIMONIAL-PAGE-MOBILE-COMPACT:END --}}
 </head>
 
-<body class="min-h-screen bg-white font-sans antialiased text-[#2A211B]">
+<body data-kie-testimonial-page class="min-h-screen bg-white font-sans antialiased text-[#2A211B]">
     @include('partials.frontend.navbar')
 
+    @php
+        $testimoniPageWarna = \App\Models\HomeSection::dataFor('testimoni-page', [
+            'frame_1_color' => null,
+            'frame_2_color' => null,
+        ]);
+        $testimoniPageFrame1Color = $testimoniPageWarna['frame_1_color'] ?: '#F6F9F6';
+        $testimoniPageFrame2Color = $testimoniPageWarna['frame_2_color'] ?: '#FFFFFF';
+    @endphp
     {{-- =====================================================
          HERO / BREADCRUMB — pola sama persis dengan hero Shop
          (produk-index.blade.php), cuma judul & breadcrumb-nya
          diganti "Testimoni" supaya konsisten satu situs.
     ====================================================== --}}
-    <section class="bg-[#F6F9F6]">
+    <section style="background-color: {{ $testimoniPageFrame1Color }};">
         <div class="mx-auto flex min-h-43.75 max-w-295 items-center justify-center px-5 py-12 sm:px-7 lg:px-8">
             <div class="flex flex-col items-center text-center">
                 <h1 class="font-display text-4xl font-semibold tracking-tight text-[#171717] sm:text-5xl">Testimoni</h1>
@@ -28,6 +140,11 @@
             </div>
         </div>
     </section>
+
+    <div class="testimoni-page-frame2" style="background-color: {{ $testimoniPageFrame2Color }};">
+        <style>
+            .testimoni-page-frame2 > section { background: transparent !important; }
+        </style>
 
     {{-- =====================================================
          TOP 3 TESTIMONI UNGGULAN — section yang SAMA PERSIS
@@ -62,7 +179,7 @@
                      sengaja belum difungsikan). --}}
                 <label class="flex items-center gap-2 rounded-md border border-[#E7D9C8] px-3 py-1.5 text-[11px] text-[#5C5147]">
                     Sort by:
-                    <select class="bg-transparent pr-1 font-medium text-[#2A211B] focus:outline-none">
+                    <select data-kie-testimonial-sort class="bg-transparent pr-1 font-medium text-[#2A211B] focus:outline-none">
                         <option>Popularity</option>
                         <option>Terbaru</option>
                         <option>Rating Tertinggi</option>
@@ -71,7 +188,7 @@
             </div>
 
             @if ($testimonials->isEmpty())
-                <div class="mt-8 flex flex-col items-center justify-center rounded-3xl border border-dashed border-[#E7D9C8] bg-[#FBF7F1] px-6 py-20 text-center">
+                <div class="mt-8 flex flex-col items-center justify-center rounded-3xl border border-dashed border-[#E7D9C8] bg-[#FBF7F1] px-6 py-20 text-center" data-kie-testimonial-empty>
                     <span class="flex h-14 w-14 items-center justify-center rounded-2xl bg-white">
                         <i class="fa-solid fa-quote-left text-xl text-[#F28A22]"></i>
                     </span>
@@ -155,6 +272,8 @@
             @endif
         </div>
     </section>
+
+    </div>
 
     @include('partials.frontend.footer')
 </body>

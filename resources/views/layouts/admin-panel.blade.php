@@ -15,9 +15,508 @@
         @vite(['resources/css/app.css', 'resources/js/app.js'])
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
         @livewireStyles
-    </head>
-    <body
-        x-data="{ sidebarOpen: false }"
+
+{{-- KIE-ADMIN-MOBILE-RESPONSIVE:START --}}
+<style>
+    /*
+     * MOBILE ADMIN ONLY.
+     * Desktop/tablet >=768px tetap memakai desain existing.
+     *
+     * Inline html zoom:80% cocok untuk desktop, tetapi membuat viewport HP
+     * terasa seperti desktop yang diperkecil. Di mobile dikembalikan ke 100%.
+     */
+    @media (max-width: 767.98px) {
+        html {
+            zoom: 100% !important;
+        }
+
+        html,
+        body[data-kie-admin-responsive] {
+            width: 100% !important;
+            max-width: 100% !important;
+            overflow-x: hidden !important;
+        }
+
+        body[data-kie-admin-responsive] {
+            min-width: 0 !important;
+        }
+
+        /* Sidebar tetap drawer, tetapi tidak selebar layar. */
+        body[data-kie-admin-responsive] [data-kie-admin-sidebar] {
+            width: min(84vw, 17.5rem) !important;
+            max-width: 17.5rem !important;
+        }
+
+        body[data-kie-admin-responsive] [data-kie-admin-sidebar] > div:first-of-type {
+            min-height: 3.75rem !important;
+        }
+
+        body[data-kie-admin-responsive] [data-kie-admin-sidebar] nav {
+            padding-left: .85rem !important;
+            padding-right: .85rem !important;
+            padding-top: 1rem !important;
+            padding-bottom: 1rem !important;
+        }
+
+        /* Topbar dibuat compact dan semua action tetap muat. */
+        body[data-kie-admin-responsive] [data-kie-admin-topbar] {
+            width: 100% !important;
+        }
+
+        body[data-kie-admin-responsive] [data-kie-admin-topbar-inner] {
+            height: 3.65rem !important;
+            min-height: 3.65rem !important;
+
+            padding-left: .75rem !important;
+            padding-right: .65rem !important;
+
+            gap: .45rem !important;
+        }
+
+        body[data-kie-admin-responsive] [data-kie-admin-topbar-inner] > div:first-child {
+            min-width: 0 !important;
+            gap: .5rem !important;
+        }
+
+        body[data-kie-admin-responsive] [data-kie-admin-topbar-inner] > div:first-child button {
+            width: 2rem !important;
+            height: 2rem !important;
+            flex: 0 0 2rem !important;
+        }
+
+        body[data-kie-admin-responsive] [data-kie-admin-topbar-inner] h1 {
+            max-width: 7.5rem !important;
+            overflow: hidden !important;
+            text-overflow: ellipsis !important;
+            white-space: nowrap !important;
+
+            font-size: .95rem !important;
+            line-height: 1.1 !important;
+        }
+
+        body[data-kie-admin-responsive] [data-kie-admin-actions] {
+            flex: 0 0 auto !important;
+            gap: .25rem !important;
+        }
+
+        /* Theme toggle */
+        body[data-kie-admin-responsive] [data-kie-admin-actions] > button:first-child {
+            width: 2.7rem !important;
+            height: 1.75rem !important;
+            padding-left: .18rem !important;
+            padding-right: .18rem !important;
+        }
+
+        body[data-kie-admin-responsive] [data-kie-admin-actions] > button:first-child > span {
+            width: 1.35rem !important;
+            height: 1.35rem !important;
+        }
+
+        body[data-kie-admin-responsive] [data-kie-admin-actions] > button:first-child .fa-sun,
+        body[data-kie-admin-responsive] [data-kie-admin-actions] > button:first-child .fa-moon {
+            font-size: .55rem !important;
+        }
+
+        /*
+         * Komponen reset/notification tetap ada, tetapi semua button langsung
+         * di action bar tidak boleh membesar.
+         */
+        body[data-kie-admin-responsive] [data-kie-admin-actions] button {
+            max-width: 2.2rem;
+        }
+
+        /* Profil cukup avatar saja di HP. */
+        body[data-kie-admin-responsive] [data-kie-admin-actions] > div:last-child > button {
+            padding: .1rem !important;
+            gap: 0 !important;
+        }
+
+        body[data-kie-admin-responsive] [data-kie-admin-actions] > div:last-child img,
+        body[data-kie-admin-responsive] [data-kie-admin-actions] > div:last-child button > span:first-child {
+            width: 2rem !important;
+            height: 2rem !important;
+        }
+
+        /* Main content benar-benar memakai lebar HP. */
+        body[data-kie-admin-responsive] [data-kie-admin-main] {
+            width: 100% !important;
+            min-width: 0 !important;
+            max-width: 100% !important;
+
+            padding: .9rem .75rem 1.5rem !important;
+        }
+
+        body[data-kie-admin-responsive] [data-kie-admin-main] > * {
+            min-width: 0 !important;
+            max-width: 100% !important;
+        }
+
+        /*
+         * Tabel admin yang memang lebar tetap scroll horizontal di dalam
+         * komponennya, bukan mendorong seluruh halaman melebar.
+         */
+        body[data-kie-admin-responsive] [data-kie-admin-main] .overflow-x-auto,
+        body[data-kie-admin-responsive] [data-kie-admin-main] .admin-scroll {
+            max-width: 100% !important;
+        }
+
+        body[data-kie-admin-responsive] [data-kie-admin-main] table {
+            font-size: .72rem !important;
+        }
+
+        /* Toast tidak menabrak tepi layar. */
+        body[data-kie-admin-responsive] > [class*="fixed"][class*="bottom-6"] {
+            max-width: calc(100vw - 1.5rem) !important;
+        }
+    }
+</style>
+{{-- KIE-ADMIN-MOBILE-RESPONSIVE:END --}}
+
+{{-- KIE-ADMIN-MOBILE-TOPBAR-CLEAN:START --}}
+<style>
+    @media (max-width: 767.98px) {
+        /*
+         * Header dibagi tegas:
+         * [menu + judul]    [tema] [reset] [profil]
+         */
+        body[data-kie-admin-responsive] [data-kie-admin-topbar-inner] {
+            display: grid !important;
+            grid-template-columns: minmax(0, 1fr) auto !important;
+            align-items: center !important;
+
+            height: 3.65rem !important;
+            min-height: 3.65rem !important;
+
+            padding-left: .75rem !important;
+            padding-right: .75rem !important;
+            column-gap: .55rem !important;
+        }
+
+        body[data-kie-admin-responsive]
+        [data-kie-admin-topbar-inner] > div:first-child {
+            display: flex !important;
+            min-width: 0 !important;
+            align-items: center !important;
+            gap: .5rem !important;
+        }
+
+        body[data-kie-admin-responsive]
+        [data-kie-admin-topbar-inner] > div:first-child > button {
+            width: 1.9rem !important;
+            min-width: 1.9rem !important;
+            max-width: 1.9rem !important;
+            height: 1.9rem !important;
+            flex: 0 0 1.9rem !important;
+        }
+
+        body[data-kie-admin-responsive]
+        [data-kie-admin-topbar-inner] h1 {
+            max-width: none !important;
+            min-width: 0 !important;
+
+            overflow: hidden !important;
+            text-overflow: ellipsis !important;
+            white-space: nowrap !important;
+
+            font-size: .95rem !important;
+            line-height: 1.05 !important;
+        }
+
+        body[data-kie-admin-responsive] [data-kie-admin-actions] {
+            display: flex !important;
+            align-items: center !important;
+            justify-content: flex-end !important;
+
+            min-width: max-content !important;
+            gap: .35rem !important;
+        }
+
+        /*
+         * Hapus rule lama yang memberi max-width ke semua button.
+         * Tiap control sekarang punya ukuran eksplisit sendiri.
+         */
+        body[data-kie-admin-responsive] [data-kie-admin-actions] button {
+            max-width: none !important;
+        }
+
+        /*
+         * THEME TOGGLE MOBILE:
+         * di desktop bentuk pill tetap.
+         * di HP dibuat SATU tombol bulat, hanya icon aktif yang terlihat.
+         * Icon sun/moon statis di belakang disembunyikan agar tidak muncul 3 icon.
+         */
+        body[data-kie-admin-responsive]
+        [data-kie-admin-actions] > button:first-child {
+            position: relative !important;
+
+            width: 2rem !important;
+            min-width: 2rem !important;
+            max-width: 2rem !important;
+            height: 2rem !important;
+
+            padding: 0 !important;
+
+            border-radius: 999px !important;
+            justify-content: center !important;
+            overflow: hidden !important;
+        }
+
+        body[data-kie-admin-responsive]
+        [data-kie-admin-actions] > button:first-child > i {
+            display: none !important;
+        }
+
+        body[data-kie-admin-responsive]
+        [data-kie-admin-actions] > button:first-child > span {
+            position: static !important;
+
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+
+            width: 1.55rem !important;
+            min-width: 1.55rem !important;
+            height: 1.55rem !important;
+
+            transform: none !important;
+            translate: none !important;
+        }
+
+        body[data-kie-admin-responsive]
+        [data-kie-admin-actions] > button:first-child > span i {
+            font-size: .62rem !important;
+        }
+
+        /*
+         * RESET:
+         * tombol pink/merah dibuat icon-only bulat dan tidak menabrak toggle.
+         */
+        body[data-kie-admin-responsive]
+        [data-kie-admin-actions] button[class*="border-red-200"] {
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+
+            width: 2rem !important;
+            min-width: 2rem !important;
+            max-width: 2rem !important;
+            height: 2rem !important;
+
+            padding: 0 !important;
+            gap: 0 !important;
+            border-radius: 999px !important;
+        }
+
+        body[data-kie-admin-responsive]
+        [data-kie-admin-actions] button[class*="border-red-200"] > span {
+            display: none !important;
+        }
+
+        body[data-kie-admin-responsive]
+        [data-kie-admin-actions] button[class*="border-red-200"] > i {
+            font-size: .62rem !important;
+        }
+
+        /*
+         * Dropdown Reset tetap usable pada HP.
+         */
+        body[data-kie-admin-responsive]
+        [data-kie-admin-actions] div[class*="w-72"] {
+            width: min(16rem, calc(100vw - 1.5rem)) !important;
+            max-width: calc(100vw - 1.5rem) !important;
+        }
+
+        /*
+         * PROFIL:
+         * avatar saja di HP. Nama dan chevron memang tidak dibutuhkan.
+         */
+        body[data-kie-admin-responsive]
+        [data-kie-admin-actions] > div:last-child > button {
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+
+            width: 2rem !important;
+            min-width: 2rem !important;
+            max-width: 2rem !important;
+            height: 2rem !important;
+
+            padding: 0 !important;
+            margin: 0 !important;
+            gap: 0 !important;
+
+            border-radius: 999px !important;
+        }
+
+        body[data-kie-admin-responsive]
+        [data-kie-admin-actions] > div:last-child > button > img,
+        body[data-kie-admin-responsive]
+        [data-kie-admin-actions] > div:last-child > button > span:first-child {
+            width: 1.9rem !important;
+            min-width: 1.9rem !important;
+            height: 1.9rem !important;
+        }
+
+        body[data-kie-admin-responsive]
+        [data-kie-admin-actions] > div:last-child > button > span:not(:first-child),
+        body[data-kie-admin-responsive]
+        [data-kie-admin-actions] > div:last-child > button > svg {
+            display: none !important;
+        }
+    }
+
+    /*
+     * HP sangat sempit: judul sedikit diperkecil, action tetap utuh.
+     */
+    @media (max-width: 359.98px) {
+        body[data-kie-admin-responsive] [data-kie-admin-topbar-inner] {
+            padding-left: .55rem !important;
+            padding-right: .55rem !important;
+            column-gap: .35rem !important;
+        }
+
+        body[data-kie-admin-responsive] [data-kie-admin-actions] {
+            gap: .22rem !important;
+        }
+
+        body[data-kie-admin-responsive]
+        [data-kie-admin-topbar-inner] h1 {
+            font-size: .86rem !important;
+        }
+
+        body[data-kie-admin-responsive]
+        [data-kie-admin-actions] > button:first-child,
+        body[data-kie-admin-responsive]
+        [data-kie-admin-actions] button[class*="border-red-200"],
+        body[data-kie-admin-responsive]
+        [data-kie-admin-actions] > div:last-child > button {
+            width: 1.85rem !important;
+            min-width: 1.85rem !important;
+            max-width: 1.85rem !important;
+            height: 1.85rem !important;
+        }
+    }
+</style>
+{{-- KIE-ADMIN-MOBILE-TOPBAR-CLEAN:END --}}
+
+{{-- KIE-ADMIN-MOBILE-SCROLL-CONTAINER-V2:START --}}
+<style>
+    @media (max-width: 767.98px) {
+        /*
+         * Jangan pakai body scroll pada layout admin mobile.
+         * Sidebar sudah merupakan scroll container sendiri,
+         * maka area konten utama dibuat scroll container juga.
+         */
+        html {
+            height: 100% !important;
+            min-height: 100% !important;
+            overflow: hidden !important;
+        }
+
+        body[data-kie-admin-responsive] {
+            width: 100% !important;
+            height: 100dvh !important;
+            min-height: 0 !important;
+
+            overflow: hidden !important;
+            overscroll-behavior: none !important;
+        }
+
+        body[data-kie-admin-responsive] [data-kie-admin-shell] {
+            width: 100% !important;
+            height: 100dvh !important;
+            min-height: 0 !important;
+
+            overflow: hidden !important;
+        }
+
+        /*
+         * Column kanan hanya setinggi viewport.
+         * Header berada di atas, main mengambil sisa tinggi.
+         */
+        body[data-kie-admin-responsive] [data-kie-admin-main-column] {
+            display: flex !important;
+            flex-direction: column !important;
+
+            width: 100% !important;
+            height: 100dvh !important;
+            min-width: 0 !important;
+            min-height: 0 !important;
+
+            overflow: hidden !important;
+        }
+
+        body[data-kie-admin-responsive] [data-kie-admin-topbar] {
+            position: relative !important;
+            top: auto !important;
+
+            flex: 0 0 auto !important;
+            width: 100% !important;
+
+            z-index: 20 !important;
+        }
+
+        /*
+         * INI scroll utama admin mobile.
+         */
+        body[data-kie-admin-responsive] [data-kie-admin-main] {
+            display: block !important;
+
+            flex: 1 1 0% !important;
+            width: 100% !important;
+            height: 0 !important;
+            min-width: 0 !important;
+            min-height: 0 !important;
+            max-height: none !important;
+
+            overflow-x: hidden !important;
+            overflow-y: auto !important;
+
+            -webkit-overflow-scrolling: touch !important;
+            overscroll-behavior-y: contain !important;
+            touch-action: pan-y !important;
+
+            padding-bottom: 6rem !important;
+        }
+
+        /*
+         * Pastikan isi dashboard tidak menciptakan scroll container lain
+         * yang merebut gesture vertikal.
+         */
+        body[data-kie-admin-responsive] [data-kie-admin-main] > * {
+            min-height: 0 !important;
+        }
+
+        /*
+         * Horizontal scroll tabel tetap hanya pada wrapper tabel.
+         */
+        body[data-kie-admin-responsive]
+        [data-kie-admin-main] .overflow-x-auto {
+            overflow-x: auto !important;
+            overflow-y: visible !important;
+            -webkit-overflow-scrolling: touch !important;
+        }
+
+        /*
+         * Sidebar tetap seperti sekarang:
+         * menu sidebar punya scroll sendiri.
+         */
+        body[data-kie-admin-responsive] [data-kie-admin-sidebar] {
+            height: 100dvh !important;
+            max-height: 100dvh !important;
+        }
+
+        body[data-kie-admin-responsive] [data-sidebar-scroll] {
+            min-height: 0 !important;
+            overflow-y: auto !important;
+            -webkit-overflow-scrolling: touch !important;
+            touch-action: pan-y !important;
+        }
+    }
+</style>
+{{-- KIE-ADMIN-MOBILE-SCROLL-CONTAINER-V2:END --}}
+</head>
+    <body data-kie-admin-responsive x-data="{ sidebarOpen: false }"
         class="bg-admin-canvas font-sans text-admin-ink antialiased"
     >
         {{--
@@ -33,11 +532,10 @@
         --}}
         <div class="fixed inset-x-0 top-0 z-50 h-0.75 bg-linear-to-r from-admin-gold via-admin-accent to-admin-gold"></div>
 
-        <div class="flex min-h-screen">
+        <div data-kie-admin-shell class="flex min-h-screen">
 
             {{-- ================= SIDEBAR ================= --}}
-            <aside
-                :class="sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'"
+            <aside data-kie-admin-sidebar :class="sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'"
                 class="fixed inset-y-0 left-0 z-40 flex w-72 shrink-0 flex-col bg-admin-sidebar text-admin-sidebar-ink shadow-2xl shadow-black/30 transition-transform duration-300 lg:translate-x-0"
             >
                 {{-- garis aksen emas tipis di tepi kanan sidebar --}}
@@ -91,7 +589,6 @@
                                 $navItem('admin.categories', 'fa-tags', 'Kategori'),
                                 $navItem('admin.transactions', 'fa-receipt', 'Pesanan'),
                                 $navItem('admin.transactions.history', 'fa-clock-rotate-left', 'History Pesanan'),
-                                $navItem('admin.customers', 'fa-users', 'Pelanggan'),
                             ];
                         @endphp
 
@@ -223,11 +720,11 @@
             ></div>
 
             {{-- ================= MAIN CONTENT ================= --}}
-            <div class="flex min-h-screen flex-1 flex-col lg:ml-72">
+            <div data-kie-admin-main-column class="flex min-h-screen flex-1 flex-col lg:ml-72">
 
                 {{-- topbar --}}
-                <header class="sticky top-0 z-20 border-b border-admin-border bg-admin-surface/90 shadow-sm shadow-black/3 backdrop-blur-xl">
-                    <div class="flex h-18 shrink-0 items-center justify-between px-5 sm:px-8">
+                <header data-kie-admin-topbar class="sticky top-0 z-20 border-b border-admin-border bg-admin-surface/90 shadow-sm shadow-black/3 backdrop-blur-xl">
+                    <div data-kie-admin-topbar-inner class="flex h-18 shrink-0 items-center justify-between px-5 sm:px-8">
                         <div class="flex items-center gap-3.5">
                             <button
                                 @click="sidebarOpen = true"
@@ -245,7 +742,7 @@
                             </div>
                         </div>
 
-                        <div class="flex items-center gap-3.5 sm:gap-5">
+                        <div data-kie-admin-actions class="flex items-center gap-3.5 sm:gap-5">
                             {{-- toggle tema Glow / Dark --}}
                             <button
                                 type="button"
@@ -357,11 +854,43 @@
                     </div>
                 </header>
 
-                <main wire:key="main-{{ request()->path() }}" class="flex-1 animate-fade-in-up px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
+                <main data-kie-admin-main wire:key="main-{{ request()->path() }}" class="flex-1 animate-fade-in-up px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
                     {{ $slot }}
                 </main>
             </div>
         </div>
+
+{{-- KIE-ADMIN-MOBILE-SCROLL-CONTAINER-V2-SCRIPT:START --}}
+<script>
+    (function () {
+        function mainScroller() {
+            if (window.innerWidth > 767.98) return null;
+            return document.querySelector('[data-kie-admin-main]');
+        }
+
+        document.addEventListener('livewire:navigate', function () {
+            var main = mainScroller();
+            if (main) {
+                sessionStorage.setItem(
+                    'adminMainScrollTop',
+                    String(main.scrollTop || 0)
+                );
+            }
+        });
+
+        document.addEventListener('livewire:navigated', function () {
+            var main = mainScroller();
+            if (main) {
+                /*
+                 * Halaman admin baru dibuka dari atas.
+                 * Sidebar tetap memakai penyimpanan scroll-nya sendiri.
+                 */
+                main.scrollTop = 0;
+            }
+        });
+    })();
+</script>
+{{-- KIE-ADMIN-MOBILE-SCROLL-CONTAINER-V2-SCRIPT:END --}}
 
         @livewireScripts
 

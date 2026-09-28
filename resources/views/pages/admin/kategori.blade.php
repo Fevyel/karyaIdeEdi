@@ -189,17 +189,6 @@ new #[Layout('layouts::admin-panel')] #[Title('Kategori')] class extends Compone
         </div>
     @else
         <div class="rounded-2xl border border-admin-border bg-admin-surface shadow-sm">
-            @if ($sortable)
-                <p class="flex items-center gap-2 border-b border-admin-border px-5 py-3 text-xs text-admin-ink-soft">
-                    <i class="fa-solid fa-arrows-up-down text-admin-accent"></i>
-                    Tahan ikon <i class="fa-solid fa-grip-vertical mx-0.5"></i> lalu geser untuk mengubah urutan. Tersimpan otomatis — 4 kategori teratas jadi <span class="font-medium text-admin-ink">Featured Category</span> di frontend.
-                </p>
-            @else
-                <p class="flex items-center gap-2 border-b border-admin-border px-5 py-3 text-xs text-admin-ink-soft">
-                    <i class="fa-solid fa-circle-info text-admin-accent"></i>
-                    Urutan tidak bisa diubah saat sedang mencari. Kosongkan pencarian untuk mengatur urutan drag &amp; drop.
-                </p>
-            @endif
             <div class="admin-scroll overflow-x-auto">
                 <table class="w-full min-w-180 text-left text-sm">
                     <thead>

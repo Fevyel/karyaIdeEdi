@@ -6,6 +6,74 @@
     <title>Produk &mdash; {{ \App\Models\Setting::current()->site_name }}</title>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+
+{{-- KIE-SORT-MOBILE-COMPACT:START --}}
+<style>
+    /*
+     * Compact sorting untuk mobile/tablet.
+     * Desktop tetap seperti desain semula.
+     */
+    @media (max-width: 1023.98px) {
+        html[data-site='frontend'] select[data-kie-sort-select] {
+            width: auto !important;
+            min-width: 8.75rem !important;
+            max-width: 10.5rem !important;
+
+            height: 1.9rem !important;
+            min-height: 1.9rem !important;
+
+            padding-top: 0 !important;
+            padding-bottom: 0 !important;
+            padding-left: .5rem !important;
+            padding-right: 1.65rem !important;
+
+            font-size: 11px !important;
+            line-height: 1.1 !important;
+
+            border-radius: .45rem !important;
+        }
+
+        html[data-site='frontend'] select[data-kie-sort-select] option {
+            font-size: 11px !important;
+            line-height: 1.2 !important;
+        }
+
+        /*
+         * Rule global responsive sebelumnya membuat semua select 16px
+         * untuk mencegah zoom iPhone. Sorting bukan input teks, jadi
+         * khusus komponen ini kita override agar dropdown tidak raksasa.
+         */
+        html[data-site='frontend'] select[data-kie-sort-select]:focus {
+            font-size: 11px !important;
+        }
+
+        html[data-site='frontend'] div:has(> select[data-kie-sort-select]),
+        html[data-site='frontend'] label:has(+ select[data-kie-sort-select]) {
+            font-size: 10px !important;
+            line-height: 1.2 !important;
+        }
+    }
+
+    @media (max-width: 639.98px) {
+        html[data-site='frontend'] select[data-kie-sort-select] {
+            min-width: 8.25rem !important;
+            max-width: 9.5rem !important;
+
+            height: 1.75rem !important;
+            min-height: 1.75rem !important;
+
+            padding-left: .45rem !important;
+            padding-right: 1.45rem !important;
+
+            font-size: 10.5px !important;
+        }
+
+        html[data-site='frontend'] select[data-kie-sort-select] option {
+            font-size: 10.5px !important;
+        }
+    }
+</style>
+{{-- KIE-SORT-MOBILE-COMPACT:END --}}
 </head>
 
 @php
@@ -109,11 +177,7 @@
     {{-- ================= SHOP HERO / BREADCRUMB ================= --}}
     <section style="background-color: {{ $produkWarnaHeroBg }};">
         <div class="mx-auto flex min-h-43.75 max-w-295 items-center justify-center gap-6 px-5 py-12 sm:px-7 lg:px-8">
-            <div class="hidden shrink-0 -translate-y-3 grid-cols-2 gap-1 sm:grid">
-                <span class="h-1 w-1 rounded-full" style="background-color: {{ $produkHeroWarna['dot'] }};"></span>
-                <span class="h-1 w-1 rounded-full" style="background-color: {{ $produkHeroWarna['dot'] }};"></span>
-                <span class="h-1 w-1 rounded-full" style="background-color: {{ $produkHeroWarna['dot'] }};"></span>
-            </div>
+
             <div class="flex flex-col items-center text-center">
                 <h1 class="font-display text-4xl font-semibold tracking-tight text-[#171717] sm:text-5xl" style="color: {{ $produkHeroWarna['heading'] }};">Produk</h1>
                 <div class="mt-3 flex items-center gap-2 text-[11px] text-[#A29587]" style="color: {{ $produkHeroWarna['soft'] }};">
@@ -122,11 +186,7 @@
                     <span class="font-medium text-[#2A211B]" style="color: {{ $produkHeroWarna['strong'] }};">Produk</span>
                 </div>
             </div>
-            <div class="hidden shrink-0 translate-y-3 grid-cols-2 gap-1 sm:grid">
-                <span class="h-1 w-1 rounded-full" style="background-color: {{ $produkHeroWarna['dot'] }};"></span>
-                <span class="h-1 w-1 rounded-full" style="background-color: {{ $produkHeroWarna['dot'] }};"></span>
-                <span class="h-1 w-1 rounded-full" style="background-color: {{ $produkHeroWarna['dot'] }};"></span>
-            </div>
+
         </div>
     </section>
 
@@ -135,10 +195,10 @@
         <div class="mx-auto max-w-295 px-5 py-10 sm:px-7 sm:py-12 lg:px-8 lg:py-14">
 
             <form id="shop-filter-form" action="{{ route('products.index') }}" method="GET">
-                <div class="grid grid-cols-1 gap-10 lg:grid-cols-[145px_minmax(0,1fr)] lg:gap-8">
+                <div data-kie-catalog-layout class="grid grid-cols-1 gap-10 lg:grid-cols-[145px_minmax(0,1fr)] lg:gap-8">
 
                     {{-- ================= FILTER SIDEBAR ================= --}}
-                    <aside class="lg:pt-1">
+                    <aside data-kie-catalog-filter class="lg:pt-1">
                         <div class="flex items-center justify-between lg:block">
                             <h2 class="text-sm font-semibold text-[#2A211B]" style="color: {{ $produkKontenWarna['heading'] }};">Filter Options</h2>
                         </div>
@@ -146,7 +206,7 @@
                         <div class="mt-8">
                             <p class="text-xs font-semibold text-[#2A211B]" style="color: {{ $produkKontenWarna['heading'] }};">Category</p>
 
-                            <div class="mt-3 space-y-2.5">
+                            <div data-kie-catalog-filter-options class="mt-3 space-y-2.5">
                                 @foreach ($categories as $category)
                                     <label class="flex cursor-pointer items-center gap-2 text-[11px] text-[#75685B] transition-colors hover:text-[#2A211B]" style="color: {{ $produkKontenWarna['body'] }};">
                                         <input
@@ -182,7 +242,7 @@
 
                             <label class="flex items-center gap-2 text-[10px] text-[#8D7E6F]" style="color: {{ $produkKontenWarna['muted'] }};">
                                 <span>Sort by :</span>
-                                <select name="sort" onchange="this.form.submit()" class="cursor-pointer border-0 bg-transparent py-1 pl-1 pr-5 text-[10px] font-medium text-[#2A211B] outline-none focus:ring-0" style="color: {{ $produkKontenWarna['heading'] }};">
+                                <select data-kie-sort-select name="sort" onchange="this.form.submit()" class="cursor-pointer border-0 bg-transparent py-1 pl-1 pr-5 text-[10px] font-medium text-[#2A211B] outline-none focus:ring-0" style="color: {{ $produkKontenWarna['heading'] }};">
                                     <option value="">Default Sorting</option>
                                     <option value="price_asc" @selected(request('sort') === 'price_asc')>Price: Low to High</option>
                                     <option value="price_desc" @selected(request('sort') === 'price_desc')>Price: High to Low</option>
@@ -228,7 +288,7 @@
                             </div>
                         @else
                             {{-- Product grid: 3 kolom seperti referensi Figma --}}
-                            <div class="grid grid-cols-1 gap-x-6 gap-y-12 sm:grid-cols-2 lg:grid-cols-3">
+                            <div data-kie-product-grid class="grid grid-cols-2 gap-x-3 gap-y-8 sm:gap-x-5 sm:gap-y-10 lg:grid-cols-3 lg:gap-x-6 lg:gap-y-12">
                                 @foreach ($products as $product)
                                     @php
                                         $hasDiscount = $product->harga_diskon && (float) $product->harga_diskon > 0 && (float) $product->harga_diskon < (float) $product->harga;

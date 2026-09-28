@@ -78,7 +78,7 @@
 
                                 <div class="mt-2 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                                     <div>
-                                        <p class="font-display text-2xl font-semibold tracking-[0.06em] text-[#1A1A1A] sm:text-3xl">
+                                        <p data-kie-payment-number class="font-display text-2xl font-semibold tracking-[0.06em] text-[#1A1A1A] sm:text-3xl">
                                             {{ $paymentNumber }}
                                         </p>
 

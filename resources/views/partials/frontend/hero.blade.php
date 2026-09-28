@@ -149,7 +149,7 @@
     $heroStatIcons = ['fa-users', 'fa-couch', 'fa-award'];
 @endphp
 
-<section class="relative isolate flex min-h-[600px] items-center overflow-hidden sm:min-h-[680px] lg:min-h-[760px]" style="background-color: {{ $heroBgColor }};">
+<section data-kie-home-hero class="relative isolate flex min-h-[600px] items-center overflow-hidden sm:min-h-[680px] lg:min-h-[760px]" style="background-color: {{ $heroBgColor }};">
     {{-- ============ Foto Header â€” background satu section penuh ============ --}}
     <div class="absolute inset-0 -z-10">
         {{-- Perbaikan garis tipis di batas hero -> section bawah: di layar dengan skala
@@ -182,7 +182,7 @@
     </div>
 
     {{-- ============ Teks, CTA, Statistik â€” overlay di atas foto, center-align ============ --}}
-    <div class="relative isolate mx-auto w-full max-w-3xl px-6 py-16 text-center sm:px-8 sm:py-20 lg:px-10 lg:py-24">
+    <div data-kie-home-hero-content class="relative isolate mx-auto w-full max-w-3xl px-6 py-16 text-center sm:px-8 sm:py-20 lg:px-10 lg:py-24">
         {{-- Cahaya (glow) -- SATU lapisan besar & lembut di belakang seluruh
              blok teks, "isolate" di wrapper di atas menjamin -z-10 ini selalu
              di belakang badge/judul/deskripsi/statistik, tidak peduli warna
@@ -219,6 +219,7 @@
         </p>
 
         <h1
+            data-kie-home-hero-title
             class="animate-fade-in-up font-display mt-3 text-5xl font-semibold leading-[0.95] tracking-tight sm:text-6xl lg:text-7xl"
             style="animation-delay: .16s; color: {{ $heroHeadingColor }}; text-shadow: 0 4px 18px rgba(0,0,0,0.4);"
         >
@@ -240,7 +241,7 @@
         </p>
 
         {{-- CTA â€” TIDAK BISA DIEDIT ADMIN, sengaja hardcode (label & link). --}}
-        <div class="animate-fade-in-up mt-9 flex flex-wrap items-center justify-center gap-4" style="animation-delay: .4s;">
+        <div data-kie-home-hero-actions class="animate-fade-in-up mt-9 flex flex-wrap items-center justify-center gap-4" style="animation-delay: .4s;">
             <a
                 href="{{ route('products.index') }}"
                 class="group inline-flex items-center gap-2 rounded-lg bg-[#1A1A1A] px-7 py-3.5 text-sm font-medium text-white shadow-lg shadow-black/20 transition-all duration-300 hover:-translate-y-0.5 hover:bg-black hover:shadow-xl hover:shadow-black/30"
@@ -260,7 +261,7 @@
 
         {{-- Statistik â€” kartu kaca (glass card) dengan ikon, datanya persis
              sama (value/label dari admin), cuma tampilannya diperkaya. --}}
-        <dl class="animate-fade-in-up mx-auto mt-11 flex max-w-2xl flex-wrap items-stretch justify-center gap-2 sm:gap-3" style="animation-delay: .48s;">
+        <dl data-kie-home-hero-stats class="animate-fade-in-up mx-auto mt-11 flex max-w-2xl flex-wrap items-stretch justify-center gap-2 sm:gap-3" style="animation-delay: .48s;">
             @foreach ($headerSection['stats'] as $i => $stat)
                 <div
                     class="flex min-w-[88px] flex-1 flex-col items-center gap-1.5 rounded-2xl border px-3 py-3 backdrop-blur-md sm:min-w-[128px] sm:px-5 sm:py-4"

@@ -7,7 +7,7 @@
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
 </head>
-<body class="min-h-screen bg-white font-sans text-[#2A211B] antialiased">
+<body data-kie-legal-page class="min-h-screen bg-white font-sans text-[#2A211B] antialiased">
     @include('partials.frontend.navbar')
 
     @php

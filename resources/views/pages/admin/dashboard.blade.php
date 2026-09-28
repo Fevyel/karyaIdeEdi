@@ -205,9 +205,8 @@ new #[Layout('layouts::admin-panel')] #[Title('Dashboard')] class extends Compon
 };
 ?>
 
-<div class="space-y-7">
-
-    {{-- ================= HEADER ================= --}}
+<div data-kie-dashboard class="space-y-7">
+{{-- ================= HEADER ================= --}}
     <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
             <h2 class="font-display text-xl font-semibold tracking-tight text-admin-ink sm:text-2xl">
@@ -229,7 +228,7 @@ new #[Layout('layouts::admin-panel')] #[Title('Dashboard')] class extends Compon
     </div>
 
     {{-- ================= STAT CARDS ================= --}}
-    <div class="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-4">
+    <div data-kie-dashboard-stats class="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-4">
         @foreach ($cards as $card)
             <div class="group relative overflow-hidden rounded-[1.25rem] border p-5 transition-all duration-300 ease-out hover:-translate-y-1
                 {{ $card['highlight']
@@ -471,3 +470,189 @@ new #[Layout('layouts::admin-panel')] #[Title('Dashboard')] class extends Compon
         </div>
     </div>
 </div>
+
+
+{{-- KIE-DASHBOARD-MOBILE-RESPONSIVE:START --}}
+<style>
+    @media (max-width: 767.98px) {
+        [data-kie-dashboard] {
+            gap: 1rem !important;
+        }
+
+        /* Header dashboard lebih ringkas. */
+        [data-kie-dashboard] > div:first-child {
+            display: grid !important;
+            grid-template-columns: minmax(0, 1fr) auto !important;
+            align-items: center !important;
+            gap: .65rem !important;
+        }
+
+        [data-kie-dashboard] > div:first-child h2 {
+            font-size: 1.05rem !important;
+            line-height: 1.2 !important;
+        }
+
+        [data-kie-dashboard] > div:first-child h2 i {
+            font-size: .85rem !important;
+        }
+
+        [data-kie-dashboard] > div:first-child p {
+            margin-top: .25rem !important;
+            font-size: .7rem !important;
+            line-height: 1.45 !important;
+        }
+
+        [data-kie-dashboard] > div:first-child > a {
+            width: auto !important;
+            min-width: 0 !important;
+
+            padding: .55rem .7rem !important;
+            gap: .35rem !important;
+
+            font-size: .68rem !important;
+            white-space: nowrap !important;
+        }
+
+        /*
+         * Empat statistik menjadi 2 x 2.
+         * Ini mengurangi scroll vertikal besar yang terlihat di screenshot.
+         */
+        [data-kie-dashboard-stats] {
+            grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+            gap: .65rem !important;
+        }
+
+        [data-kie-dashboard-stats] > div {
+            min-width: 0 !important;
+            min-height: 7.15rem !important;
+
+            padding: .8rem !important;
+            border-radius: 1rem !important;
+        }
+
+        [data-kie-dashboard-stats] > div > .relative.flex {
+            gap: .35rem !important;
+            align-items: flex-start !important;
+        }
+
+        [data-kie-dashboard-stats] > div span[class*="uppercase"] {
+            font-size: .5rem !important;
+            line-height: 1.35 !important;
+            letter-spacing: .055em !important;
+        }
+
+        [data-kie-dashboard-stats] > div span.flex.h-10 {
+            width: 1.85rem !important;
+            height: 1.85rem !important;
+            flex: 0 0 1.85rem !important;
+            border-radius: .55rem !important;
+        }
+
+        [data-kie-dashboard-stats] > div span.flex.h-10 i {
+            font-size: .65rem !important;
+        }
+
+        [data-kie-dashboard-stats] > div > p.mt-5 {
+            margin-top: .8rem !important;
+
+            font-size: 1.03rem !important;
+            line-height: 1.1 !important;
+
+            overflow-wrap: anywhere !important;
+        }
+
+        [data-kie-dashboard-stats] > div > p.mt-1 {
+            margin-top: .25rem !important;
+            font-size: .55rem !important;
+            line-height: 1.25 !important;
+        }
+
+        /*
+         * Semua panel setelah statistik tetap satu kolom, tetapi lebih padat.
+         */
+        [data-kie-dashboard] > div.grid:not([data-kie-dashboard-stats]) {
+            gap: .75rem !important;
+        }
+
+        [data-kie-dashboard] > div.grid:not([data-kie-dashboard-stats]) > div {
+            min-width: 0 !important;
+            padding: .85rem !important;
+            border-radius: 1rem !important;
+        }
+
+        [data-kie-dashboard] > div.grid:not([data-kie-dashboard-stats]) p.text-sm {
+            font-size: .78rem !important;
+        }
+
+        [data-kie-dashboard] > div.grid:not([data-kie-dashboard-stats]) p.text-xs,
+        [data-kie-dashboard] > div.grid:not([data-kie-dashboard-stats]) span.text-xs {
+            font-size: .65rem !important;
+        }
+
+        /* Grafik 7 hari dibuat lebih pendek. */
+        [data-kie-dashboard] .h-40 {
+            height: 7.5rem !important;
+        }
+
+        [data-kie-dashboard] .mt-6 {
+            margin-top: .85rem !important;
+        }
+
+        [data-kie-dashboard] .mt-5 {
+            margin-top: .75rem !important;
+        }
+
+        /* Donut lebih proporsional untuk HP. */
+        [data-kie-dashboard] div[class*="h-40"][class*="w-40"][class*="rounded-full"] {
+            width: 7.75rem !important;
+            height: 7.75rem !important;
+        }
+
+        [data-kie-dashboard] div[class*="h-28"][class*="w-28"][class*="rounded-full"] {
+            width: 5.4rem !important;
+            height: 5.4rem !important;
+        }
+
+        /*
+         * Produk terlaris / interaksi: badge tidak memakan ruang terlalu besar.
+         */
+        [data-kie-dashboard] li {
+            min-width: 0 !important;
+        }
+
+        [data-kie-dashboard] li span[class*="rounded-full"][class*="px-2.5"] {
+            padding-left: .45rem !important;
+            padding-right: .45rem !important;
+            font-size: .58rem !important;
+        }
+
+        /* Tabel tetap scroll di dalam card. */
+        [data-kie-dashboard] table {
+            min-width: 32rem !important;
+            font-size: .68rem !important;
+        }
+    }
+
+    @media (max-width: 359.98px) {
+        [data-kie-dashboard-stats] {
+            gap: .5rem !important;
+        }
+
+        [data-kie-dashboard-stats] > div {
+            padding: .68rem !important;
+        }
+
+        [data-kie-dashboard-stats] > div > p.mt-5 {
+            font-size: .92rem !important;
+        }
+
+        [data-kie-dashboard] > div:first-child {
+            grid-template-columns: 1fr !important;
+        }
+
+        [data-kie-dashboard] > div:first-child > a {
+            justify-self: start !important;
+        }
+    }
+</style>
+{{-- KIE-DASHBOARD-MOBILE-RESPONSIVE:END --}}

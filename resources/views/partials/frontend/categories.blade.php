@@ -89,7 +89,7 @@
             </div>
 
             {{-- ============ Grid kategori ============ --}}
-            <div class="mt-10 grid grid-cols-2 gap-4 sm:grid-cols-2 sm:gap-8 lg:grid-cols-4">
+            <div data-kie-home-categories-grid data-kie-home-categories-slider class="mt-10 grid grid-cols-2 gap-4 sm:grid-cols-2 sm:gap-8 lg:grid-cols-4">
                 @foreach ($displayCategories as $category)
                     <a
                         href="{{ route('products.index', ['category' => $category->slug]) }}"
