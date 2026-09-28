@@ -37,3 +37,6 @@ temp-*-patch/
 
 # Local maintenance scripts
 /tools/
+
+# Local pre-hosting backups
+/backups/
