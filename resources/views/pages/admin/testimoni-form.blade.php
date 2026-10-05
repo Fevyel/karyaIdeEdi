@@ -1,16 +1,26 @@
 <?php
 
 use App\Models\Testimonial;
+use App\Models\Product;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
+use Livewire\WithFileUploads;
 
 new #[Layout('layouts::admin-panel')] class extends Component
 {
+    use WithFileUploads;
+
+    // KIE_ADMIN_TESTIMONIAL_PHOTOS_V1
     public ?int $testimonialId = null;
 
     public bool $isEdit = false;
+
+    /* KIE_ADMIN_TESTIMONIAL_PRODUCT_LINK_V1 */
+    public ?int $product_id = null;
+
+    public array $productOptions = [];
 
     public string $customer_name = '';
 
@@ -33,6 +43,15 @@ new #[Layout('layouts::admin-panel')] class extends Component
 
     public ?string $foto_lama = null;
 
+    /** Foto-foto ulasan yang baru dipilih admin. */
+    public array $reviewPhotos = [];
+
+    /** Foto ulasan lama saat mode edit. */
+    public array $existingReviewPhotos = [];
+
+    /** Foto lama yang baru benar-benar dihapus saat tombol Simpan ditekan. */
+    public array $removedReviewPhotos = [];
+
     /**
      * Satu komponen dipakai untuk Tambah (tanpa $testimonial) maupun
      * Edit (route model binding otomatis mengisi $testimonial).
@@ -46,6 +65,7 @@ new #[Layout('layouts::admin-panel')] class extends Component
         if ($testimonial && $testimonial->exists) {
             $this->isEdit = true;
             $this->testimonialId = $testimonial->id;
+            $this->product_id = $testimonial->product_id;
             $this->customer_name = $testimonial->customer_name;
             $this->jabatan = (string) $testimonial->jabatan;
             $this->provinsi = (string) $testimonial->provinsi;
@@ -55,7 +75,27 @@ new #[Layout('layouts::admin-panel')] class extends Component
             $this->is_active = $testimonial->is_active;
             $this->urutan = $testimonial->urutan;
             $this->foto_lama = $testimonial->foto;
+            $this->existingReviewPhotos = collect($testimonial->photos ?? [])
+                ->filter()
+                ->values()
+                ->all();
         }
+
+        $this->productOptions = Product::query()
+            ->where(function ($query) {
+                $query->where('status', 'aktif');
+
+                if ($this->product_id) {
+                    $query->orWhere('id', $this->product_id);
+                }
+            })
+            ->orderBy('nama')
+            ->get(['id', 'nama'])
+            ->map(fn (Product $product) => [
+                'id' => $product->id,
+                'nama' => $product->nama,
+            ])
+            ->all();
     }
 
     public function getPageTitleProperty(): string
@@ -79,6 +119,7 @@ new #[Layout('layouts::admin-panel')] class extends Component
     protected function rules(): array
     {
         return [
+            'product_id' => ['nullable', 'integer', 'exists:products,id'],
             'customer_name' => ['required', 'string', 'max:255'],
             'jabatan' => ['nullable', 'string', 'max:255'],
             'provinsi' => ['nullable', 'string', 'max:255'],
@@ -87,6 +128,8 @@ new #[Layout('layouts::admin-panel')] class extends Component
             'comment' => ['required', 'string', 'max:2000'],
             'urutan' => ['required', 'integer', 'min:0'],
             'fotoCroppedBase64' => ['nullable', 'string'],
+            'reviewPhotos' => ['nullable', 'array', 'max:5'],
+            'reviewPhotos.*' => ['image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
         ];
     }
 
@@ -118,9 +161,54 @@ new #[Layout('layouts::admin-panel')] class extends Component
         return $binary;
     }
 
+    public function removeExistingReviewPhoto(int $index): void
+    {
+        if (! array_key_exists($index, $this->existingReviewPhotos)) {
+            return;
+        }
+
+        $path = $this->existingReviewPhotos[$index];
+
+        if ($path) {
+            $this->removedReviewPhotos[] = $path;
+        }
+
+        unset($this->existingReviewPhotos[$index]);
+
+        $this->existingReviewPhotos = array_values(
+            $this->existingReviewPhotos
+        );
+    }
+
+    public function removeNewReviewPhoto(int $index): void
+    {
+        if (! array_key_exists($index, $this->reviewPhotos)) {
+            return;
+        }
+
+        unset($this->reviewPhotos[$index]);
+
+        $this->reviewPhotos = array_values(
+            $this->reviewPhotos
+        );
+    }
+
     public function save(): void
     {
         $this->validate();
+
+        if (
+            count($this->existingReviewPhotos)
+            + count($this->reviewPhotos)
+            > 5
+        ) {
+            $this->addError(
+                'reviewPhotos',
+                'Maksimal 5 foto ulasan.'
+            );
+
+            return;
+        }
 
         $testimonial = $this->isEdit ? Testimonial::findOrFail($this->testimonialId) : new Testimonial();
 
@@ -138,6 +226,7 @@ new #[Layout('layouts::admin-panel')] class extends Component
             }
         }
 
+        $testimonial->product_id = $this->product_id ?: null;
         $testimonial->customer_name = $this->customer_name;
         $testimonial->jabatan = $this->jabatan !== '' ? $this->jabatan : null;
         $testimonial->provinsi = $this->provinsi !== '' ? $this->provinsi : null;
@@ -146,6 +235,31 @@ new #[Layout('layouts::admin-panel')] class extends Component
         $testimonial->comment = $this->comment;
         $testimonial->is_active = $this->is_active;
         $testimonial->urutan = $this->urutan;
+
+        /*
+         * FOTO ULASAN / TESTIMONI
+         * Berbeda dengan `foto` yang merupakan avatar pelanggan.
+         */
+        $savedReviewPhotos = array_values(
+            array_filter($this->existingReviewPhotos)
+        );
+
+        foreach ($this->reviewPhotos as $reviewPhoto) {
+            $savedReviewPhotos[] = $reviewPhoto->store(
+                'testimoni/reviews',
+                'public'
+            );
+        }
+
+        $testimonial->photos = $savedReviewPhotos !== []
+            ? $savedReviewPhotos
+            : null;
+
+        foreach (array_unique($this->removedReviewPhotos) as $removedPhoto) {
+            if ($removedPhoto) {
+                Storage::disk('public')->delete($removedPhoto);
+            }
+        }
 
         if (! $this->isEdit) {
             // Testimoni yang dibuat langsung admin di menu ini otomatis
@@ -239,6 +353,125 @@ new #[Layout('layouts::admin-panel')] class extends Component
             </div>
         </div>
 
+
+        {{-- ================= CARD: FOTO ULASAN ================= --}}
+        <div class="rounded-2xl border border-admin-border bg-admin-surface p-5 shadow-sm sm:p-6">
+            <div class="flex flex-wrap items-start justify-between gap-3">
+                <div>
+                    <h3 class="flex items-center gap-2 text-sm font-semibold text-admin-ink">
+                        <i class="fa-solid fa-images text-admin-accent"></i>
+                        Foto Ulasan / Testimoni
+                    </h3>
+
+                    <p class="mt-1 text-xs text-admin-ink-soft">
+                        Opsional. Maksimal 5 foto, masing-masing maksimal 2 MB.
+                        Foto ini akan tampil bersama isi testimoni di frontend.
+                    </p>
+                </div>
+
+                <label
+                    for="review_photos"
+                    class="cursor-pointer rounded-full bg-admin-accent px-4 py-2 text-xs font-semibold text-white transition hover:bg-admin-accent-strong"
+                >
+                    <i class="fa-solid fa-plus mr-1"></i>
+                    Tambah Foto
+                </label>
+
+                <input
+                    id="review_photos"
+                    type="file"
+                    wire:model="reviewPhotos"
+                    accept="image/jpeg,image/png,image/webp"
+                    multiple
+                    class="hidden"
+                >
+            </div>
+
+            <div
+                wire:loading
+                wire:target="reviewPhotos"
+                class="mt-4 text-xs text-admin-ink-soft"
+            >
+                <i class="fa-solid fa-circle-notch animate-spin mr-1"></i>
+                Memuat foto...
+            </div>
+
+            @error('reviewPhotos')
+                <p class="mt-3 text-xs font-medium text-red-600">
+                    <i class="fa-solid fa-circle-exclamation mr-1"></i>
+                    {{ $message }}
+                </p>
+            @enderror
+
+            @error('reviewPhotos.*')
+                <p class="mt-3 text-xs font-medium text-red-600">
+                    <i class="fa-solid fa-circle-exclamation mr-1"></i>
+                    {{ $message }}
+                </p>
+            @enderror
+
+            @if ($existingReviewPhotos !== [] || $reviewPhotos !== [])
+                <div
+                    class="mt-5"
+                    style="display:flex;flex-wrap:wrap;gap:12px;"
+                >
+                    {{-- Foto yang sudah tersimpan --}}
+                    @foreach ($existingReviewPhotos as $index => $photo)
+                        <div
+                            wire:key="existing-review-photo-{{ $index }}"
+                            style="position:relative;width:84px;height:84px;"
+                        >
+                            <img
+                                src="{{ \Illuminate\Support\Facades\Storage::disk('public')->url($photo) }}"
+                                alt="Foto ulasan"
+                                style="width:84px;height:84px;display:block;object-fit:cover;border-radius:12px;border:1px solid var(--color-admin-border);"
+                            >
+
+                            <button
+                                type="button"
+                                wire:click="removeExistingReviewPhoto({{ $index }})"
+                                title="Hapus foto"
+                                style="position:absolute;right:-6px;top:-6px;width:24px;height:24px;border-radius:999px;background:#b91c1c;color:#fff;border:2px solid var(--color-admin-surface);display:flex;align-items:center;justify-content:center;"
+                            >
+                                <i class="fa-solid fa-xmark" style="font-size:10px;"></i>
+                            </button>
+                        </div>
+                    @endforeach
+
+                    {{-- Foto baru sebelum disimpan --}}
+                    @foreach ($reviewPhotos as $index => $photo)
+                        <div
+                            wire:key="new-review-photo-{{ $index }}"
+                            style="position:relative;width:84px;height:84px;"
+                        >
+                            @if (method_exists($photo, 'temporaryUrl'))
+                                <img
+                                    src="{{ $photo->temporaryUrl() }}"
+                                    alt="Preview foto ulasan"
+                                    style="width:84px;height:84px;display:block;object-fit:cover;border-radius:12px;border:1px solid var(--color-admin-border);"
+                                >
+                            @endif
+
+                            <button
+                                type="button"
+                                wire:click="removeNewReviewPhoto({{ $index }})"
+                                title="Hapus foto"
+                                style="position:absolute;right:-6px;top:-6px;width:24px;height:24px;border-radius:999px;background:#b91c1c;color:#fff;border:2px solid var(--color-admin-surface);display:flex;align-items:center;justify-content:center;"
+                            >
+                                <i class="fa-solid fa-xmark" style="font-size:10px;"></i>
+                            </button>
+                        </div>
+                    @endforeach
+                </div>
+            @else
+                <div class="mt-4 rounded-xl border border-dashed border-admin-border px-4 py-5 text-center">
+                    <i class="fa-regular fa-images text-lg text-admin-ink-soft"></i>
+                    <p class="mt-2 text-xs text-admin-ink-soft">
+                        Belum ada foto ulasan.
+                    </p>
+                </div>
+            @endif
+        </div>
         {{-- ================= CARD: INFORMASI TESTIMONI ================= --}}
         <div class="rounded-2xl border border-admin-border bg-admin-surface p-5 shadow-sm sm:p-6">
             <h3 class="mb-5 flex items-center gap-2 text-sm font-semibold text-admin-ink">
@@ -247,6 +480,49 @@ new #[Layout('layouts::admin-panel')] class extends Component
             </h3>
 
             <div class="grid gap-5 sm:grid-cols-2">
+
+                {{-- Produk yang menerima review ini --}}
+                <div class="sm:col-span-2">
+                    <label
+                        for="product_id"
+                        class="mb-1.5 block text-sm font-medium text-admin-ink"
+                    >
+                        Produk Terkait
+                        <span class="font-normal text-admin-ink-soft">
+                            (opsional)
+                        </span>
+                    </label>
+
+                    <select
+                        id="product_id"
+                        wire:model="product_id"
+                        class="w-full rounded-lg border {{ $errors->has('product_id') ? 'border-red-400' : 'border-admin-border' }} bg-admin-surface px-3 py-2.5 text-sm text-admin-ink transition focus:border-admin-accent focus:outline-none focus:ring-2 focus:ring-admin-accent/20"
+                    >
+                        <option value="">
+                            Testimoni umum ? tidak terkait produk
+                        </option>
+
+                        @foreach ($productOptions as $productOption)
+                            <option value="{{ $productOption['id'] }}">
+                                {{ $productOption['nama'] }}
+                            </option>
+                        @endforeach
+                    </select>
+
+                    <p class="mt-1.5 text-xs text-admin-ink-soft">
+                        Jika memilih produk, testimoni ini otomatis tampil
+                        pada bagian Review produk tersebut dan ratingnya ikut
+                        dihitung ke nilai produk.
+                    </p>
+
+                    @error('product_id')
+                        <p class="mt-1.5 flex items-center gap-1 text-xs font-medium text-red-600">
+                            <i class="fa-solid fa-circle-exclamation"></i>
+                            {{ $message }}
+                        </p>
+                    @enderror
+                </div>
+
                 <div>
                     <label for="customer_name" class="mb-1.5 block text-sm font-medium text-admin-ink">Nama Pelanggan</label>
                     <input
@@ -288,22 +564,37 @@ new #[Layout('layouts::admin-panel')] class extends Component
                     >
                     @error('kabupaten')<p class="mt-1.5 flex items-center gap-1 text-xs font-medium text-red-600"><i class="fa-solid fa-circle-exclamation"></i> {{ $message }}</p>@enderror
                 </div>
+                <div x-data="{ localRating: @entangle('rating') }">
+                    <label class="mb-1.5 block text-sm font-medium text-admin-ink">
+                        Rating
+                    </label>
 
-                <div>
-                    <label class="mb-1.5 block text-sm font-medium text-admin-ink">Rating</label>
                     <div class="flex items-center gap-1">
                         @for ($i = 1; $i <= 5; $i++)
                             <button
                                 type="button"
-                                wire:click="$set('rating', {{ $i }})"
-                                class="text-xl transition hover:scale-110 {{ $i <= $rating ? 'text-admin-gold' : 'text-admin-border' }}"
+                                x-on:click="localRating = {{ $i }}"
+                                class="text-xl transition duration-100 hover:scale-110"
+                                :class="{{ $i }} <= localRating
+                                    ? 'text-admin-gold'
+                                    : 'text-admin-border'"
+                                aria-label="Rating {{ $i }} dari 5"
                             >
                                 <i class="fa-solid fa-star"></i>
                             </button>
                         @endfor
-                        <span class="ml-2 text-sm text-admin-ink-soft">{{ $rating }}/5</span>
+
+                        <span class="ml-2 text-sm text-admin-ink-soft">
+                            <span x-text="localRating"></span>/5
+                        </span>
                     </div>
-                    @error('rating')<p class="mt-1.5 flex items-center gap-1 text-xs font-medium text-red-600"><i class="fa-solid fa-circle-exclamation"></i> {{ $message }}</p>@enderror
+
+                    @error('rating')
+                        <p class="mt-1.5 flex items-center gap-1 text-xs font-medium text-red-600">
+                            <i class="fa-solid fa-circle-exclamation"></i>
+                            {{ $message }}
+                        </p>
+                    @enderror
                 </div>
 
                 <div>

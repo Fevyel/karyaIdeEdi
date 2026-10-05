@@ -5,9 +5,7 @@
         <meta name="viewport" content="width=device-width, initial-scale=1">
 
         <title>{{ $title ?? 'Admin Panel' }} - Karya Ide Edi</title>
-
-        <link rel="icon" href="/favicon.ico" sizes="any">
-        <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+        @include('partials.favicon')
 
         <link rel="preconnect" href="https://fonts.bunny.net">
         <link href="https://fonts.bunny.net/css?family=fraunces:400,500,600,600i,700|instrument-sans:400,500,600,700" rel="stylesheet">
@@ -515,6 +513,42 @@
     }
 </style>
 {{-- KIE-ADMIN-MOBILE-SCROLL-CONTAINER-V2:END --}}
+
+    {{-- KIE-ADMIN-ACTIVE-GOLD --}}
+    <style>
+        .kie-admin-active-gold {
+            background: linear-gradient(
+                135deg,
+                #7A5228 0%,
+                #65421F 55%,
+                #533519 100%
+            ) !important;
+
+            border: 1px solid #B98A52 !important;
+            color: #FFFFFF !important;
+
+            box-shadow:
+                0 8px 22px rgba(55, 31, 11, .28),
+                inset 0 1px 0 rgba(255,255,255,.10) !important;
+        }
+
+        .kie-admin-active-gold:hover {
+            background: linear-gradient(
+                135deg,
+                #896033 0%,
+                #704B25 55%,
+                #5D3B1D 100%
+            ) !important;
+
+            border-color: #C79A62 !important;
+            color: #FFFFFF !important;
+        }
+
+        .kie-admin-active-gold i {
+            color: #FFFFFF !important;
+        }
+    </style>
+
 </head>
     <body data-kie-admin-responsive x-data="{ sidebarOpen: false }"
         class="bg-admin-canvas font-sans text-admin-ink antialiased"
@@ -571,7 +605,11 @@
                     </span>
                 </div>
 
-                <nav data-sidebar-scroll class="admin-scroll flex-1 overflow-y-auto px-5 py-6">
+                <nav
+    data-sidebar-scroll
+    @click="if ($event.target.closest('a')) sidebarOpen = false"
+    class="admin-scroll flex-1 overflow-y-auto px-5 py-6"
+>
                     <p class="px-2 pb-2 text-[11px] font-semibold uppercase tracking-[0.2em] text-admin-sidebar-ink/35">
                         Menu
                     </p>
@@ -612,7 +650,7 @@
                                     wire:navigate
                                     class="group relative flex items-center justify-between overflow-hidden rounded-xl px-3 py-2.75 text-sm font-medium transition-all duration-200
                                         {{ $item['active']
-                                            ? 'bg-linear-to-r from-admin-accent to-admin-accent-strong text-white shadow-md shadow-black/25'
+                                            ? 'kie-admin-active-gold text-white shadow-md shadow-black/25'
                                             : 'text-admin-sidebar-ink/55 hover:translate-x-0.5 hover:bg-admin-sidebar-ink/6 hover:text-admin-sidebar-ink' }}"
                                 >
                                     <span class="absolute inset-y-0 left-0 w-0.75 rounded-r-full bg-admin-gold transition-transform duration-200
@@ -655,7 +693,7 @@
                                     wire:navigate
                                     class="group relative flex items-center gap-3 overflow-hidden rounded-xl px-3 py-2.75 text-sm font-medium transition-all duration-200
                                         {{ $item['active']
-                                            ? 'bg-linear-to-r from-admin-accent to-admin-accent-strong text-white shadow-md shadow-black/25'
+                                            ? 'kie-admin-active-gold text-white shadow-md shadow-black/25'
                                             : 'text-admin-sidebar-ink/55 hover:translate-x-0.5 hover:bg-admin-sidebar-ink/6 hover:text-admin-sidebar-ink' }}"
                                 >
                                     <span class="absolute inset-y-0 left-0 w-0.75 rounded-r-full bg-admin-gold transition-transform duration-200
@@ -676,7 +714,7 @@
                                 wire:navigate
                                 class="group relative flex items-center justify-between overflow-hidden rounded-xl px-3 py-2.75 text-sm font-medium transition-all duration-200
                                     {{ $isInteraksiActive
-                                        ? 'bg-linear-to-r from-admin-accent to-admin-accent-strong text-white shadow-md shadow-black/25'
+                                        ? 'kie-admin-active-gold text-white shadow-md shadow-black/25'
                                         : 'text-admin-sidebar-ink/55 hover:translate-x-0.5 hover:bg-admin-sidebar-ink/6 hover:text-admin-sidebar-ink' }}"
                             >
                                 <span class="absolute inset-y-0 left-0 w-0.75 rounded-r-full bg-admin-gold transition-transform duration-200
@@ -715,8 +753,10 @@
             <div
                 x-show="sidebarOpen"
                 x-cloak
+                x-transition.opacity
                 @click="sidebarOpen = false"
-                class="fixed inset-0 z-30 bg-black/40 backdrop-blur-sm lg:hidden"
+                x-bind:class="sidebarOpen ? 'pointer-events-auto opacity-100' : 'pointer-events-none opacity-0'"
+                class="fixed inset-0 z-30 bg-black/40 backdrop-blur-sm transition-opacity duration-200 lg:hidden"
             ></div>
 
             {{-- ================= MAIN CONTENT ================= --}}
@@ -734,7 +774,12 @@
                             </button>
                             <div>
                                 <h1 class="font-display text-base font-semibold leading-tight tracking-tight text-admin-ink sm:text-lg">
-                                    {{ $title ?? 'Dashboard' }}
+                                    {{ $title
+    ?? (request()->routeIs('admin.testimonials.create')
+        ? 'Tambah Testimoni'
+        : (request()->routeIs('admin.testimonials.edit')
+            ? 'Edit Testimoni'
+            : 'Dashboard')) }}
                                 </h1>
                                 <p class="hidden text-[11px] font-medium uppercase tracking-[0.08em] text-admin-ink-soft/80 sm:block">
                                     Karya Ide Edi &middot; Panel Admin
@@ -854,7 +899,7 @@
                     </div>
                 </header>
 
-                <main data-kie-admin-main wire:key="main-{{ request()->path() }}" class="flex-1 animate-fade-in-up px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
+                <main data-kie-admin-main wire:key="main-{{ request()->path() }}" class="flex-1 px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
                     {{ $slot }}
                 </main>
             </div>

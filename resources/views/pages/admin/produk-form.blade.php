@@ -250,6 +250,35 @@ new #[Layout('layouts::admin-panel')] class extends Component
     {
         $this->validate();
 
+        // KIE_MAX_3_FEATURED_V1
+        if ($this->featured) {
+            if ($this->status !== 'aktif') {
+                $this->addError(
+                    'featured',
+                    'Produk Featured harus berstatus Aktif agar dapat tampil di beranda.'
+                );
+
+                return;
+            }
+
+            $featuredCount = Product::query()
+                ->where('featured', true)
+                ->when(
+                    $this->productId,
+                    fn ($query) => $query->where('id', '!=', $this->productId)
+                )
+                ->count();
+
+            if ($featuredCount >= 3) {
+                $this->addError(
+                    'featured',
+                    'Maksimal hanya 3 produk Featured di beranda. Nonaktifkan Featured pada salah satu produk lain terlebih dahulu.'
+                );
+
+                return;
+            }
+        }
+
         $product = $this->isEdit ? Product::findOrFail($this->productId) : new Product();
 
         if ($this->thumbnailCroppedBase64) {
@@ -540,13 +569,31 @@ new #[Layout('layouts::admin-panel')] class extends Component
                     </select>
                 </div>
 
-                <label class="flex w-fit cursor-pointer items-center gap-2 sm:col-span-2">
-                    <input
-                        type="checkbox" wire:model="featured"
-                        class="h-4 w-4 rounded border-admin-border text-admin-accent focus:ring-2 focus:ring-admin-accent/30"
-                    >
-                    <span class="text-sm text-admin-ink-soft">Tandai sebagai produk <span class="font-medium text-admin-ink">Featured</span></span>
-                </label>
+                <div class="sm:col-span-2">
+                    <label class="flex w-fit cursor-pointer items-center gap-2">
+                        <input
+                            type="checkbox"
+                            wire:model="featured"
+                            class="h-4 w-4 rounded border-admin-border text-admin-accent focus:ring-2 focus:ring-admin-accent/30"
+                        >
+                        <span class="text-sm text-admin-ink-soft">
+                            Tandai sebagai produk
+                            <span class="font-medium text-admin-ink">Featured</span>
+                        </span>
+                    </label>
+
+                    <p class="mt-1.5 text-xs text-admin-ink-soft">
+                        Maksimal 3 produk aktif dapat menjadi Featured.
+                        Ketiganya akan tampil di bagian Produk Unggulan Beranda.
+                    </p>
+
+                    @error('featured')
+                        <p class="mt-1.5 flex items-center gap-1 text-xs font-medium text-red-600">
+                            <i class="fa-solid fa-circle-exclamation"></i>
+                            {{ $message }}
+                        </p>
+                    @enderror
+                </div>
             </div>
         </div>
 

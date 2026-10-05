@@ -203,6 +203,342 @@
                 <a href="{{ route('payment.transfer', 'dana') }}" class="flex h-5 w-8 items-center justify-center overflow-hidden rounded-sm bg-[#4A4A4A]" aria-label="Pembayaran via DANA" title="Pembayaran via DANA"><img src="{{ asset('images/payment-official/dana.svg') }}" alt="DANA" style="display:block;max-width:27px;max-height:12px;width:auto;height:auto;object-fit:contain;"></a>
             </div>
     </div>
+
+{{-- KIE-TICKER-REFERENCE-FOOTER-V2 --}}
+<style>
+    /*
+     * Pita FURNITUR TOKO MEBEL / KARYA IDE EDI
+     * dibuat seperti referensi:
+     * gelap, tipis, garis atas-bawah, tipografi renggang,
+     * menyatu dengan footer.
+     *
+     * TEKS dan animasi bergeraknya TIDAK diganti.
+     */
+    [data-kie-reference-ticker-shell] {
+        box-sizing: border-box !important;
+        width: 100% !important;
+        max-width: none !important;
+
+        height: 46px !important;
+        min-height: 46px !important;
+
+        margin: 0 !important;
+        padding: 0 !important;
+
+        display: flex !important;
+        align-items: center !important;
+
+        overflow: hidden !important;
+
+        background: var(--kie-reference-footer-bg, #151719) !important;
+
+        border: 0 !important;
+        border-top: 1px solid rgba(255,255,255,.09) !important;
+        border-bottom: 1px solid rgba(255,255,255,.09) !important;
+        border-radius: 0 !important;
+
+        box-shadow: none !important;
+    }
+
+    [data-kie-reference-ticker-track] {
+        width: max-content !important;
+        min-width: max-content !important;
+
+        margin: 0 !important;
+
+        display: flex !important;
+        align-items: center !important;
+
+        white-space: nowrap !important;
+
+        background: transparent !important;
+        box-shadow: none !important;
+
+        color: rgba(255,255,255,.70) !important;
+
+        font-family:
+            "Courier New",
+            ui-monospace,
+            SFMono-Regular,
+            Menlo,
+            Monaco,
+            Consolas,
+            monospace !important;
+
+        font-size: 11px !important;
+        font-weight: 600 !important;
+        line-height: 1 !important;
+
+        letter-spacing: .30em !important;
+        text-transform: uppercase !important;
+    }
+
+    [data-kie-reference-ticker-track] * {
+        background: transparent !important;
+        box-shadow: none !important;
+
+        color: inherit !important;
+
+        font-family: inherit !important;
+        font-size: inherit !important;
+        font-weight: inherit !important;
+        line-height: inherit !important;
+        letter-spacing: inherit !important;
+        text-transform: inherit !important;
+    }
+
+    footer[data-kie-reference-footer] {
+        margin-top: 0 !important;
+        border-top: 0 !important;
+    }
+
+    @media (max-width: 639.98px) {
+        [data-kie-reference-ticker-shell] {
+            height: 38px !important;
+            min-height: 38px !important;
+        }
+
+        [data-kie-reference-ticker-track] {
+            font-size: 9px !important;
+            letter-spacing: .23em !important;
+        }
+    }
+</style>
+
+<script>
+(() => {
+    const transparentColor = (value) => {
+        return !value
+            || value === 'transparent'
+            || value === 'rgba(0, 0, 0, 0)';
+    };
+
+    const parseRgb = (value) => {
+        const match = String(value || '').match(
+            /rgba?\(\s*(\d+)[,\s]+(\d+)[,\s]+(\d+)/
+        );
+
+        return match
+            ? [Number(match[1]), Number(match[2]), Number(match[3])]
+            : null;
+    };
+
+    const luminance = (value) => {
+        const rgb = parseRgb(value);
+
+        if (!rgb) return 999;
+
+        return (
+            rgb[0] * .2126 +
+            rgb[1] * .7152 +
+            rgb[2] * .0722
+        );
+    };
+
+    const normalize = (value) => {
+        return String(value || '')
+            .replace(/\s+/g, ' ')
+            .trim()
+            .toUpperCase();
+    };
+
+    const visible = (element) => {
+        const rect = element.getBoundingClientRect();
+        const style = getComputedStyle(element);
+
+        return rect.width > 0
+            && rect.height > 0
+            && style.display !== 'none'
+            && style.visibility !== 'hidden';
+    };
+
+    const applyKieTickerReference = () => {
+        const footer = document.querySelector('footer');
+
+        if (!footer) return;
+
+        footer.setAttribute('data-kie-reference-footer', '');
+
+        /*
+         * Cari teks pita di SELURUH halaman.
+         * Jadi tidak peduli source Blade-nya berada di file mana.
+         */
+        const textCandidates = [...document.querySelectorAll('body *')]
+            .filter((element) => {
+                if (!visible(element)) return false;
+
+                const content = normalize(element.textContent);
+
+                return content.includes('FURNITUR TOKO MEBEL')
+                    && (
+                        content.includes('KARYA IDE EDI')
+                        || content.includes('KARYA IDE-EDI')
+                    );
+            });
+
+        if (!textCandidates.length) return;
+
+        /*
+         * Prioritas pertama: elemen yang memang sedang dianimasikan.
+         */
+        const animatedCandidates = [];
+
+        textCandidates.forEach((candidate) => {
+            [candidate, ...candidate.querySelectorAll('*')]
+                .forEach((element) => {
+                    if (!visible(element)) return;
+
+                    const content = normalize(element.textContent);
+
+                    if (
+                        !content.includes('FURNITUR TOKO MEBEL')
+                        && !content.includes('KARYA IDE EDI')
+                        && !content.includes('KARYA IDE-EDI')
+                    ) {
+                        return;
+                    }
+
+                    const style = getComputedStyle(element);
+
+                    if (
+                        style.animationName
+                        && style.animationName !== 'none'
+                    ) {
+                        animatedCandidates.push(element);
+                    }
+                });
+        });
+
+        let track = animatedCandidates[0] || null;
+
+        /*
+         * Kalau animasi ditempel lewat parent/utility lain,
+         * pilih elemen matching paling kecil.
+         */
+        if (!track) {
+            track = [...textCandidates]
+                .sort((a, b) => {
+                    const ra = a.getBoundingClientRect();
+                    const rb = b.getBoundingClientRect();
+
+                    return (ra.width * ra.height)
+                        - (rb.width * rb.height);
+                })[0];
+        }
+
+        if (!track) return;
+
+        /*
+         * Cari wrapper pita:
+         * biasanya elemen lebar viewport dengan overflow hidden.
+         */
+        let shell = track.parentElement;
+        let current = track.parentElement;
+
+        while (
+            current
+            && current !== document.body
+            && current !== footer
+        ) {
+            const rect = current.getBoundingClientRect();
+            const style = getComputedStyle(current);
+
+            const overflowSuitable = [
+                'hidden',
+                'clip',
+                'auto'
+            ].includes(style.overflowX);
+
+            if (
+                rect.width >= window.innerWidth * .70
+                && rect.height >= 20
+                && rect.height <= 120
+                && overflowSuitable
+            ) {
+                shell = current;
+                break;
+            }
+
+            current = current.parentElement;
+        }
+
+        if (!shell) return;
+
+        /*
+         * Ambil warna gelap footer yang BENAR.
+         */
+        const footerColorCandidates = [
+            footer,
+            ...footer.querySelectorAll(':scope > *'),
+            ...footer.querySelectorAll(':scope > * > *')
+        ]
+            .map((element) => getComputedStyle(element).backgroundColor)
+            .filter((color) => !transparentColor(color))
+            .sort((a, b) => luminance(a) - luminance(b));
+
+        const footerBackground =
+            footerColorCandidates[0] || '#151719';
+
+        shell.setAttribute(
+            'data-kie-reference-ticker-shell',
+            ''
+        );
+
+        track.setAttribute(
+            'data-kie-reference-ticker-track',
+            ''
+        );
+
+        shell.style.setProperty(
+            '--kie-reference-footer-bg',
+            footerBackground
+        );
+
+        /*
+         * Pastikan benar-benar menempel dengan footer.
+         */
+        shell.style.marginBottom = '0';
+        shell.style.marginTop = '0';
+        footer.style.marginTop = '0';
+
+        /*
+         * Hilangkan warna emas dari wrapper dekat track,
+         * tanpa menyentuh isi footer.
+         */
+        let parent = track.parentElement;
+
+        while (
+            parent
+            && parent !== shell
+            && parent !== footer
+        ) {
+            parent.style.background = 'transparent';
+            parent.style.boxShadow = 'none';
+            parent = parent.parentElement;
+        }
+    };
+
+    if (document.readyState === 'loading') {
+        document.addEventListener(
+            'DOMContentLoaded',
+            applyKieTickerReference,
+            { once: true }
+        );
+    } else {
+        applyKieTickerReference();
+    }
+
+    document.addEventListener(
+        'livewire:navigated',
+        applyKieTickerReference
+    );
+
+    window.addEventListener(
+        'resize',
+        applyKieTickerReference
+    );
+})();
+</script>
 </footer>
 
 <x-whatsapp-float :href="$footerWaLink" />

@@ -416,3 +416,11 @@ html[data-site='frontend'] button[disabled] {
 }
 /* KIE-FRONTEND-BUTTON-SYSTEM:END */
 
+
+/* KIE-FRONTEND-PULL-TO-REFRESH
+   Frontend harus tetap memakai native pull-to-refresh browser mobile.
+   Admin panel tetap memakai aturan scroll-nya sendiri. */
+html[data-site="frontend"],
+html[data-site="frontend"] body {
+    overscroll-behavior-y: auto !important;
+}

@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="id" data-site="frontend">
 <head>
+    @include('partials.favicon')
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Lacak Pesanan {{ $transaction->order_code }} — {{ \App\Models\Setting::current()->site_name }}</title>
@@ -45,7 +46,7 @@
 
     <section class="mx-auto w-full px-5 py-12 sm:px-8 lg:px-12 xl:px-16">
         <div class="rounded-2xl border border-[#EFE7DC] bg-white p-6 shadow-sm sm:p-8">
-            @unless ($isTrustedDevice)
+            @unless ($hasFullAccess)
                 <div class="mb-6 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm leading-relaxed text-amber-900">
                     <div class="flex items-start gap-2.5">
                         <i class="fa-solid fa-shield-halved mt-0.5"></i>
@@ -69,7 +70,7 @@
                 </span>
             </div>
 
-            @if ($isTrustedDevice && $isActiveQueue)
+            @if ($hasFullAccess && $isActiveQueue)
                 <div class="mt-6 rounded-xl bg-[#F7F8F6] p-5 text-center">
                     <p class="text-[11px] uppercase tracking-wide text-[#A29587]">Posisi Antrean Anda</p>
                     <p class="mt-1 font-display text-4xl font-semibold text-[#F28A22]">#{{ $transaction->queue_number }}</p>
@@ -86,7 +87,7 @@
             <div class="mt-6 border-t border-[#EFE7DC] pt-6">
                 <h2 class="font-display text-base font-semibold text-[#2A211B]">Detail Pesanan</h2>
                 <div class="mt-4 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
-                    @if ($isTrustedDevice)
+                    @if ($hasFullAccess)
                         <div>
                             <p class="text-[11px] uppercase tracking-wide text-[#A29587]">Nama Pemesan</p>
                             <p class="mt-1 text-sm font-semibold">{{ $transaction->customer_name }}</p>
@@ -100,7 +101,7 @@
                         <p class="text-[11px] uppercase tracking-wide text-[#A29587]">Produk</p>
                         <p class="mt-1 text-sm font-semibold">{{ $transaction->product?->nama ?? '—' }}</p>
                     </div>
-                    @if ($isTrustedDevice)
+                    @if ($hasFullAccess)
                         <div>
                             <p class="text-[11px] uppercase tracking-wide text-[#A29587]">Jumlah</p>
                             <p class="mt-1 text-sm font-semibold">{{ $transaction->quantity }}</p>
@@ -110,7 +111,7 @@
                             <p class="mt-1 text-sm font-semibold">Rp{{ number_format((float) $transaction->total, 0, ',', '.') }}</p>
                         </div>
                     @endif
-                    @if ($isTrustedDevice && $transaction->catatan)
+                    @if ($hasFullAccess && $transaction->catatan)
                         <div>
                             <p class="text-[11px] uppercase tracking-wide text-[#A29587]">Catatan Pesanan</p>
                             <p class="mt-1 text-sm font-semibold">{{ $transaction->catatan }}</p>
@@ -119,7 +120,7 @@
                 </div>
             </div>
 
-            @if ($isTrustedDevice)
+            @if ($hasFullAccess)
             <div class="mt-6 border-t border-[#EFE7DC] pt-6">
                 <h2 class="font-display text-base font-semibold text-[#2A211B]">Alamat Pengiriman</h2>
                 <div class="mt-4 rounded-xl bg-[#F7F8F6] p-4 text-sm leading-relaxed text-[#5F554B]">
@@ -139,12 +140,12 @@
                     Pesanan Saya di Perangkat Ini
                 </a>
                 <p class="text-xs leading-relaxed text-[#A29587] sm:max-w-sm sm:text-right">
-                    Link ini terikat pada perangkat pertama yang membukanya. Gunakan perangkat yang sama untuk melihat detail lengkap pesanan.
+                    Siapa pun yang memiliki link tracking ini dapat melihat detail pesanan. Simpan link ini dengan aman dan jangan bagikan kepada pihak yang tidak berkepentingan.
                 </p>
             </div>
         </div>
 
-        @if ($isTrustedDevice && $transaction->status === 'completed')
+        @if ($hasFullAccess && $transaction->status === 'completed')
             <div class="mt-6 rounded-2xl border border-[#EFE7DC] bg-white p-6 shadow-sm sm:p-8">
                 <h2 class="font-display text-base font-semibold text-[#2A211B]">Komentar</h2>
                 <p class="mt-1 text-xs leading-relaxed text-[#8A7C6E]">
@@ -297,50 +298,6 @@
                             <p class="mt-1.5 text-xs text-red-500">{{ $message }}</p>
                         @enderror
 
-                        {{-- Alamat (Provinsi & Kabupaten/Kota) — sama seperti sensor nama di
-                             bawah, hanya tampil & disimpan untuk komentar PERTAMA (yang
-                             dijadikan kartu testimoni publik). Keduanya opsional; kalau
-                             dikosongkan baris alamat tidak akan tampil di kartu publik.
-                             Lihat Testimonial::displayAddress(). --}}
-                        @unless ($originalComment)
-                            <div class="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
-                                <div>
-                                    <label for="provinsi" class="text-xs font-semibold text-[#8A7C6E]">
-                                        Provinsi <span class="font-normal text-[#A29587]">(opsional)</span>
-                                    </label>
-                                    <input
-                                        type="text"
-                                        id="provinsi"
-                                        name="provinsi"
-                                        value="{{ old('provinsi') }}"
-                                        maxlength="255"
-                                        placeholder="mis. Jawa Tengah"
-                                        class="mt-1.5 w-full rounded-xl border border-[#E8DED1] bg-[#F7F8F6] px-4 py-2.5 text-sm text-[#2A211B] placeholder:text-[#A29587] focus:border-[#F28A22] focus:outline-none focus:ring-2 focus:ring-[#F28A22]/20"
-                                    >
-                                    @error('provinsi')
-                                        <p class="mt-1.5 text-xs text-red-500">{{ $message }}</p>
-                                    @enderror
-                                </div>
-
-                                <div>
-                                    <label for="kabupaten" class="text-xs font-semibold text-[#8A7C6E]">
-                                        Kabupaten/Kota <span class="font-normal text-[#A29587]">(opsional)</span>
-                                    </label>
-                                    <input
-                                        type="text"
-                                        id="kabupaten"
-                                        name="kabupaten"
-                                        value="{{ old('kabupaten') }}"
-                                        maxlength="255"
-                                        placeholder="mis. Semarang"
-                                        class="mt-1.5 w-full rounded-xl border border-[#E8DED1] bg-[#F7F8F6] px-4 py-2.5 text-sm text-[#2A211B] placeholder:text-[#A29587] focus:border-[#F28A22] focus:outline-none focus:ring-2 focus:ring-[#F28A22]/20"
-                                    >
-                                    @error('kabupaten')
-                                        <p class="mt-1.5 text-xs text-red-500">{{ $message }}</p>
-                                    @enderror
-                                </div>
-                            </div>
-                        @endunless
 
                         {{-- Sensor nama — hanya tampil di komentar PERTAMA, karena hanya
                              komentar pertama (topLevel) yang dijadikan kartu testimoni
@@ -390,7 +347,7 @@
                     </form>
                 @endif
             </div>
-        @elseif ($isTrustedDevice)
+        @elseif ($hasFullAccess)
             <div class="mt-6 rounded-2xl border border-dashed border-[#E8DED1] bg-[#FBF7F1] p-6 text-center sm:p-8">
                 <i class="fa-regular fa-comment-dots mb-2 text-lg text-[#A29587]"></i>
                 <p class="text-sm font-semibold text-[#2A211B]">Komentar belum bisa dikirim</p>

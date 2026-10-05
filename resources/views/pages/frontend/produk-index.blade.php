@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="id" data-site="frontend">
 <head>
+    @include('partials.favicon')
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Produk &mdash; {{ \App\Models\Setting::current()->site_name }}</title>

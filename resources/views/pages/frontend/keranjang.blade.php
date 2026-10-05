@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="id" data-site="frontend">
 <head>
+    @include('partials.favicon')
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Keranjang &mdash; {{ \App\Models\Setting::current()->site_name }}</title>
@@ -34,7 +35,7 @@
 <body data-kie-cart-page class="min-h-screen bg-[#FAF7F2] font-sans antialiased text-[#2A211B]">
     @include('partials.frontend.navbar')
 
-    <main data-store-page="cart" data-wa-number="{{ $waNumber ?? \App\Models\Setting::current()->whatsappDigits() }}" class="mx-auto min-h-[70vh] max-w-7xl px-5 py-12 sm:px-8 lg:px-10 lg:py-16">
+    <main data-store-page="cart" data-wa-number="{{ $waNumber ?? \App\Models\Setting::current()->whatsappDigits() }}" class="mx-auto min-h-[70vh] max-w-7xl px-5 pb-28 pt-12 sm:px-8 lg:px-10 lg:py-16">
         <div class="flex flex-col gap-4 border-b border-[#E7DED2] pb-8 sm:flex-row sm:items-end sm:justify-between">
             <div>
                 <p class="text-[10px] font-semibold uppercase tracking-[0.2em] text-admin-accent">Pilihan Produk</p>

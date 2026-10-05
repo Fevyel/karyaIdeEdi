@@ -85,7 +85,7 @@
     // bisa di-embed (diblokir Google). Kalau tautan admin di atas kebetulan
     // sudah format embed resmi, pakai itu langsung.
     $lokasiMapEmbedQuery = trim($lokasiSetting->site_name.' '.$lokasiSetting->alamat);
-    $lokasiMapEmbedSrc = 'https://www.google.com/maps?q='.urlencode($lokasiMapEmbedQuery ?: $lokasiSetting->site_name).'&z=15&output=embed';
+    $lokasiMapEmbedSrc = 'https://www.google.com/maps/embed?origin=mfe&pb=!1m3!2m1!1s'.urlencode($lokasiMapEmbedQuery ?: $lokasiSetting->site_name).'!6i15';
 
     if ($lokasiMapsUrlAdmin !== '' && (str_contains($lokasiMapsUrlAdmin, 'output=embed') || str_contains($lokasiMapsUrlAdmin, '/maps/embed'))) {
         $lokasiMapEmbedSrc = $lokasiMapsUrlAdmin;
@@ -203,7 +203,7 @@
                     src="{{ $lokasiMapEmbedSrc }}"
                     class="h-48 w-full border-0 sm:h-64"
                     style="filter: grayscale(45%) sepia(65%) hue-rotate(-8deg) saturate(140%) brightness(1.05) contrast(0.94);"
-                    loading="lazy"
+                    loading="eager"
                     referrerpolicy="no-referrer-when-downgrade"
                     title="Peta lokasi {{ $lokasiSetting->site_name }}"
                 ></iframe>

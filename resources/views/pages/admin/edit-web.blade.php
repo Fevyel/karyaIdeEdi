@@ -697,6 +697,12 @@ new #[Layout('layouts::admin-panel')] #[Title('Edit Web')] class extends Compone
 
  public array $dok3PathLama = [];
 
+ /** Sumber video: upload atau url. */
+ public array $dok3Mode = [];
+
+ /** URL video bila sumber menggunakan URL. */
+ public array $dok3Url = [];
+
  public array $dok3UploadBaru = [];
 
  // ---- Galeri Foto Dokumentasi (khusus FOTO) ----
@@ -1070,6 +1076,12 @@ new #[Layout('layouts::admin-panel')] #[Title('Edit Web')] class extends Compone
 
  // ================= KENAPA PILIH KAMI (section Expertise) =================
 
+ public bool $keahlianUseCustomBg = false;
+
+ public string $keahlianBgColor = '#FFFFFF';
+
+ public array $keahlianBgPresets = \App\Support\ColorPalette::PRESETS;
+
  public string $keahlianBadgeText = '';
 
  public string $keahlianTitle = '';
@@ -1111,6 +1123,7 @@ new #[Layout('layouts::admin-panel')] #[Title('Edit Web')] class extends Compone
  private function keahlianDefaults(): array
  {
  return [
+ 'bg_color' => null,
  'badge_text' => 'Kenapa Pilih Kami',
  'title' => 'Kualitas yang Bisa Anda Percaya',
  'description' => 'Setiap furnitur kami dibuat dari material pilihan dan dikerjakan dengan tangan secara teliti, menghasilkan produk yang kokoh, nyaman, dan tahan lama untuk mengisi rumah Anda.',
@@ -1553,23 +1566,57 @@ new #[Layout('layouts::admin-panel')] #[Title('Edit Web')] class extends Compone
  $tipeProp = "{$prefix}Tipe";
  $ketProp = "{$prefix}Keterangan";
  $pathProp = "{$prefix}PathLama";
+ $urlProp = "{$prefix}Url";
+ $modeProp = "{$prefix}Mode";
+
+ $hasUrl = property_exists($this, $urlProp);
+ $hasMode = property_exists($this, $modeProp);
 
  $this->$keysProp = [];
  $this->$tipeProp = [];
  $this->$ketProp = [];
  $this->$pathProp = [];
 
+ if ($hasUrl) {
+ $this->$urlProp = [];
+ }
+
+ if ($hasMode) {
+ $this->$modeProp = [];
+ }
+
  foreach ($items as $item) {
- if (! is_array($item) || empty($item['path'])) {
+ if (! is_array($item)) {
+ continue;
+ }
+
+ $path = trim((string) ($item['path'] ?? ''));
+ $url = trim((string) ($item['url'] ?? ''));
+
+ if ($path === '' && (! $hasUrl || $url === '')) {
  continue;
  }
 
  $key = (string) Str::uuid();
 
  $this->$keysProp[] = $key;
- $this->{$tipeProp}[$key] = in_array($item['tipe'] ?? null, ['foto', 'video'], true) ? $item['tipe'] : 'foto';
+ $this->{$tipeProp}[$key] = in_array(
+ $item['tipe'] ?? null,
+ ['foto', 'video'],
+ true
+ ) ? $item['tipe'] : 'foto';
+
  $this->{$ketProp}[$key] = (string) ($item['keterangan'] ?? '');
- $this->{$pathProp}[$key] = $item['path'];
+ $this->{$pathProp}[$key] = $path !== '' ? $path : null;
+
+ if ($hasUrl) {
+ $this->{$urlProp}[$key] = $url;
+ }
+
+ if ($hasMode) {
+ $this->{$modeProp}[$key] =
+ ($url !== '' && $path === '') ? 'url' : 'upload';
+ }
  }
  }
 
@@ -1643,6 +1690,9 @@ new #[Layout('layouts::admin-panel')] #[Title('Edit Web')] class extends Compone
 
  $keahlianDefaults = $this->keahlianDefaults();
  $keahlianData = HomeSection::dataFor('keahlian', $keahlianDefaults);
+
+ $this->keahlianUseCustomBg = filled($keahlianData['bg_color'] ?? null);
+ $this->keahlianBgColor = ($keahlianData['bg_color'] ?? null) ?: $this->keahlianBgColor;
 
  $this->keahlianBadgeText = $keahlianData['badge_text'];
  $this->keahlianTitle = $keahlianData['title'];
@@ -1955,6 +2005,12 @@ new #[Layout('layouts::admin-panel')] #[Title('Edit Web')] class extends Compone
  $this->sustainabilityPointsUseCustomBg = true;
  $this->sustainabilityPointsBgColor = $hex;
  }
+ public function selectKeahlianBgPreset(string $hex): void
+ {
+ $this->keahlianUseCustomBg = true;
+ $this->keahlianBgColor = $hex;
+ }
+
  public function selectMissionBgPreset(string $hex): void
  {
  $this->missionUseCustomBg = true;
@@ -2244,10 +2300,12 @@ new #[Layout('layouts::admin-panel')] #[Title('Edit Web')] class extends Compone
  $this->dok3Tipe[$key] = 'video';
  $this->dok3Keterangan[$key] = '';
  $this->dok3PathLama[$key] = null;
+ $this->dok3Mode[$key] = 'upload';
+ $this->dok3Url[$key] = '';
  $this->dok3UploadBaru[$key] = null;
  }
 
- /** Hapus 1 item kartu 3D (upload baru yang belum disimpan ATAU file lama), lalu buang key-nya dari urutan. */
+ /** Hapus satu item Galeri Video. */
  public function removeDok3Item(string $key): void
  {
  if (! in_array($key, $this->dok3Keys, true)) {
@@ -2258,8 +2316,18 @@ new #[Layout('layouts::admin-panel')] #[Title('Edit Web')] class extends Compone
  Storage::disk('public')->delete($this->dok3PathLama[$key]);
  }
 
- $this->dok3Keys = array_values(array_diff($this->dok3Keys, [$key]));
- unset($this->dok3Tipe[$key], $this->dok3Keterangan[$key], $this->dok3PathLama[$key], $this->dok3UploadBaru[$key]);
+ $this->dok3Keys = array_values(
+ array_diff($this->dok3Keys, [$key])
+ );
+
+ unset(
+ $this->dok3Tipe[$key],
+ $this->dok3Keterangan[$key],
+ $this->dok3PathLama[$key],
+ $this->dok3Mode[$key],
+ $this->dok3Url[$key],
+ $this->dok3UploadBaru[$key]
+ );
  }
 
  public function getDokFotoPreviewUrlsProperty(): array
@@ -2973,6 +3041,7 @@ new #[Layout('layouts::admin-panel')] #[Title('Edit Web')] class extends Compone
  'keahlianDescription' => ['required', 'string', 'max:400'],
  'keahlianChecklist' => ['required', 'array', 'size:2'],
  'keahlianChecklist.*' => ['required', 'string', 'max:150'],
+ 'keahlianBgColor' => ['required', 'string', 'regex:/^#[0-9A-Fa-f]{6}$/'],
  'keahlianMediaType' => ['required', 'in:video_url,video_upload'],
  'keahlianVideoUrl' => ['nullable', 'url', 'max:2048'],
  'keahlianVideoUpload' => ['nullable', 'file', 'mimetypes:video/mp4,video/webm,video/ogg,video/quicktime', 'max:51200'],
@@ -3028,6 +3097,7 @@ new #[Layout('layouts::admin-panel')] #[Title('Edit Web')] class extends Compone
  'title' => $validated['keahlianTitle'],
  'description' => $validated['keahlianDescription'],
  'checklist' => $validated['keahlianChecklist'],
+ 'bg_color' => $this->keahlianUseCustomBg ? $validated['keahlianBgColor'] : null,
  'image_path' => $imagePath,
  'media_type' => $this->keahlianMediaType,
  'video_url' => $this->keahlianVideoUrl !== '' ? $this->keahlianVideoUrl : null,
@@ -3404,18 +3474,65 @@ new #[Layout('layouts::admin-panel')] #[Title('Edit Web')] class extends Compone
  ];
 
  foreach ($this->dok3Keys as $key) {
+ $mode = $this->dok3Mode[$key] ?? 'upload';
+
  $rules["dok3Tipe.$key"] = ['required', 'in:video'];
+ $rules["dok3Mode.$key"] = ['required', 'in:upload,url'];
  $rules["dok3Keterangan.$key"] = ['nullable', 'string', 'max:80'];
- $rules["dok3UploadBaru.$key"] = ['nullable', 'file', 'mimetypes:video/mp4,video/webm,video/ogg,video/quicktime', 'max:51200'];
+
+ if ($mode === 'url') {
+ $rules["dok3Url.$key"] = ['required', 'url', 'max:2048'];
+
+ $rules["dok3UploadBaru.$key"] = [
+ 'nullable',
+ 'file',
+ 'mimetypes:video/mp4,video/webm,video/ogg,video/quicktime',
+ 'max:51200',
+ ];
+ } else {
+ $rules["dok3Url.$key"] = ['nullable', 'url', 'max:2048'];
+
+ $rules["dok3UploadBaru.$key"] = [
+ ($this->dok3PathLama[$key] ?? null) ? 'nullable' : 'required',
+ 'file',
+ 'mimetypes:video/mp4,video/webm,video/ogg,video/quicktime',
+ 'max:51200',
+ ];
+ }
  }
 
  $validated = $this->validate($rules, [
  'dok3Judul.required' => 'Judul wajib diisi.',
  'dok3Subjudul.required' => 'Subjudul wajib diisi.',
  'dok3Deskripsi.required' => 'Deskripsi wajib diisi.',
+
+ 'dok3Url.*.required' => 'URL video wajib diisi.',
+ 'dok3Url.*.url' => 'URL video tidak valid. Gunakan alamat yang diawali http:// atau https://.',
+
+ 'dok3UploadBaru.*.required' => 'Silakan pilih file video atau ubah sumber menjadi URL Video.',
+ 'dok3UploadBaru.*.mimetypes' => 'Format file video tidak didukung.',
+ 'dok3UploadBaru.*.max' => 'Ukuran video maksimal 50 MB.',
  ]);
 
  foreach ($this->dok3Keys as $key) {
+ $mode = $this->dok3Mode[$key] ?? 'upload';
+
+ if ($mode === 'url') {
+ // Kalau sebelumnya memakai upload lalu diganti menjadi URL,
+ // hapus file lama agar tidak tertinggal di storage.
+ if ($this->dok3PathLama[$key] ?? null) {
+ Storage::disk('public')->delete($this->dok3PathLama[$key]);
+ }
+
+ $this->dok3PathLama[$key] = null;
+ $this->dok3UploadBaru[$key] = null;
+
+ continue;
+ }
+
+ // Mode upload: URL lama tidak dipakai lagi.
+ $this->dok3Url[$key] = '';
+
  $upload = $this->dok3UploadBaru[$key] ?? null;
 
  if (! $upload) {
@@ -3427,22 +3544,44 @@ new #[Layout('layouts::admin-panel')] #[Title('Edit Web')] class extends Compone
  }
 
  $extension = $upload->getClientOriginalExtension() ?: 'mp4';
+
  $this->dok3PathLama[$key] = $upload->storeAs(
  'home-sections',
  'dokumentasi3-'.Str::uuid().'.'.$extension,
  'public'
  );
+
  $this->dok3UploadBaru[$key] = null;
  }
 
- // Item TANPA file tersimpan (belum pernah diisi) tidak ikut disimpan --
- // urutan yang tersisa mengikuti $dok3Keys, dirapikan ulang lewat values().
  $items = collect($this->dok3Keys)
- ->map(fn ($key) => ($this->dok3PathLama[$key] ?? null) ? [
- 'tipe' => $this->dok3Tipe[$key],
- 'path' => $this->dok3PathLama[$key],
- 'keterangan' => trim((string) $this->dok3Keterangan[$key]),
- ] : null)
+ ->map(function ($key) {
+ $mode = $this->dok3Mode[$key] ?? 'upload';
+
+ $keterangan = trim(
+ (string) ($this->dok3Keterangan[$key] ?? '')
+ );
+
+ if ($mode === 'url') {
+ $url = trim(
+ (string) ($this->dok3Url[$key] ?? '')
+ );
+
+ return $url !== '' ? [
+ 'tipe' => 'video',
+ 'url' => $url,
+ 'keterangan' => $keterangan,
+ ] : null;
+ }
+
+ $path = $this->dok3PathLama[$key] ?? null;
+
+ return $path ? [
+ 'tipe' => 'video',
+ 'path' => $path,
+ 'keterangan' => $keterangan,
+ ] : null;
+ })
  ->filter()
  ->values()
  ->all();
@@ -3661,7 +3800,7 @@ new #[Layout('layouts::admin-panel')] #[Title('Edit Web')] class extends Compone
  @if(! $section['ready']) disabled @endif
  class="flex shrink-0 items-center gap-2.5 rounded-xl px-3.5 py-2.5 text-left text-sm font-medium transition
  {{ $activeSection === $section['key']
- ? 'bg-admin-panel text-white'
+ ? 'kie-admin-active-gold text-white'
  : ($section['ready']
  ? 'text-admin-ink hover:bg-admin-cream'
  : 'cursor-not-allowed text-admin-ink-soft/60') }}"
@@ -4339,8 +4478,14 @@ new #[Layout('layouts::admin-panel')] #[Title('Edit Web')] class extends Compone
  </div>
  </form>
  @elseif ($activeSection === 'kategori')
- <form wire:submit="saveKat
+ <form wire:submit="saveKategori" class="space-y-6">
 
+ <div>
+ <h3 class="mb-1 flex items-center gap-2 text-sm font-semibold text-admin-ink">
+ <i class="fa-solid fa-table-cells-large text-admin-accent"></i>
+ Kategori Produk (section ke-5 Beranda)
+ </h3>
+ </div>
 {{-- WARNA --}}
  <div class="space-y-4 rounded-xl border border-admin-border p-4">
  <p class="text-xs font-semibold uppercase tracking-wide text-admin-ink-soft">Warna Frame (Latar Section)</p>
@@ -4542,119 +4687,405 @@ new #[Layout('layouts::admin-panel')] #[Title('Edit Web')] class extends Compone
  </div>
  </form>
  @elseif ($activeSection === 'keahlian')
- <form wire:submit="saveKeahlian" class="space-y-6">
+                <form wire:submit="saveKeahlian" class="space-y-6">
 
- <div>
- <h3 class="mb-1 flex items-center gap-2 text-sm font-semibold text-admin-ink">
- <i class="fa-solid fa-award text-admin-accent"></i>
- Kenapa Pilih Kami (section ke-7 Beranda)
- </h3>
- 
- </div>
+                    <div>
+                        <h3 class="mb-1 flex items-center gap-2 text-sm font-semibold text-admin-ink">
+                            <i class="fa-solid fa-award text-admin-accent"></i>
+                            Kenapa Pilih Kami (section ke-7 Beranda)
+                        </h3>
+                        <p class="text-xs text-admin-ink-soft">
+                            Section split foto kiri / teks kanan, tepat setelah Testimoni Pelanggan. Ikon sosial
+                            di bawah checklist tidak diedit di sini (Instagram, TikTok, Facebook selalu tetap,
+                            WhatsApp ambil otomatis dari Pengaturan).
+                        </p>
+                    </div>
 
- {{-- MEDIA (Foto / Video) --}}
- <div class="space-y-4 rounded-xl border border-admin-border p-4">
- <div>
- <p class="text-xs font-semibold uppercase tracking-wide text-admin-ink-soft">Media panel kiri</p>
- 
- </div>
+                    {{-- MEDIA (Foto / Video) --}}
+                    <div class="space-y-4 rounded-xl border border-admin-border p-4">
+                        <div>
+                            <p class="text-xs font-semibold uppercase tracking-wide text-admin-ink-soft">Media panel kiri</p>
+                            <p class="mt-1 text-xs text-admin-ink-soft">
+                                Section ini khusus video (bukan foto statis). Pilih salah satu: video dari
+                                tautan (YouTube, TikTok, Instagram, Facebook, Google Drive, atau link video
+                                langsung), atau upload video dari perangkat. Video otomatis diputar dengan
+                                suara begitu pengunjung scroll sampai bagian ini, dan suaranya meredup pelan
+                                saat mereka melewatinya.
+                            </p>
+                        </div>
 
- {{-- Tab pemilih jenis media --}}
- <div data-kie-media-source-toggle class="inline-flex w-full flex-wrap gap-2 rounded-lg bg-admin-cream p-1 sm:w-auto">
- @foreach ([
- 'video_url' => ['icon' => 'fa-link', 'label' => 'URL'],
- 'video_upload' => ['icon' => 'fa-upload', 'label' => 'File'],
- ] as $mediaKey => $mediaMeta)
- <button
- type="button"
- wire:click="$set('keahlianMediaType', '{{ $mediaKey }}')"
- class="flex items-center gap-2 rounded-md px-3 py-2 text-xs font-semibold transition {{ $keahlianMediaType === $mediaKey ? 'bg-admin-panel text-white shadow-sm' : 'text-admin-ink-soft hover:bg-white' }}"
- >
- <i class="fa-solid {{ $mediaMeta['icon'] }} text-xs"></i>
- {{ $mediaMeta['label'] }}
- </button>
- @endforeach
- </div>
- @error('keahlianMediaType')<p class="text-xs font-medium text-red-600">{{ $message }}</p>@enderror
+                        {{-- Tab pemilih jenis media --}}
+                        <div class="inline-flex w-full flex-wrap gap-2 rounded-lg bg-admin-cream p-1 sm:w-auto">
+                            @foreach ([
+                                'video_url' => ['icon' => 'fa-link', 'label' => 'Video (Tautan URL)'],
+                                'video_upload' => ['icon' => 'fa-upload', 'label' => 'Video (Upload Perangkat)'],
+                            ] as $mediaKey => $mediaMeta)
+                                <button
+                                    type="button"
+                                    wire:click="$set('keahlianMediaType', '{{ $mediaKey }}')"
+                                    class="flex items-center gap-2 rounded-md px-3 py-2 text-xs font-semibold transition {{ $keahlianMediaType === $mediaKey ? 'bg-admin-panel text-white shadow-sm' : 'text-admin-ink-soft hover:bg-white' }}"
+                                >
+                                    <i class="fa-solid {{ $mediaMeta['icon'] }} text-xs"></i>
+                                    {{ $mediaMeta['label'] }}
+                                </button>
+                            @endforeach
+                        </div>
+                        @error('keahlianMediaType')<p class="text-xs font-medium text-red-600">{{ $message }}</p>@enderror
 
- @if ($keahlianMediaType === 'video_url')
- <div class="space-y-3">
- <label class="mb-1.5 block text-sm font-medium text-admin-ink">Tautan video</label>
- <input
- type="url" wire:model="keahlianVideoUrl"
- placeholder="https://youtube.com/watch?v=... , https://drive.google.com/file/d/... , dst."
- class="w-full rounded-lg border border-admin-border bg-admin-surface px-3 py-2.5 text-sm text-admin-ink transition focus:border-admin-accent focus:outline-none focus:ring-2 focus:ring-admin-accent/20"
- >
- @error('keahlianVideoUrl')<p class="text-xs font-medium text-red-600">{{ $message }}</p>@enderror
- 
- @if ($keahlianVideoUrl)
- 
- @endif
- </div>
- @endif
+                    @if ($keahlianMediaType === 'video_url')
+                        <div class="space-y-3">
+                            <label class="mb-1.5 block text-sm font-medium text-admin-ink">Tautan video</label>
+                            <input
+                                type="url" wire:model="keahlianVideoUrl"
+                                placeholder="https://youtube.com/watch?v=... , https://drive.google.com/file/d/... , dst."
+                                class="w-full rounded-lg border border-admin-border bg-admin-surface px-3 py-2.5 text-sm text-admin-ink transition focus:border-admin-accent focus:outline-none focus:ring-2 focus:ring-admin-accent/20"
+                            >
+                            @error('keahlianVideoUrl')<p class="text-xs font-medium text-red-600">{{ $message }}</p>@enderror
+                            <p class="text-xs text-admin-ink-soft">
+                                Tautan yang didukung: YouTube, TikTok, Instagram, Facebook, Google Drive (pakai
+                                link "Bagikan" biasa), atau tautan file video langsung (.mp4/.webm/.mov/.ogg).
+                                Untuk YouTube, video otomatis diputar dengan suara &amp; meredup sendiri saat
+                                dilewati. Untuk platform lain (TikTok/Instagram/Facebook/Google Drive), video
+                                tetap tampil dan baru dimuat saat pengunjung sampai di bagian ini, tapi
+                                putar-otomatis-bersuara &amp; efek redup mengikuti aturan pemutar bawaan
+                                masing-masing platform tsb -- di luar kendali kita.
+                            </p>
+                            @if ($keahlianVideoUrl)
+                                <a
+                                    href="{{ $keahlianVideoUrl }}" target="_blank" rel="noopener"
+                                    class="inline-flex items-center gap-1.5 text-xs font-semibold text-admin-accent hover:underline"
+                                >
+                                    <i class="fa-solid fa-arrow-up-right-from-square text-[10px]"></i> Buka tautan ini untuk memastikan
+                                </a>
+                            @endif
+                        </div>
+                    @endif
 
- @if ($keahlianMediaType === 'video_upload')
- <div class="space-y-3">
- <label class="mb-1.5 block text-sm font-medium text-admin-ink">File video dari perangkat</label>
- <input
- type="file" wire:model="keahlianVideoUpload" accept="video/mp4,video/webm,video/ogg,video/quicktime"
- class="block w-full text-sm text-admin-ink file:mr-3 file:rounded-full file:border-0 file:bg-admin-accent file:px-4 file:py-2 file:text-xs file:font-semibold file:text-white hover:file:bg-admin-accent-strong"
- >
- <div wire:loading wire:target="keahlianVideoUpload" class="text-xs text-admin-ink-soft">
- <i class="fa-solid fa-circle-notch animate-spin"></i> Mengunggah video...
- </div>
- @error('keahlianVideoUpload')<p class="text-xs font-medium text-red-600">{{ $message }}</p>@enderror
- <p class="text-xs text-admin-ink-soft">Format MP4/WebM/MOV/OGG, maksimal 50MB.</p>
+                    @if ($keahlianMediaType === 'video_upload')
+                        <div class="space-y-3">
+                            <label class="mb-1.5 block text-sm font-medium text-admin-ink">File video dari perangkat</label>
+                            <input
+                                type="file" wire:model="keahlianVideoUpload" accept="video/mp4,video/webm,video/ogg,video/quicktime"
+                                class="block w-full text-sm text-admin-ink file:mr-3 file:rounded-full file:border-0 file:bg-admin-accent file:px-4 file:py-2 file:text-xs file:font-semibold file:text-white hover:file:bg-admin-accent-strong"
+                            >
+                            <div wire:loading wire:target="keahlianVideoUpload" class="text-xs text-admin-ink-soft">
+                                <i class="fa-solid fa-circle-notch animate-spin"></i> Mengunggah video...
+                            </div>
+                            @error('keahlianVideoUpload')<p class="text-xs font-medium text-red-600">{{ $message }}</p>@enderror
+                            <p class="text-xs text-admin-ink-soft">Format MP4/WebM/MOV/OGG, maksimal 50MB.</p>
 
- @if ($this->keahlianVideoPreviewUrl)
- 
- @endif
- </div>
- @endif
+                            @if ($this->keahlianVideoPreviewUrl)
+                                <a
+                                    href="{{ $this->keahlianVideoPreviewUrl }}" target="_blank" rel="noopener"
+                                    class="inline-flex items-center gap-1.5 text-xs font-semibold text-admin-accent hover:underline"
+                                >
+                                    <i class="fa-solid fa-circle-play text-[10px]"></i> Lihat video yang sedang tersimpan
+                                </a>
+                            @else
+                                <p class="text-xs text-admin-ink-soft">Belum ada video yang diunggah.</p>
+                            @endif
+                        </div>
+                    @endif
+                    </div>
 
- @if ($dokumentasiMediaType === 'video_upload')
- <div class="space-y-3">
- <label class="mb-1.5 block text-sm font-medium text-admin-ink">File video dari perangkat</label>
- <input
- type="file" wire:model="dokumentasiVideoUpload" accept="video/mp4,video/webm,video/ogg,video/quicktime"
- class="block w-full text-sm text-admin-ink file:mr-3 file:rounded-full file:border-0 file:bg-admin-accent file:px-4 file:py-2 file:text-xs file:font-semibold file:text-white hover:file:bg-admin-accent-strong"
- >
- <div wire:loading wire:target="dokumentasiVideoUpload" class="text-xs text-admin-ink-soft">
- <i class="fa-solid fa-circle-notch animate-spin"></i> Mengunggah video...
- </div>
- @error('dokumentasiVideoUpload')<p class="text-xs font-medium text-red-600">{{ $message }}</p>@enderror
- <p class="text-xs text-admin-ink-soft">Format MP4/WebM/MOV/OGG, maksimal 50MB.</p>
+                    {{-- WARNA BACKGROUND --}}
+                    <div class="space-y-4 rounded-xl border border-admin-border p-4">
+                        <p class="text-xs font-semibold uppercase tracking-wide text-admin-ink-soft">Warna Background</p>
+                        <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                            <label class="flex items-center gap-2 text-sm text-admin-ink">
+                                <input type="checkbox" wire:model.live="keahlianUseCustomBg" class="h-4 w-4 rounded border-admin-border text-admin-accent focus:ring-admin-accent">
+                                Pakai warna latar khusus
+                            </label>
+                            <input type="color" wire:model="keahlianBgColor" @disabled(! $keahlianUseCustomBg) class="h-10 w-16 cursor-pointer rounded-lg border border-admin-border disabled:cursor-not-allowed disabled:opacity-40">
+                        </div>
+                        <div>
+                            <p class="mb-2 text-[11px] font-medium uppercase tracking-wide text-admin-ink-soft">Atau pilih dari rekomendasi</p>
+                            <div class="flex flex-wrap gap-2.5">
+                                @foreach ($keahlianBgPresets as $preset)
+                                    <button type="button" wire:click="selectKeahlianBgPreset('{{ $preset['value'] }}')" title="{{ $preset['label'] }}" class="group flex flex-col items-center gap-1">
+                                        <span class="flex h-9 w-9 items-center justify-center rounded-full shadow-sm ring-1 ring-inset ring-white/40 transition duration-200 group-hover:scale-110 group-hover:shadow-md {{ $keahlianUseCustomBg && strtoupper($keahlianBgColor) === $preset['value'] ? 'border-2 border-admin-accent ring-2 ring-admin-accent ring-offset-2 ring-offset-admin-surface' : 'border border-admin-border group-hover:border-admin-accent/60' }}" style="background:{{ $preset['value'] }};">
+                                            @if ($keahlianUseCustomBg && strtoupper($keahlianBgColor) === $preset['value'])<i class="fa-solid fa-check text-xs" style="color:{{ $preset['check'] }};"></i>@endif
+                                        </span>
+                                        <span class="max-w-14 truncate text-[10px] text-admin-ink-soft">{{ $preset['label'] }}</span>
+                                    </button>
+                                @endforeach
+                            </div>
+                        </div>
+                    </div>
+                    {{-- ISI TEKS --}}
+                    <div class="space-y-4 rounded-xl border border-admin-border p-4">
+                        <p class="text-xs font-semibold uppercase tracking-wide text-admin-ink-soft">Isi Teks</p>
 
- @if ($this->dokumentasiVideoPreviewUrl)
- <a
- href="{{ $this->dokumentasiVideoPreviewUrl }}" target="_blank" rel="noopener"
- class="inline-flex items-center gap-1.5 text-xs font-semibold text-admin-accent hover:underline"
- >
- <i class="fa-solid fa-circle-play text-[10px]"></i> Lihat video yang sedang tersimpan
- </a>
- @else
- 
- @endif
- </div>
- @endif
- </div>
+                        <div class="grid gap-4 sm:grid-cols-2">
+                            <div>
+                                <label class="mb-1.5 block text-sm font-medium text-admin-ink">Label kecil (di atas judul)</label>
+                                <input
+                                    type="text" maxlength="40" wire:model="keahlianBadgeText"
+                                    class="w-full rounded-lg border border-admin-border bg-admin-surface px-3 py-2.5 text-sm text-admin-ink transition focus:border-admin-accent focus:outline-none focus:ring-2 focus:ring-admin-accent/20"
+                                >
+                                @error('keahlianBadgeText')<p class="mt-1.5 text-xs font-medium text-red-600">{{ $message }}</p>@enderror
+                            </div>
+                            <div>
+                                <label class="mb-1.5 block text-sm font-medium text-admin-ink">Judul</label>
+                                <input
+                                    type="text" maxlength="60" wire:model="keahlianTitle"
+                                    class="w-full rounded-lg border border-admin-border bg-admin-surface px-3 py-2.5 text-sm text-admin-ink transition focus:border-admin-accent focus:outline-none focus:ring-2 focus:ring-admin-accent/20"
+                                >
+                                @error('keahlianTitle')<p class="mt-1.5 text-xs font-medium text-red-600">{{ $message }}</p>@enderror
+                            </div>
+                            <div class="sm:col-span-2">
+                                <label class="mb-1.5 block text-sm font-medium text-admin-ink">Deskripsi</label>
+                                <textarea
+                                    rows="3" maxlength="400" wire:model="keahlianDescription"
+                                    class="w-full resize-none rounded-lg border border-admin-border bg-admin-surface px-3 py-2.5 text-sm text-admin-ink transition focus:border-admin-accent focus:outline-none focus:ring-2 focus:ring-admin-accent/20"
+                                ></textarea>
+                                @error('keahlianDescription')<p class="mt-1.5 text-xs font-medium text-red-600">{{ $message }}</p>@enderror
+                            </div>
+                        </div>
 
- <div class="flex justify-end">
- <button
- type="submit"
- wire:loading.attr="disabled" wire:target="saveDokumentasi"
- class="flex items-center gap-2 rounded-full bg-admin-panel px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-admin-panel/20 transition-all duration-200 hover:bg-admin-accent-strong active:scale-[0.99] disabled:opacity-60"
- >
- <span wire:loading.remove wire:target="saveDokumentasi" class="flex items-center gap-2">
- <i class="fa-solid fa-floppy-disk text-xs"></i> Simpan
- </span>
- <span wire:loading wire:target="saveDokumentasi" class="flex items-center gap-2">
- <i class="fa-solid fa-circle-notch animate-spin"></i> Menyimpan...
- </span>
- </button>
- </div>
- </form>
- @elseif ($activeSection === 'profil-toko')
+                        <div>
+                            <p class="mb-2 text-sm font-medium text-admin-ink">Checklist (2 poin di bawah deskripsi)</p>
+                            <div class="grid gap-3 sm:grid-cols-2">
+                                @foreach ($keahlianChecklist as $i => $point)
+                                    <div class="space-y-2 rounded-lg border border-admin-border p-3">
+                                        <textarea
+                                            rows="2" maxlength="150" placeholder="Poin ke-{{ $i + 1 }}"
+                                            wire:model="keahlianChecklist.{{ $i }}"
+                                            class="w-full resize-none rounded-lg border border-admin-border bg-admin-surface px-2.5 py-2 text-sm text-admin-ink transition focus:border-admin-accent focus:outline-none focus:ring-2 focus:ring-admin-accent/20"
+                                        ></textarea>
+                                        @error("keahlianChecklist.{$i}")<p class="text-[11px] font-medium text-red-600">{{ $message }}</p>@enderror
+                                    </div>
+                                @endforeach
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="flex justify-end">
+                        <button
+                            type="submit"
+                            wire:loading.attr="disabled" wire:target="saveKeahlian"
+                            class="flex items-center gap-2 rounded-full bg-admin-panel px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-admin-panel/20 transition-all duration-200 hover:bg-admin-accent-strong active:scale-[0.99] disabled:opacity-60"
+                        >
+                            <span wire:loading.remove wire:target="saveKeahlian" class="flex items-center gap-2">
+                                <i class="fa-solid fa-floppy-disk text-xs"></i> Simpan
+                            </span>
+                            <span wire:loading wire:target="saveKeahlian" class="flex items-center gap-2">
+                                <i class="fa-solid fa-circle-notch animate-spin"></i> Menyimpan...
+                            </span>
+                        </button>
+                    </div>
+                </form>
+            @elseif ($activeSection === 'faq')
+                <form wire:submit="saveFaq" class="space-y-6">
+
+                    <div>
+                        <h3 class="mb-1 flex items-center gap-2 text-sm font-semibold text-admin-ink">
+                            <i class="fa-solid fa-circle-question text-admin-accent"></i>
+                            FAQ (section ke-8 Beranda, tepat sebelum Footer)
+                        </h3>
+                        <p class="text-xs text-admin-ink-soft">
+                            Enam pasang pertanyaan &amp; jawaban yang tampil sebagai accordion. Tombol
+                            "Hubungi admin lewat WhatsApp" di bawahnya tidak diedit di sini -- nomor diambil
+                            otomatis dari Pengaturan.
+                        </p>
+                    </div>
+
+                    <div class="space-y-3">
+                        @foreach ($faqItems as $i => $faqItem)
+                            <div class="space-y-2 rounded-xl border border-admin-border p-4">
+                                <label class="mb-1 block text-xs font-semibold uppercase tracking-wide text-admin-ink-soft">
+                                    Pertanyaan {{ $i + 1 }}
+                                </label>
+                                <input
+                                    type="text" maxlength="150" placeholder="Pertanyaan"
+                                    wire:model="faqItems.{{ $i }}.q"
+                                    class="w-full rounded-lg border border-admin-border bg-admin-surface px-2.5 py-2 text-sm font-semibold text-admin-ink transition focus:border-admin-accent focus:outline-none focus:ring-2 focus:ring-admin-accent/20"
+                                >
+                                @error("faqItems.{$i}.q")<p class="text-[11px] font-medium text-red-600">{{ $message }}</p>@enderror
+
+                                <textarea
+                                    rows="2" maxlength="500" placeholder="Jawaban"
+                                    wire:model="faqItems.{{ $i }}.a"
+                                    class="w-full resize-none rounded-lg border border-admin-border bg-admin-surface px-2.5 py-2 text-xs text-admin-ink transition focus:border-admin-accent focus:outline-none focus:ring-2 focus:ring-admin-accent/20"
+                                ></textarea>
+                                @error("faqItems.{$i}.a")<p class="text-[11px] font-medium text-red-600">{{ $message }}</p>@enderror
+                            </div>
+                        @endforeach
+                    </div>
+
+                    <div class="flex justify-end">
+                        <button
+                            type="submit"
+                            wire:loading.attr="disabled" wire:target="saveFaq"
+                            class="flex items-center gap-2 rounded-full bg-admin-panel px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-admin-panel/20 transition-all duration-200 hover:bg-admin-accent-strong active:scale-[0.99] disabled:opacity-60"
+                        >
+                            <span wire:loading.remove wire:target="saveFaq" class="flex items-center gap-2">
+                                <i class="fa-solid fa-floppy-disk text-xs"></i> Simpan
+                            </span>
+                            <span wire:loading wire:target="saveFaq" class="flex items-center gap-2">
+                                <i class="fa-solid fa-circle-notch animate-spin"></i> Menyimpan...
+                            </span>
+                        </button>
+                    </div>
+                </form>
+            @elseif ($activeSection === 'lokasi')
+                <form wire:submit="saveLokasi" class="space-y-6">
+
+                    <div>
+                        <h3 class="mb-1 flex items-center gap-2 text-sm font-semibold text-admin-ink">
+                            <i class="fa-solid fa-location-dot text-admin-accent"></i>
+                            Lokasi (section ke-9 Beranda, tepat sebelum Footer)
+                        </h3>
+                        <p class="text-xs text-admin-ink-soft">
+                            Section "Kunjungi Kami" -- teks di kiri dan ilustrasi peta di kanan. Tombol
+                            "Hubungi via WhatsApp" tidak diedit di sini (nomornya otomatis dari Pengaturan,
+                            dan tombolnya hilang sendiri kalau nomor WhatsApp masih kosong).
+                        </p>
+                    </div>
+
+                    {{-- TEKS --}}
+                    <div class="space-y-4 rounded-xl border border-admin-border p-4">
+                        <p class="text-xs font-semibold uppercase tracking-wide text-admin-ink-soft">Teks</p>
+
+                        <div>
+                            <label class="mb-1 block text-xs font-medium text-admin-ink-soft">Label kecil (di atas judul)</label>
+                            <input
+                                type="text" maxlength="40" placeholder="Kunjungi Kami"
+                                wire:model="lokasiEyebrow"
+                                class="w-full rounded-lg border border-admin-border bg-admin-surface px-2.5 py-2 text-sm text-admin-ink transition focus:border-admin-accent focus:outline-none focus:ring-2 focus:ring-admin-accent/20"
+                            >
+                            @error('lokasiEyebrow')<p class="mt-1 text-[11px] font-medium text-red-600">{{ $message }}</p>@enderror
+                        </div>
+
+                        <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                            <div>
+                                <label class="mb-1 block text-xs font-medium text-admin-ink-soft">Judul baris 1</label>
+                                <input
+                                    type="text" maxlength="60" placeholder="Datang Langsung ke"
+                                    wire:model="lokasiHeadingLine1"
+                                    class="w-full rounded-lg border border-admin-border bg-admin-surface px-2.5 py-2 text-sm font-semibold text-admin-ink transition focus:border-admin-accent focus:outline-none focus:ring-2 focus:ring-admin-accent/20"
+                                >
+                                @error('lokasiHeadingLine1')<p class="mt-1 text-[11px] font-medium text-red-600">{{ $message }}</p>@enderror
+                            </div>
+                            <div>
+                                <label class="mb-1 block text-xs font-medium text-admin-ink-soft">Judul baris 2</label>
+                                <input
+                                    type="text" maxlength="60" placeholder="Workshop Kami"
+                                    wire:model="lokasiHeadingLine2"
+                                    class="w-full rounded-lg border border-admin-border bg-admin-surface px-2.5 py-2 text-sm font-semibold text-admin-ink transition focus:border-admin-accent focus:outline-none focus:ring-2 focus:ring-admin-accent/20"
+                                >
+                                @error('lokasiHeadingLine2')<p class="mt-1 text-[11px] font-medium text-red-600">{{ $message }}</p>@enderror
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="mb-1 block text-xs font-medium text-admin-ink-soft">Deskripsi</label>
+                            <textarea
+                                rows="3" maxlength="500"
+                                wire:model="lokasiDescription"
+                                class="w-full resize-none rounded-lg border border-admin-border bg-admin-surface px-2.5 py-2 text-xs text-admin-ink transition focus:border-admin-accent focus:outline-none focus:ring-2 focus:ring-admin-accent/20"
+                            ></textarea>
+                            @error('lokasiDescription')<p class="mt-1 text-[11px] font-medium text-red-600">{{ $message }}</p>@enderror
+                        </div>
+                    </div>
+
+                    {{-- GOOGLE MAPS --}}
+                    <div class="space-y-4 rounded-xl border border-admin-border p-4">
+                        <div>
+                            <p class="text-xs font-semibold uppercase tracking-wide text-admin-ink-soft">Google Maps</p>
+                            <p class="mt-1 text-[11px] text-admin-ink-soft">
+                                Cukup tempel tautan Google Maps toko -- alamat yang tampil di teks dan tulisan
+                                pada ilustrasi peta di sebelah kanan otomatis mengikuti (satu paket), tidak perlu
+                                diatur satu-satu lagi.
+                            </p>
+                        </div>
+
+                        <div>
+                            <label class="mb-1 block text-xs font-medium text-admin-ink-soft">Tautan Google Maps (tombol "Lihat di Google Maps")</label>
+                            <input
+                                type="text" maxlength="2048" placeholder="https://maps.app.goo.gl/..."
+                                wire:model="lokasiMapsUrl"
+                                class="w-full rounded-lg border border-admin-border bg-admin-surface px-2.5 py-2 text-sm text-admin-ink transition focus:border-admin-accent focus:outline-none focus:ring-2 focus:ring-admin-accent/20"
+                            >
+                            @error('lokasiMapsUrl')<p class="mt-1 text-[11px] font-medium text-red-600">{{ $message }}</p>@enderror
+                            <p class="mt-1 text-[11px] text-admin-ink-soft">
+                                Tempel tautan hasil "Bagikan" di Google Maps supaya titiknya benar-benar akurat.
+                                Dikosongkan = tautan dibuat otomatis dari nama toko + alamat di Admin &gt; Pengaturan
+                                (perilaku lama).
+                            </p>
+                        </div>
+                    </div>
+
+                    {{-- WARNA --}}
+                    <div class="space-y-4 rounded-xl border border-admin-border p-4">
+                        <p class="text-xs font-semibold uppercase tracking-wide text-admin-ink-soft">Warna Frame (Latar Section)</p>
+
+                        <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                            <label class="flex items-center gap-2 text-sm text-admin-ink">
+                                <input type="checkbox" wire:model.live="lokasiUseCustomBg" class="h-4 w-4 rounded border-admin-border text-admin-accent focus:ring-admin-accent">
+                                Pakai warna latar khusus
+                            </label>
+                            <input
+                                type="color" wire:model="lokasiBgColor"
+                                @disabled(! $lokasiUseCustomBg)
+                                class="h-10 w-16 cursor-pointer rounded-lg border border-admin-border disabled:cursor-not-allowed disabled:opacity-40"
+                            >
+                        </div>
+
+                        <div>
+                            <p class="mb-2 text-[11px] font-medium uppercase tracking-wide text-admin-ink-soft">Atau pilih dari rekomendasi</p>
+                            <div class="flex flex-wrap gap-2.5">
+                                @foreach ($lokasiBgPresets as $preset)
+                                    <button
+                                        type="button"
+                                        wire:click="selectLokasiBgPreset('{{ $preset['value'] }}')"
+                                        title="{{ $preset['label'] }}"
+                                        class="group flex flex-col items-center gap-1"
+                                    >
+                                        <span
+                                            class="flex h-9 w-9 items-center justify-center rounded-full shadow-sm ring-1 ring-inset ring-white/40 transition duration-200 group-hover:scale-110 group-hover:shadow-md
+                                            {{ $lokasiUseCustomBg && strtoupper($lokasiBgColor) === $preset['value']
+                                                ? 'border-2 border-admin-accent ring-2 ring-admin-accent ring-offset-2 ring-offset-admin-surface'
+                                                : 'border border-admin-border group-hover:border-admin-accent/60' }}"
+                                            style="background: linear-gradient(135deg, color-mix(in oklab, {{ $preset['value'] }} 100%, white 30%), {{ $preset['value'] }} 55%, color-mix(in oklab, {{ $preset['value'] }} 100%, black 16%));"
+                                        >
+                                            @if ($lokasiUseCustomBg && strtoupper($lokasiBgColor) === $preset['value'])
+                                                <i class="fa-solid fa-check text-xs drop-shadow-sm" style="color: {{ $preset['check'] }};"></i>
+                                            @endif
+                                        </span>
+                                        <span class="max-w-14 truncate text-[10px] text-admin-ink-soft">{{ $preset['label'] }}</span>
+                                    </button>
+                                @endforeach
+                            </div>
+                        </div>
+
+                        <p class="text-xs text-admin-ink-soft">
+                            Kalau tidak dicentang, section ini tetap putih seperti bawaan. Warna judul, paragraf,
+                            dan alamat otomatis menyesuaikan terang/gelap mengikuti warna latar supaya tetap kebaca.
+                        </p>
+                    </div>
+
+                    @include('partials.admin.frame-gradient', [
+                        'key' => 'lokasi',
+                        'gradient' => $lokasiGradient,
+                    ])
+
+                    <div class="flex justify-end">
+                        <button
+                            type="submit"
+                            wire:loading.attr="disabled" wire:target="saveLokasi"
+                            class="flex items-center gap-2 rounded-full bg-admin-panel px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-admin-panel/20 transition-all duration-200 hover:bg-admin-accent-strong active:scale-[0.99] disabled:opacity-60"
+                        >
+                            <span wire:loading.remove wire:target="saveLokasi" class="flex items-center gap-2">
+                                <i class="fa-solid fa-floppy-disk text-xs"></i> Simpan
+                            </span>
+                            <span wire:loading wire:target="saveLokasi" class="flex items-center gap-2">
+                                <i class="fa-solid fa-circle-notch animate-spin"></i> Menyimpan...
+                            </span>
+                        </button>
+                    </div>
+                </form>
+            @elseif ($activeSection === 'profil-toko')
  <form wire:submit="saveProfilHero" class="space-y-6">
 
  <div>
@@ -5559,7 +5990,14 @@ new #[Layout('layouts::admin-panel')] #[Title('Edit Web')] class extends Compone
  </div>
  </form>
 @elseif ($activeSection === 'dokumentasi-3')
- <form wire:submit="saveDokumentasi3" class="space-y-6">
+ <form
+ wire:submit="saveDokumentasi3"
+ x-data="{ dok3Uploading: false }"
+ x-on:livewire-upload-start="dok3Uploading = true"
+ x-on:livewire-upload-finish="dok3Uploading = false"
+ x-on:livewire-upload-error="dok3Uploading = false"
+ class="space-y-6"
+>
  <div>
  <h3 class="mb-1 flex items-center gap-2 text-sm font-semibold text-admin-ink"><i class="fa-solid fa-video text-admin-accent"></i> Galeri Video</h3>
  
@@ -5571,20 +6009,234 @@ new #[Layout('layouts::admin-panel')] #[Title('Edit Web')] class extends Compone
  <textarea rows="3" maxlength="500" wire:model="dok3Deskripsi" placeholder="Deskripsi" class="w-full resize-none rounded-lg border border-admin-border bg-admin-surface px-3 py-2.5 text-sm"></textarea>
  </div>
  <div class="space-y-4 rounded-xl border border-admin-border p-4">
- <div class="flex items-start justify-between gap-3"><div><p class="text-xs font-semibold uppercase tracking-wide text-admin-ink-soft">Daftar Video</p></div><button type="button" wire:click="addDok3Item" class="rounded-full border border-admin-accent px-3.5 py-2 text-xs font-semibold text-admin-accent hover:bg-admin-accent hover:text-white"><i class="fa-solid fa-plus mr-1"></i> Tambah Video</button></div>
- <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+ <div class="flex items-start justify-between gap-3"><div><p class="text-xs font-semibold uppercase tracking-wide text-admin-ink-soft">Daftar Video</p></div><button
+ type="button"
+ wire:click.prevent.stop="addDok3Item"
+ wire:loading.attr="disabled"
+ wire:target="addDok3Item"
+ class="relative z-20 pointer-events-auto rounded-full border border-admin-accent px-3.5 py-2 text-xs font-semibold text-admin-accent hover:bg-admin-accent hover:text-white disabled:opacity-60"
+><i class="fa-solid fa-plus mr-1"></i> Tambah Video</button></div>
+ <div class="grid grid-cols-2 gap-3 sm:gap-4">
  @foreach ($dok3Keys as $urutan => $key)
  <div wire:key="dok3-video-{{ $key }}" class="space-y-3 rounded-xl border border-admin-border bg-admin-surface p-3">
- <div class="flex items-center justify-between"><span class="text-xs font-semibold text-admin-ink">Video {{ $urutan + 1 }}</span><button type="button" wire:click="removeDok3Item('{{ $key }}')" class="h-8 w-8 rounded-full text-admin-danger hover:bg-admin-danger/10"><i class="fa-solid fa-trash text-xs"></i></button></div>
- @if ($this->dok3PreviewUrls[$key] ?? null)<video src="{{ $this->dok3PreviewUrls[$key] }}" class="aspect-video w-full rounded-lg bg-black object-cover" autoplay muted loop playsinline></video>@endif
- <input type="file" wire:model="dok3UploadBaru.{{ $key }}" accept="video/mp4,video/webm,video/ogg,video/quicktime" class="block w-full text-xs file:mr-2 file:rounded-full file:border-0 file:bg-admin-accent file:px-3 file:py-1.5 file:text-white">
- @error("dok3UploadBaru.$key")<p class="text-[11px] text-red-600">{{ $message }}</p>@enderror
- <input type="text" maxlength="80" wire:model="dok3Keterangan.{{ $key }}" placeholder="Judul/keterangan video" class="w-full rounded-md border border-admin-border bg-admin-surface px-2.5 py-2 text-xs">
+
+ <div class="flex items-center justify-between">
+ <span class="text-xs font-semibold text-admin-ink">
+ Video {{ $urutan + 1 }}
+ </span>
+
+ <button
+ type="button"
+ wire:click="removeDok3Item('{{ $key }}')"
+ class="h-8 w-8 rounded-full text-admin-danger hover:bg-admin-danger/10"
+ >
+ <i class="fa-solid fa-trash text-xs"></i>
+ </button>
  </div>
- @endforeach
+
+ <div>
+ <label class="mb-1.5 block text-[11px] font-semibold uppercase tracking-wide text-admin-ink-soft">
+ Sumber Video
+ </label>
+
+ <div class="flex items-center gap-2">
+
+ <button
+ type="button"
+ wire:click="$set('dok3Mode.{{ $key }}', 'upload')"
+ title="Upload File"
+ aria-label="Upload File"
+ style="{{ (($dok3Mode[$key] ?? 'upload') === 'upload')
+     ? 'background:#76502A;border-color:#B88750;color:#FFFFFF;'
+     : 'background:transparent;border-color:var(--color-admin-border);color:var(--color-admin-ink);' }}"
+ class="flex h-10 w-10 items-center justify-center rounded-lg border transition-all duration-200 hover:scale-105"
+ >
+ <i class="fa-solid fa-file-video text-sm"></i>
+ </button>
+
+ <button
+ type="button"
+ wire:click="$set('dok3Mode.{{ $key }}', 'url')"
+ title="URL Video"
+ aria-label="URL Video"
+ style="{{ (($dok3Mode[$key] ?? 'upload') === 'url')
+     ? 'background:#76502A;border-color:#B88750;color:#FFFFFF;'
+     : 'background:transparent;border-color:var(--color-admin-border);color:var(--color-admin-ink);' }}"
+ class="flex h-10 w-10 items-center justify-center rounded-lg border transition-all duration-200 hover:scale-105"
+ >
+ <i class="fa-solid fa-link text-sm"></i>
+ </button>
+
+</div>
+
+@error("dok3Mode.$key")
+ <p class="mt-1 text-[11px] text-red-600">{{ $message }}</p>
+ @enderror
+ </div>
+
+ @if (($dok3Mode[$key] ?? 'upload') === 'url')
+
+ <div wire:transition.opacity.duration.200ms>
+ <label class="mb-1.5 block text-[11px] font-semibold text-admin-ink-soft">
+ URL Video
+ </label>
+
+ <input
+ type="url"
+ wire:model="dok3Url.{{ $key }}"
+ placeholder="https://youtube.com/... / instagram.com/... / tiktok.com/... / facebook.com/... / drive.google.com/..."
+ class="w-full rounded-md border border-admin-border bg-admin-surface px-2.5 py-2 text-xs text-admin-ink placeholder:text-admin-ink-soft outline-none transition-all duration-200 focus:border-admin-accent" style="background:var(--color-admin-surface);color:var(--color-admin-ink);caret-color:#B88750;"
+ >
+
+ @error("dok3Url.$key")
+ <p class="mt-1 text-[11px] text-red-600">{{ $message }}</p>
+ @enderror
+
+ <p class="mt-1 text-[10px] leading-relaxed text-admin-ink-soft">
+ Bisa menggunakan URL http/https dari media sosial mana pun. YouTube, Instagram/Reels, TikTok, Facebook, Google Drive, dan video langsung akan diproses otomatis; platform lain tetap dapat dibuka melalui tautan asal.
+ </p>
+ </div>
+
+ @else
+
+ <div
+ wire:transition.opacity.duration.200ms
+ x-data="{ uploading: false, progress: 0, uploadFailed: false }"
+ x-on:livewire-upload-start="uploading = true; progress = 0; uploadFailed = false"
+ x-on:livewire-upload-progress="progress = $event.detail.progress"
+ x-on:livewire-upload-finish="uploading = false; progress = 100"
+ x-on:livewire-upload-error="uploading = false; uploadFailed = true"
+ class="space-y-2"
+ >
+
+ @if ($this->dok3PreviewUrls[$key] ?? null)
+ <video
+ src="{{ $this->dok3PreviewUrls[$key] }}"
+ class="aspect-video w-full rounded-lg bg-black object-cover"
+ autoplay
+ muted
+ loop
+ playsinline
+ ></video>
+ @endif
+
+ <input
+ type="file"
+ wire:model="dok3UploadBaru.{{ $key }}"
+ accept="video/mp4,video/webm,video/ogg,video/quicktime"
+ class="block w-full text-xs
+ file:mr-2 file:rounded-full file:border-0
+ file:bg-[#795126] file:px-3 file:py-2
+ file:font-semibold file:text-white"
+ >
+
+ <div
+ x-show="uploading"
+ x-cloak
+ class="rounded-lg border border-[#A8783F]/40 bg-[#A8783F]/10 p-3"
+ >
+ <div class="mb-2 flex items-center justify-between gap-2">
+ <span class="flex items-center gap-2 text-[11px] font-semibold text-[#B98548]">
+ <i class="fa-solid fa-circle-notch animate-spin"></i>
+ Sedang mengunggah...
+ </span>
+
+ <span
+ class="text-[11px] font-bold text-[#B98548]"
+ x-text="progress + '%'"
+ ></span>
+ </div>
+
+ <div class="h-2 overflow-hidden rounded-full bg-black/15">
+ <div
+ class="h-full rounded-full bg-[#A8783F] transition-all duration-200"
+ x-bind:style="'width:' + progress + '%'"
+ ></div>
+ </div>
+
+ <p class="mt-2 text-[10px] leading-relaxed text-admin-ink-soft">
+ Tunggu sampai upload selesai sebelum menyimpan galeri.
+ </p>
+ </div>
+
+ <div
+ x-show="uploadFailed"
+ x-cloak
+ class="rounded-lg border border-red-500/30 bg-red-500/10 p-2.5 text-[11px] font-medium text-red-500"
+ >
+ <i class="fa-solid fa-triangle-exclamation mr-1"></i>
+ Upload gagal. Pilih ulang file atau periksa koneksi dan ukuran video.
+ </div>
+
+ @error("dok3UploadBaru.$key")
+ <p class="text-[11px] text-red-600">{{ $message }}</p>
+ @enderror
+
+ </div>
+
+ @endif
+
+ <input
+ type="text"
+ maxlength="80"
+ wire:model="dok3Keterangan.{{ $key }}"
+ placeholder="Judul/keterangan video"
+ class="w-full rounded-md border border-admin-border bg-admin-surface px-2.5 py-2 text-xs"
+ >
+
+ </div>
+@endforeach
  </div>
  </div>
- <div class="flex justify-end"><button type="submit" class="rounded-full bg-admin-panel px-6 py-3 text-sm font-semibold text-white"><i class="fa-solid fa-floppy-disk mr-2"></i>Simpan Galeri Video</button></div>
+ <div class="flex flex-col items-end gap-2">
+
+ <div
+ x-show="dok3Uploading"
+ x-cloak
+ class="flex items-center gap-2 rounded-lg border border-[#A8783F]/35 bg-[#A8783F]/10 px-3 py-2 text-[11px] font-semibold text-[#B98548]"
+ >
+ <i class="fa-solid fa-circle-notch animate-spin"></i>
+ Video masih diunggah. Tunggu sampai selesai.
+ </div>
+
+ <button
+ type="submit"
+ x-bind:disabled="dok3Uploading"
+ wire:loading.attr="disabled"
+ wire:target="saveDokumentasi3"
+ class="rounded-full bg-[#795126] px-6 py-3 text-sm font-semibold text-white transition hover:bg-[#67421E] disabled:cursor-not-allowed disabled:opacity-45"
+ >
+
+ <span
+ x-show="dok3Uploading"
+ class="flex items-center gap-2"
+ >
+ <i class="fa-solid fa-hourglass-half"></i>
+ Menunggu Upload
+ </span>
+
+ <span
+ x-show="!dok3Uploading"
+ wire:loading.remove
+ wire:target="saveDokumentasi3"
+ class="flex items-center gap-2"
+ >
+ <i class="fa-solid fa-floppy-disk"></i>
+ Simpan Galeri Video
+ </span>
+
+ <span
+ x-show="!dok3Uploading"
+ wire:loading
+ wire:target="saveDokumentasi3"
+ class="flex items-center gap-2"
+ >
+ <i class="fa-solid fa-circle-notch animate-spin"></i>
+ Menyimpan...
+ </span>
+
+ </button>
+ </div>
  </form>
  @elseif ($activeSection === 'dokumentasi-foto')
  <form wire:submit="saveDokumentasiFoto" class="space-y-6">
@@ -5596,7 +6248,7 @@ new #[Layout('layouts::admin-panel')] #[Title('Edit Web')] class extends Compone
  </div>
  <div class="space-y-4 rounded-xl border border-admin-border p-4">
  <div class="flex items-start justify-between gap-3"><div><p class="text-xs font-semibold uppercase tracking-wide text-admin-ink-soft" style="animation-duration:120s !important;">Daftar Foto</p></div><button type="button" wire:click="addDokFotoItem" class="rounded-full border border-admin-accent px-3.5 py-2 text-xs font-semibold text-admin-accent hover:bg-admin-accent hover:text-white"><i class="fa-solid fa-plus mr-1"></i> Tambah Foto</button></div>
- <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+ <div class="grid grid-cols-2 gap-3 sm:gap-4">
  @foreach ($dokFotoKeys as $urutan => $key)
  <div wire:key="dok-foto-{{ $key }}" class="space-y-3 rounded-xl border border-admin-border bg-admin-surface p-3">
  <div class="flex items-center justify-between"><span class="text-xs font-semibold text-admin-ink">Foto {{ $urutan + 1 }}</span><button type="button" wire:click="removeDokFotoItem('{{ $key }}')" class="h-8 w-8 rounded-full text-admin-danger hover:bg-admin-danger/10"><i class="fa-solid fa-trash text-xs"></i></button></div>
@@ -5608,7 +6260,7 @@ new #[Layout('layouts::admin-panel')] #[Title('Edit Web')] class extends Compone
  @endforeach
  </div>
  </div>
- <div class="flex justify-end"><button type="submit" class="rounded-full bg-admin-panel px-6 py-3 text-sm font-semibold text-white"><i class="fa-solid fa-floppy-disk mr-2"></i>Simpan Galeri Foto</button></div>
+ <div class="flex justify-end"><button wire:loading.attr="disabled" type="submit" class="rounded-full bg-admin-panel px-6 py-3 text-sm font-semibold text-white"><i class="fa-solid fa-floppy-disk mr-2"></i>Simpan Galeri Foto</button></div>
  </form>
  @elseif ($activeSection === 'warna')
  <form wire:submit="saveProdukWarna" class="space-y-6">
@@ -5799,7 +6451,7 @@ new #[Layout('layouts::admin-panel')] #[Title('Edit Web')] class extends Compone
  </div>
  </div>
 
- <div class="flex justify-end"><button type="submit" class="rounded-full bg-admin-panel px-6 py-3 text-sm font-semibold text-white"><i class="fa-solid fa-floppy-disk mr-2 text-xs"></i>Simpan Hero</button></div>
+ <div class="flex justify-end"><button wire:loading.attr="disabled" type="submit" class="rounded-full bg-admin-panel px-6 py-3 text-sm font-semibold text-white"><i class="fa-solid fa-floppy-disk mr-2 text-xs"></i>Simpan Hero</button></div>
  </form>
 
  @elseif ($activeSection === 'sustainability-points')
@@ -5858,7 +6510,7 @@ new #[Layout('layouts::admin-panel')] #[Title('Edit Web')] class extends Compone
  @error('sustainabilityNote')<p class="mt-1 text-xs text-red-600">{{ $message }}</p>@enderror
  </div>
 
- <div class="flex justify-end"><button type="submit" class="rounded-full bg-admin-panel px-6 py-3 text-sm font-semibold text-white"><i class="fa-solid fa-floppy-disk mr-2 text-xs"></i>Simpan Prinsip</button></div>
+ <div class="flex justify-end"><button wire:loading.attr="disabled" type="submit" class="rounded-full bg-admin-panel px-6 py-3 text-sm font-semibold text-white"><i class="fa-solid fa-floppy-disk mr-2 text-xs"></i>Simpan Prinsip</button></div>
  </form>
  @elseif ($activeSection === 'privacy-hero')
  <form wire:submit="savePrivacyHero" class="space-y-6">
@@ -5876,7 +6528,7 @@ new #[Layout('layouts::admin-panel')] #[Title('Edit Web')] class extends Compone
  <div><label class="mb-1.5 block text-sm font-medium text-admin-ink">Tanggal pembaruan terakhir</label><input wire:model="privacyHeroUpdatedDate" type="date" class="w-full rounded-lg border border-admin-border bg-admin-surface px-3 py-2.5 text-sm text-admin-ink sm:max-w-xs"></div>
  </div>
 
- <div class="flex justify-end"><button type="submit" class="rounded-full bg-admin-panel px-6 py-3 text-sm font-semibold text-white"><i class="fa-solid fa-floppy-disk mr-2 text-xs"></i>Simpan Hero</button></div>
+ <div class="flex justify-end"><button wire:loading.attr="disabled" type="submit" class="rounded-full bg-admin-panel px-6 py-3 text-sm font-semibold text-white"><i class="fa-solid fa-floppy-disk mr-2 text-xs"></i>Simpan Hero</button></div>
  </form>
 
  @elseif ($activeSection === 'privacy-contact')
@@ -5890,7 +6542,7 @@ new #[Layout('layouts::admin-panel')] #[Title('Edit Web')] class extends Compone
  <div><label class="mb-1.5 block text-sm font-medium text-admin-ink">Deskripsi</label><textarea wire:model="privacyContactDescription" rows="4" maxlength="600" class="w-full resize-y rounded-lg border border-admin-border bg-admin-surface px-3 py-2.5 text-sm text-admin-ink"></textarea></div>
  <div><label class="mb-1.5 block text-sm font-medium text-admin-ink">Tulisan tombol WhatsApp</label><input wire:model="privacyContactButtonLabel" type="text" maxlength="80" class="w-full rounded-lg border border-admin-border bg-admin-surface px-3 py-2.5 text-sm text-admin-ink"></div>
  </div>
- <div class="flex justify-end"><button type="submit" class="rounded-full bg-admin-panel px-6 py-3 text-sm font-semibold text-white"><i class="fa-solid fa-floppy-disk mr-2 text-xs"></i>Simpan Kontak</button></div>
+ <div class="flex justify-end"><button wire:loading.attr="disabled" type="submit" class="rounded-full bg-admin-panel px-6 py-3 text-sm font-semibold text-white"><i class="fa-solid fa-floppy-disk mr-2 text-xs"></i>Simpan Kontak</button></div>
  </form>
 
  @elseif (str_starts_with($activeSection, 'privacy-'))
@@ -5929,7 +6581,7 @@ new #[Layout('layouts::admin-panel')] #[Title('Edit Web')] class extends Compone
  </div>
  </div>
 
- <div class="flex justify-end"><button type="submit" class="rounded-full bg-admin-panel px-6 py-3 text-sm font-semibold text-white"><i class="fa-solid fa-floppy-disk mr-2 text-xs"></i>Simpan Bagian</button></div>
+ <div class="flex justify-end"><button wire:loading.attr="disabled" type="submit" class="rounded-full bg-admin-panel px-6 py-3 text-sm font-semibold text-white"><i class="fa-solid fa-floppy-disk mr-2 text-xs"></i>Simpan Bagian</button></div>
  </form>
 
  @elseif ($activeSection === 'cookies-hero')
@@ -5941,7 +6593,7 @@ new #[Layout('layouts::admin-panel')] #[Title('Edit Web')] class extends Compone
  <div><label class="mb-1.5 block text-sm font-medium text-admin-ink">Deskripsi</label><textarea wire:model="cookiesHeroDescription" rows="5" maxlength="700" class="w-full resize-y rounded-lg border border-admin-border bg-admin-surface px-3 py-2.5 text-sm text-admin-ink"></textarea></div>
  <div><label class="mb-1.5 block text-sm font-medium text-admin-ink">Tanggal pembaruan terakhir</label><input wire:model="cookiesHeroUpdatedDate" type="date" class="w-full rounded-lg border border-admin-border bg-admin-surface px-3 py-2.5 text-sm text-admin-ink sm:max-w-xs"></div>
  </div>
- <div class="flex justify-end"><button type="submit" class="rounded-full bg-admin-panel px-6 py-3 text-sm font-semibold text-white"><i class="fa-solid fa-floppy-disk mr-2 text-xs"></i>Simpan Hero</button></div>
+ <div class="flex justify-end"><button wire:loading.attr="disabled" type="submit" class="rounded-full bg-admin-panel px-6 py-3 text-sm font-semibold text-white"><i class="fa-solid fa-floppy-disk mr-2 text-xs"></i>Simpan Hero</button></div>
  </form>
 
  @elseif ($activeSection === 'cookies-summary')
@@ -5951,7 +6603,7 @@ new #[Layout('layouts::admin-panel')] #[Title('Edit Web')] class extends Compone
  <div><label class="mb-1.5 block text-sm font-medium text-admin-ink">Label tebal</label><input wire:model="cookiesSummaryLabel" type="text" maxlength="80" class="w-full rounded-lg border border-admin-border bg-admin-surface px-3 py-2.5 text-sm text-admin-ink"></div>
  <div><label class="mb-1.5 block text-sm font-medium text-admin-ink">Isi ringkasan</label><textarea wire:model="cookiesSummaryText" rows="5" maxlength="1200" class="w-full resize-y rounded-lg border border-admin-border bg-admin-surface px-3 py-2.5 text-sm leading-relaxed text-admin-ink"></textarea></div>
  </div>
- <div class="flex justify-end"><button type="submit" class="rounded-full bg-admin-panel px-6 py-3 text-sm font-semibold text-white"><i class="fa-solid fa-floppy-disk mr-2 text-xs"></i>Simpan Ringkasan</button></div>
+ <div class="flex justify-end"><button wire:loading.attr="disabled" type="submit" class="rounded-full bg-admin-panel px-6 py-3 text-sm font-semibold text-white"><i class="fa-solid fa-floppy-disk mr-2 text-xs"></i>Simpan Ringkasan</button></div>
  </form>
 
  @elseif ($activeSection === 'cookies-categories')
@@ -5982,7 +6634,7 @@ new #[Layout('layouts::admin-panel')] #[Title('Edit Web')] class extends Compone
  </div>
  </div>
 
- <div class="flex justify-end"><button type="submit" class="rounded-full bg-admin-panel px-6 py-3 text-sm font-semibold text-white"><i class="fa-solid fa-floppy-disk mr-2 text-xs"></i>Simpan Kategori</button></div>
+ <div class="flex justify-end"><button wire:loading.attr="disabled" type="submit" class="rounded-full bg-admin-panel px-6 py-3 text-sm font-semibold text-white"><i class="fa-solid fa-floppy-disk mr-2 text-xs"></i>Simpan Kategori</button></div>
  </form>
 
  @elseif ($activeSection === 'cookies-browser')
@@ -5992,7 +6644,7 @@ new #[Layout('layouts::admin-panel')] #[Title('Edit Web')] class extends Compone
  <div><label class="mb-1.5 block text-sm font-medium text-admin-ink">Judul</label><input wire:model="cookiesBrowserHeading" type="text" maxlength="140" class="w-full rounded-lg border border-admin-border bg-admin-surface px-3 py-2.5 text-sm text-admin-ink"></div>
  <div><label class="mb-1.5 block text-sm font-medium text-admin-ink">Isi</label><textarea wire:model="cookiesBrowserText" rows="7" maxlength="1800" class="w-full resize-y rounded-lg border border-admin-border bg-admin-surface px-3 py-2.5 text-sm leading-relaxed text-admin-ink"></textarea></div>
  </div>
- <div class="flex justify-end"><button type="submit" class="rounded-full bg-admin-panel px-6 py-3 text-sm font-semibold text-white"><i class="fa-solid fa-floppy-disk mr-2 text-xs"></i>Simpan Bagian</button></div>
+ <div class="flex justify-end"><button wire:loading.attr="disabled" type="submit" class="rounded-full bg-admin-panel px-6 py-3 text-sm font-semibold text-white"><i class="fa-solid fa-floppy-disk mr-2 text-xs"></i>Simpan Bagian</button></div>
  </form>
 
  @elseif ($activeSection === 'cookies-contact')
@@ -6003,7 +6655,7 @@ new #[Layout('layouts::admin-panel')] #[Title('Edit Web')] class extends Compone
  <div><label class="mb-1.5 block text-sm font-medium text-admin-ink">Deskripsi</label><textarea wire:model="cookiesContactDescription" rows="4" maxlength="600" class="w-full resize-y rounded-lg border border-admin-border bg-admin-surface px-3 py-2.5 text-sm text-admin-ink"></textarea></div>
  <div><label class="mb-1.5 block text-sm font-medium text-admin-ink">Tulisan tombol WhatsApp</label><input wire:model="cookiesContactButtonLabel" type="text" maxlength="80" class="w-full rounded-lg border border-admin-border bg-admin-surface px-3 py-2.5 text-sm text-admin-ink"></div>
  </div>
- <div class="flex justify-end"><button type="submit" class="rounded-full bg-admin-panel px-6 py-3 text-sm font-semibold text-white"><i class="fa-solid fa-floppy-disk mr-2 text-xs"></i>Simpan Kontak</button></div>
+ <div class="flex justify-end"><button wire:loading.attr="disabled" type="submit" class="rounded-full bg-admin-panel px-6 py-3 text-sm font-semibold text-white"><i class="fa-solid fa-floppy-disk mr-2 text-xs"></i>Simpan Kontak</button></div>
  </form>
  @elseif ($activeSection === 'terms-hero')
  <form wire:submit="saveTermsHero" class="space-y-6">
@@ -6039,7 +6691,7 @@ new #[Layout('layouts::admin-panel')] #[Title('Edit Web')] class extends Compone
  </div>
 
  <div class="flex justify-end">
- <button type="submit" class="rounded-full bg-admin-panel px-6 py-3 text-sm font-semibold text-white">
+ <button wire:loading.attr="disabled" type="submit" class="rounded-full bg-admin-panel px-6 py-3 text-sm font-semibold text-white">
  <i class="fa-solid fa-floppy-disk mr-2 text-xs"></i>Simpan Hero
  </button>
  </div>
@@ -6074,7 +6726,7 @@ new #[Layout('layouts::admin-panel')] #[Title('Edit Web')] class extends Compone
  </div>
 
  <div class="flex justify-end">
- <button type="submit" class="rounded-full bg-admin-panel px-6 py-3 text-sm font-semibold text-white">
+ <button wire:loading.attr="disabled" type="submit" class="rounded-full bg-admin-panel px-6 py-3 text-sm font-semibold text-white">
  <i class="fa-solid fa-floppy-disk mr-2 text-xs"></i>Simpan Kontak
  </button>
  </div>
@@ -6135,7 +6787,7 @@ new #[Layout('layouts::admin-panel')] #[Title('Edit Web')] class extends Compone
  </div>
 
  <div class="flex justify-end">
- <button type="submit" class="rounded-full bg-admin-panel px-6 py-3 text-sm font-semibold text-white">
+ <button wire:loading.attr="disabled" type="submit" class="rounded-full bg-admin-panel px-6 py-3 text-sm font-semibold text-white">
  <i class="fa-solid fa-floppy-disk mr-2 text-xs"></i>Simpan Bagian
  </button>
  </div>

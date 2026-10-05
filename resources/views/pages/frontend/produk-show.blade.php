@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="id" data-site="frontend">
     <head>
+    @include('partials.favicon')
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <title>{{ $product->nama }} &mdash; {{ \App\Models\Setting::current()->site_name }}</title>
@@ -39,11 +40,17 @@
         $approvedTestimonials = $product->testimonials()
             ->approved()
             ->active()
+            ->topLevel()
+            ->with('approvedUpdateComment')
             ->latest()
             ->get();
 
+        // Satu pesanan = satu review utama. Komentar Update tidak dihitung
+        // sebagai review/rating baru supaya rata-rata produk tidak dobel.
+        $ratedTestimonials = $approvedTestimonials->whereNotNull('rating');
         $reviewCount = $approvedTestimonials->count();
-        $averageRating = $reviewCount > 0 ? (float) $approvedTestimonials->avg('rating') : 0;
+        $ratingCount = $ratedTestimonials->count();
+        $averageRating = $ratingCount > 0 ? (float) $ratedTestimonials->avg('rating') : 0;
 
         $siteSetting = \App\Models\Setting::current();
         $waNumber = $siteSetting->whatsappDigits();
@@ -149,9 +156,12 @@
                             <div class="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1">
                                 <div class="flex items-center gap-0.5 text-[#F0A321]" aria-label="Rating {{ number_format($averageRating, 1) }} dari 5">
                                     @for ($i = 1; $i <= 5; $i++)
-                                        <i class="fa-solid fa-star text-[10px] {{ $reviewCount === 0 || $averageRating < $i ? 'text-[#D9D4CD]' : '' }}"></i>
+                                        <i class="fa-solid fa-star text-[10px] {{ $ratingCount === 0 || $averageRating < $i ? 'text-[#D9D4CD]' : '' }}"></i>
                                     @endfor
                                 </div>
+                                <span class="text-[10px] font-semibold text-[#6F6258]">
+                                    {{ $ratingCount > 0 ? number_format($averageRating, 1) : '0.0' }}
+                                </span>
                                 <span class="text-[10px] text-[#A1988E]">
                                     ({{ $reviewCount }} Customer Reviews)
                                 </span>
@@ -310,7 +320,7 @@
                  - Reviews      : testimonial approved + aktif milik produk ini
             ====================================================== --}}
             <section class="bg-white" x-data="{ tab: 'description' }">
-                <div class="mx-auto w-full max-w-[1600px] px-5 pb-14 sm:px-8 lg:px-12 xl:px-16">
+                <div class="mx-auto w-full max-w-[1600px] px-5 pb-8 sm:px-8 lg:px-12 xl:px-16">
                     <div class="border-t border-[#EEEAE5]"></div>
 
                     <div class="pt-5">
@@ -379,30 +389,443 @@
                         </div>
 
                         {{-- Tab: Reviews --}}
-                        <div x-show="tab === 'reviews'" x-cloak class="pt-7 max-w-3xl">
-                            @forelse ($approvedTestimonials as $testimonial)
-                                <div class="mb-5 border-b border-[#F0ECE7] pb-5 last:mb-0 last:border-b-0 last:pb-0">
-                                    <div class="flex items-center gap-0.5 text-[#F0A321]">
-                                        @for ($i = 1; $i <= 5; $i++)
-                                            <i class="fa-solid fa-star text-[10px] {{ $testimonial->rating < $i ? 'text-[#D9D4CD]' : '' }}"></i>
-                                        @endfor
-                                    </div>
-                                    <p class="mt-2 text-[10px] font-semibold text-[#2A211B] sm:text-[11px]">
-                                        {{ $testimonial->customer_name }}
-                                    </p>
-                                    @if ($testimonial->comment)
-                                        <p class="mt-1 text-[10px] leading-[1.8] text-[#7A7067] sm:text-[11px]">
-                                            {{ $testimonial->comment }}
-                                        </p>
-                                    @endif
-                                </div>
-                            @empty
-                                <p class="text-[10px] leading-[1.8] text-[#7A7067] sm:text-[11px]">
-                                    Belum ada ulasan untuk produk ini.
-                                </p>
-                            @endforelse
-                        </div>
+<div x-show="tab === 'reviews'" x-cloak class="pt-5">
+
+    @if ($approvedTestimonials->isNotEmpty())
+
+        {{-- Header ala marketplace --}}
+        <div class="kie-product-review-heading">
+            <div>
+                <p class="kie-product-review-heading-title">
+                    Ulasan Produk
+                </p>
+
+                <div class="kie-product-review-summary">
+                    <span class="kie-product-review-summary-score">
+                        {{ number_format($averageRating, 1) }}
+                    </span>
+
+                    <div class="kie-product-review-summary-stars">
+                        @for ($i = 1; $i <= 5; $i++)
+                            @php
+                                $fullStar = $averageRating >= $i;
+                                $halfStar = ! $fullStar
+                                    && $averageRating >= ($i - 0.5);
+                            @endphp
+
+                            @if ($fullStar)
+                                <i
+                                    class="fa-solid fa-star"
+                                    style="color:#F2A01C;"
+                                ></i>
+                            @elseif ($halfStar)
+                                <i
+                                    class="fa-solid fa-star-half-stroke"
+                                    style="color:#F2A01C;"
+                                ></i>
+                            @else
+                                <i
+                                    class="fa-solid fa-star"
+                                    style="color:#DDD6CE;"
+                                ></i>
+                            @endif
+                        @endfor
                     </div>
+
+                    <span class="kie-product-review-summary-count">
+                        {{ $reviewCount }} ulasan
+                    </span>
+                </div>
+            </div>
+
+            @if ($reviewCount > 2)
+    <a
+        href="{{ route('products.reviews', $product) }}"
+        class="kie-product-review-more kie-product-review-more-mobile"
+    >
+        Lihat Selengkapnya
+        <i class="fa-solid fa-chevron-right"></i>
+    </a>
+@endif
+
+@if ($reviewCount > 3)
+    <a
+        href="{{ route('products.reviews', $product) }}"
+        class="kie-product-review-more kie-product-review-more-desktop"
+    >
+        Lihat Selengkapnya
+        <i class="fa-solid fa-chevron-right"></i>
+    </a>
+@endif
+        </div>
+
+        {{-- HANYA 2 review terbaru di halaman produk --}}
+        <div class="kie-product-review-grid">
+            @foreach ($approvedTestimonials->take(3) as $testimonial)
+                @php
+                    $productReviewPhotos = collect($testimonial->photos ?? [])
+                        ->filter()
+                        ->take(2)
+                        ->values();
+
+                    $productReviewAddress = collect([
+                        $testimonial->kabupaten,
+                        $testimonial->provinsi,
+                    ])->filter()->implode(', ');
+
+                    $productReviewName = $testimonial->displayName();
+                    $productReviewRating = (int) ($testimonial->rating ?? 0);
+                @endphp
+
+                <article class="kie-product-review-card">
+                    <div class="kie-product-review-inner">
+
+                        <div class="kie-product-review-top">
+                            <div class="kie-product-review-profile">
+                                <span class="kie-product-review-avatar">
+                                    {{ strtoupper(mb_substr($productReviewName, 0, 1)) }}
+                                </span>
+
+                                <div class="kie-product-review-user">
+                                    <p class="kie-product-review-name">
+                                        {{ $productReviewName }}
+                                    </p>
+
+                                    <div class="kie-product-review-rating-row">
+                                        <div class="kie-product-review-stars">
+                                            @for ($i = 1; $i <= 5; $i++)
+                                                <i
+                                                    class="fa-solid fa-star"
+                                                    style="color: {{ $i <= $productReviewRating ? '#F2A01C' : '#DDD6CE' }};"
+                                                ></i>
+                                            @endfor
+                                        </div>
+
+                                        @if ($testimonial->rating)
+                                            <span class="kie-product-review-rating-number">
+                                                {{ number_format((float) $testimonial->rating, 1) }}
+                                            </span>
+                                        @endif
+                                    </div>
+                                </div>
+                            </div>
+
+                            <span class="kie-product-review-date">
+                                {{ $testimonial->created_at?->format('d/m/Y') }}
+                            </span>
+                        </div>
+
+                        @if ($productReviewAddress !== '')
+                            <div class="kie-product-review-location">
+                                <i class="fa-solid fa-location-dot"></i>
+                                {{ $productReviewAddress }}
+                            </div>
+                        @endif
+
+                        @if ($testimonial->comment)
+                            <p class="kie-product-review-comment">
+                                {{ $testimonial->comment }}
+                            </p>
+                        @endif
+
+                        @if ($productReviewPhotos->isNotEmpty())
+                            <div class="kie-product-review-photos">
+                                @foreach ($productReviewPhotos as $photo)
+                                    <a
+                                        href="{{ \Illuminate\Support\Facades\Storage::disk('public')->url($photo) }}"
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        class="kie-product-review-photo"
+                                    >
+                                        <img
+                                            src="{{ \Illuminate\Support\Facades\Storage::disk('public')->url($photo) }}"
+                                            alt="Foto ulasan {{ $productReviewName }}"
+                                        >
+                                    </a>
+                                @endforeach
+                            </div>
+                        @endif
+
+                        @if ($testimonial->approvedUpdateComment?->comment)
+                            <div class="kie-product-review-update">
+                                <p>Update dari pembeli</p>
+                                <span>
+                                    {{ $testimonial->approvedUpdateComment->comment }}
+                                </span>
+                            </div>
+                        @endif
+
+                    </div>
+                </article>
+            @endforeach
+        </div>
+
+    @else
+        <div class="kie-product-review-empty">
+            Belum ada ulasan untuk produk ini.
+        </div>
+    @endif
+</div>
+
+<style>
+    .kie-product-review-heading{
+        display:flex;
+        align-items:flex-end;
+        justify-content:space-between;
+        gap:20px;
+        margin-bottom:14px;
+        max-width:1100px;
+    }
+
+    .kie-product-review-heading-title{
+        margin:0;
+        font-size:13px;
+        font-weight:700;
+        color:#2A211B;
+    }
+
+    .kie-product-review-summary{
+        margin-top:5px;
+        display:flex;
+        align-items:center;
+        gap:7px;
+    }
+
+    .kie-product-review-summary-score{
+        font-size:18px;
+        line-height:1;
+        font-weight:700;
+        color:#2A211B;
+    }
+
+    .kie-product-review-summary-stars{
+        display:flex;
+        gap:2px;
+        font-size:10px;
+    }
+
+    .kie-product-review-summary-count{
+        font-size:9px;
+        color:#9A8E82;
+    }
+
+    .kie-product-review-more{
+        display:inline-flex;
+        align-items:center;
+        gap:7px;
+        padding:8px 12px;
+        border:1px solid #EADFD3;
+        border-radius:999px;
+        background:#FFF;
+        color:#A7672C;
+        font-size:10px;
+        font-weight:600;
+        text-decoration:none;
+        transition:.2s ease;
+    }
+
+    .kie-product-review-more:hover{
+        background:#FBF5ED;
+        border-color:#DDBF9D;
+    }
+
+    .kie-product-review-more i{
+        font-size:8px;
+    }
+
+    .kie-product-review-grid{
+        display:grid;
+        grid-template-columns:repeat(3,minmax(0,1fr));
+        gap:14px;
+        max-width:1100px;
+    }
+
+    .kie-product-review-card{
+        overflow:hidden;
+        min-width:0;
+        border:1px solid #ECE4DA;
+        border-radius:16px;
+        background:#FFF;
+        box-shadow:0 7px 24px rgba(42,33,27,.05);
+    }
+
+    .kie-product-review-inner{
+        padding:15px 16px;
+    }
+
+    .kie-product-review-top{
+        display:flex;
+        align-items:flex-start;
+        justify-content:space-between;
+        gap:12px;
+    }
+
+    .kie-product-review-profile{
+        min-width:0;
+        display:flex;
+        align-items:center;
+        gap:10px;
+    }
+
+    .kie-product-review-avatar{
+        width:36px;
+        height:36px;
+        flex:0 0 36px;
+        display:flex;
+        align-items:center;
+        justify-content:center;
+        border-radius:999px;
+        background:#F6EFE7;
+        border:1px solid #ECE0D3;
+        color:#D98222;
+        font-size:11px;
+        font-weight:700;
+    }
+
+    .kie-product-review-user{
+        min-width:0;
+    }
+
+    .kie-product-review-name{
+        margin:0;
+        overflow:hidden;
+        text-overflow:ellipsis;
+        white-space:nowrap;
+        font-size:11px;
+        font-weight:700;
+        color:#2A211B;
+    }
+
+    .kie-product-review-rating-row{
+        margin-top:4px;
+        display:flex;
+        align-items:center;
+        gap:6px;
+    }
+
+    .kie-product-review-stars{
+        display:flex;
+        align-items:center;
+        gap:2px;
+        font-size:10px;
+    }
+
+    .kie-product-review-rating-number{
+        font-size:9px;
+        font-weight:600;
+        color:#75695E;
+    }
+
+    .kie-product-review-date{
+        flex:0 0 auto;
+        font-size:8.5px;
+        color:#AAA098;
+    }
+
+    .kie-product-review-location{
+        width:max-content;
+        max-width:100%;
+        margin-top:10px;
+        padding:4px 8px;
+        border-radius:999px;
+        background:#FAF6F1;
+        color:#887A6D;
+        font-size:8.5px;
+        overflow-wrap:anywhere;
+    }
+
+    .kie-product-review-location i{
+        margin-right:4px;
+        color:#BC8350;
+        font-size:7px;
+    }
+
+    .kie-product-review-comment{
+        margin:11px 0 0;
+        color:#554B43;
+        font-size:10.5px;
+        line-height:1.65;
+    }
+
+    .kie-product-review-photos{
+        margin-top:11px;
+        display:flex;
+        flex-wrap:wrap;
+        gap:7px;
+    }
+
+    .kie-product-review-photo{
+        width:58px;
+        height:58px;
+        flex:0 0 58px;
+        display:block;
+        overflow:hidden;
+        border:1px solid #E8DED3;
+        border-radius:9px;
+        background:#F6F1EB;
+    }
+
+    .kie-product-review-photo img{
+        display:block;
+        width:100%;
+        height:100%;
+        object-fit:cover;
+    }
+
+    .kie-product-review-update{
+        margin-top:11px;
+        padding:9px 10px;
+        border-radius:9px;
+        background:#FBF6EF;
+    }
+
+    .kie-product-review-update p{
+        margin:0;
+        color:#9B6E3F;
+        font-size:7.5px;
+        font-weight:700;
+        letter-spacing:.1em;
+        text-transform:uppercase;
+    }
+
+    .kie-product-review-update span{
+        display:block;
+        margin-top:4px;
+        color:#675C52;
+        font-size:9.5px;
+        line-height:1.55;
+    }
+
+    .kie-product-review-empty{
+        max-width:1100px;
+        padding:18px;
+        border:1px dashed #E8DED1;
+        border-radius:14px;
+        background:#FCFAF7;
+        color:#75695E;
+        font-size:10px;
+    }
+
+    @media(max-width:767.98px){
+        .kie-product-review-heading{
+            align-items:center;
+        }
+
+        .kie-product-review-grid{
+            grid-template-columns:1fr;
+        }
+
+        .kie-product-review-card:nth-child(n+2){
+            display:none;
+        }
+
+        .kie-product-review-more{
+            padding:7px 9px;
+            font-size:9px;
+        }
+    }
+</style>
+</div>
                 </div>
             </section>
 
@@ -836,5 +1259,1103 @@
                 }
             });
         </script>
-    </body>
+
+{{-- KIE-PRODUCT-REVIEW-AESTHETIC-V2 --}}
+<style>
+    .kie-product-review-grid {
+        display: grid !important;
+        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+        gap: 16px !important;
+        align-items: start !important;
+    }
+
+    .kie-product-review-card {
+        box-sizing: border-box !important;
+        width: 100% !important;
+        min-width: 0 !important;
+        height: auto !important;
+        min-height: 0 !important;
+
+        border: 1px solid #ece4db !important;
+        border-radius: 18px !important;
+
+        background:
+            linear-gradient(
+                145deg,
+                #ffffff 0%,
+                #fdfbf8 100%
+            ) !important;
+
+        box-shadow:
+            0 8px 28px rgba(46, 32, 22, .06) !important;
+
+        overflow: hidden !important;
+    }
+
+    .kie-product-review-card:hover {
+        transform: translateY(-2px);
+        box-shadow:
+            0 13px 34px rgba(46, 32, 22, .09) !important;
+    }
+
+    .kie-product-review-card > div:first-child {
+        padding: 18px !important;
+    }
+
+    .kie-product-review-card .fa-star {
+        font-size: 10px !important;
+    }
+
+    .kie-product-review-photo {
+        display: block !important;
+
+        width: 72px !important;
+        height: 72px !important;
+        min-width: 72px !important;
+        min-height: 72px !important;
+        flex: 0 0 72px !important;
+
+        border: 1px solid #e8ded3 !important;
+        border-radius: 12px !important;
+
+        background: #f6f1eb !important;
+        overflow: hidden !important;
+    }
+
+    .kie-product-review-photo-img {
+        display: block !important;
+        width: 100% !important;
+        height: 100% !important;
+        max-width: 100% !important;
+        object-fit: cover !important;
+    }
+
+    /*
+     * Komentar dibuat lebih elegan:
+     * tidak memakai tanda kutip besar/aneh,
+     * cukup quote icon kecil.
+     */
+    .kie-product-review-card .fa-quote-left {
+        color: #c1b19f !important;
+    }
+
+    @media (max-width: 899.98px) {
+        .kie-product-review-grid {
+            grid-template-columns: 1fr !important;
+        }
+    }
+
+    @media (max-width: 639.98px) {
+        .kie-product-review-grid {
+            gap: 12px !important;
+        }
+
+        .kie-product-review-card {
+            border-radius: 15px !important;
+        }
+
+        .kie-product-review-card > div:first-child {
+            padding: 14px !important;
+        }
+
+        .kie-product-review-photo {
+            width: 58px !important;
+            height: 58px !important;
+            min-width: 58px !important;
+            min-height: 58px !important;
+            flex-basis: 58px !important;
+
+            border-radius: 10px !important;
+        }
+    }
+</style>
+
+{{-- KIE-PRODUCT-REVIEW-COMPACT-V3 --}}
+<style>
+    .kie-product-review-grid {
+        display: grid !important;
+        grid-template-columns: repeat(2, minmax(0, 620px)) !important;
+        justify-content: start !important;
+        align-items: start !important;
+        gap: 14px !important;
+    }
+
+    .kie-product-review-card {
+        width: 100% !important;
+        max-width: 620px !important;
+        min-height: 0 !important;
+        height: auto !important;
+
+        border: 1px solid #ece4da !important;
+        border-radius: 16px !important;
+
+        background: #fff !important;
+
+        box-shadow:
+            0 7px 24px rgba(42, 33, 27, .055) !important;
+    }
+
+    .kie-product-review-card > div:first-child {
+        padding: 15px 16px !important;
+    }
+
+    .kie-product-review-card:hover {
+        transform: translateY(-1px) !important;
+        box-shadow:
+            0 10px 28px rgba(42, 33, 27, .075) !important;
+    }
+
+    .kie-product-review-card .h-10.w-10 {
+        width: 36px !important;
+        height: 36px !important;
+        min-width: 36px !important;
+        min-height: 36px !important;
+    }
+
+    .kie-product-review-card .mt-4 {
+        margin-top: 10px !important;
+    }
+
+    .kie-product-review-card .mt-3 {
+        margin-top: 8px !important;
+    }
+
+    .kie-product-review-card .mt-1\.5 {
+        margin-top: 4px !important;
+    }
+
+    .kie-product-review-photo {
+        width: 62px !important;
+        height: 62px !important;
+        min-width: 62px !important;
+        min-height: 62px !important;
+        flex-basis: 62px !important;
+        border-radius: 10px !important;
+    }
+
+    .kie-product-review-photo-img {
+        width: 100% !important;
+        height: 100% !important;
+        object-fit: cover !important;
+    }
+
+    /* Kalau hanya ada satu review, jangan dibuat selebar section. */
+    .kie-product-review-grid:has(> .kie-product-review-card:only-child) {
+        grid-template-columns: minmax(0, 620px) !important;
+    }
+
+    @media (max-width: 767.98px) {
+        .kie-product-review-grid,
+        .kie-product-review-grid:has(> .kie-product-review-card:only-child) {
+            grid-template-columns: 1fr !important;
+        }
+
+        .kie-product-review-card {
+            max-width: none !important;
+            border-radius: 14px !important;
+        }
+
+        .kie-product-review-card > div:first-child {
+            padding: 13px !important;
+        }
+
+        .kie-product-review-photo {
+            width: 56px !important;
+            height: 56px !important;
+            min-width: 56px !important;
+            min-height: 56px !important;
+            flex-basis: 56px !important;
+        }
+    }
+</style>
+
+
+<style>
+/* KIE-REVIEW-FINAL-LOCK-V14 */
+
+
+/* =========================================================
+   DETAIL PRODUK
+   ========================================================= */
+
+.kie-product-review-heading{
+    width:100% !important;
+    max-width:none !important;
+
+    display:flex !important;
+    align-items:flex-end !important;
+    justify-content:space-between !important;
+
+    gap:20px !important;
+
+    margin-bottom:18px !important;
+}
+
+.kie-product-review-heading-title{
+    margin:0 !important;
+
+    font-size:15px !important;
+    font-weight:700 !important;
+
+    color:#2A211B !important;
+}
+
+.kie-product-review-summary{
+    margin-top:6px !important;
+    padding:0 !important;
+
+    display:flex !important;
+    align-items:center !important;
+
+    gap:8px !important;
+
+    border:0 !important;
+    background:transparent !important;
+    box-shadow:none !important;
+}
+
+.kie-product-review-summary-score{
+    font-size:22px !important;
+    line-height:1 !important;
+    font-weight:700 !important;
+}
+
+.kie-product-review-summary-stars{
+    display:flex !important;
+    gap:2px !important;
+
+    font-size:12px !important;
+}
+
+.kie-product-review-summary-count{
+    font-size:10px !important;
+    color:#95887B !important;
+}
+
+.kie-product-review-more{
+    margin-left:auto !important;
+
+    display:inline-flex !important;
+    align-items:center !important;
+
+    gap:8px !important;
+
+    padding:9px 14px !important;
+
+    border:1px solid #E9D8C5 !important;
+    border-radius:999px !important;
+
+    background:#FFF !important;
+
+    color:#A86629 !important;
+
+    font-size:10px !important;
+    font-weight:600 !important;
+
+    white-space:nowrap !important;
+}
+
+.kie-product-review-more-mobile{
+    display:none !important;
+}
+
+.kie-product-review-more-desktop{
+    display:inline-flex !important;
+}
+
+
+/* GRID DESKTOP = 3 */
+.kie-product-review-grid{
+    width:100% !important;
+    max-width:none !important;
+
+    display:grid !important;
+
+    grid-template-columns:repeat(3,minmax(0,1fr)) !important;
+
+    gap:16px !important;
+
+    align-items:start !important;
+}
+
+
+/* CARD */
+.kie-product-review-card{
+    box-sizing:border-box !important;
+
+    width:100% !important;
+
+    height:auto !important;
+    min-height:0 !important;
+
+    align-self:start !important;
+
+    overflow:hidden !important;
+
+    border:1px solid #EDE3D8 !important;
+    border-radius:18px !important;
+
+    background:#FFF !important;
+
+    box-shadow:
+        0 8px 26px rgba(42,33,27,.055) !important;
+}
+
+.kie-product-review-inner{
+    box-sizing:border-box !important;
+
+    width:100% !important;
+
+    height:auto !important;
+    min-height:0 !important;
+
+    display:block !important;
+
+    padding:18px !important;
+}
+
+
+/* =========================================================
+   USER
+   ========================================================= */
+
+.kie-product-review-top{
+    display:flex !important;
+    flex-direction:column !important;
+
+    align-items:flex-start !important;
+
+    gap:0 !important;
+}
+
+.kie-product-review-profile{
+    width:100% !important;
+    min-width:0 !important;
+
+    display:flex !important;
+    align-items:center !important;
+
+    gap:11px !important;
+}
+
+.kie-product-review-avatar{
+    width:42px !important;
+    height:42px !important;
+
+    min-width:42px !important;
+    min-height:42px !important;
+
+    flex:0 0 42px !important;
+
+    display:flex !important;
+    align-items:center !important;
+    justify-content:center !important;
+
+    border:1px solid #E9DDCF !important;
+    border-radius:999px !important;
+
+    background:#F8F3ED !important;
+
+    color:#C97A1C !important;
+
+    font-size:12px !important;
+    font-weight:700 !important;
+}
+
+.kie-product-review-user{
+    min-width:0 !important;
+}
+
+.kie-product-review-name{
+    margin:0 !important;
+
+    font-size:14px !important;
+    line-height:1.25 !important;
+    font-weight:700 !important;
+
+    color:#2A211B !important;
+}
+
+.kie-product-review-rating-row{
+    margin-top:5px !important;
+
+    display:flex !important;
+    align-items:center !important;
+
+    gap:7px !important;
+}
+
+.kie-product-review-stars{
+    display:flex !important;
+    align-items:center !important;
+
+    gap:2px !important;
+
+    font-size:11px !important;
+}
+
+.kie-product-review-rating-number{
+    font-size:10px !important;
+    font-weight:600 !important;
+
+    color:#756A60 !important;
+}
+
+
+/* TANGGAL DI BAWAH NAMA/RATING, BUKAN UJUNG CARD */
+.kie-product-review-date{
+    position:static !important;
+
+    display:block !important;
+
+    margin:5px 0 0 53px !important;
+
+    padding:0 !important;
+
+    font-size:9.5px !important;
+    line-height:1.2 !important;
+
+    color:#A0958A !important;
+
+    white-space:nowrap !important;
+}
+
+
+/* =========================================================
+   ISI
+   ========================================================= */
+
+.kie-product-review-location{
+    width:fit-content !important;
+    max-width:100% !important;
+
+    display:inline-flex !important;
+    align-items:center !important;
+
+    gap:5px !important;
+
+    margin-top:12px !important;
+
+    padding:5px 9px !important;
+
+    border-radius:999px !important;
+
+    background:#F8F5F1 !important;
+
+    color:#84776B !important;
+
+    font-size:10px !important;
+}
+
+.kie-product-review-comment{
+    width:100% !important;
+    max-width:none !important;
+
+    margin:12px 0 0 !important;
+
+    color:#50463E !important;
+
+    font-size:13px !important;
+    line-height:1.65 !important;
+
+    word-break:break-word !important;
+}
+
+
+/* =========================================================
+   FOTO DI KANAN DESKTOP
+   ========================================================= */
+
+@media (min-width:1200px){
+
+    .kie-product-review-card:has(.kie-product-review-photos)
+    .kie-product-review-inner{
+        display:grid !important;
+
+        grid-template-columns:minmax(0,1fr) auto !important;
+
+        column-gap:16px !important;
+
+        align-items:start !important;
+    }
+
+    .kie-product-review-card:has(.kie-product-review-photos)
+    .kie-product-review-top,
+    .kie-product-review-card:has(.kie-product-review-photos)
+    .kie-product-review-location,
+    .kie-product-review-card:has(.kie-product-review-photos)
+    .kie-product-review-comment,
+    .kie-product-review-card:has(.kie-product-review-photos)
+    .kie-product-review-update{
+        grid-column:1 !important;
+    }
+
+    .kie-product-review-photos{
+        position:static !important;
+
+        grid-column:2 !important;
+        grid-row:1 / span 4 !important;
+
+        align-self:end !important;
+
+        width:auto !important;
+
+        margin:0 !important;
+
+        display:grid !important;
+
+        grid-template-columns:repeat(2,68px) !important;
+
+        gap:8px !important;
+    }
+
+    .kie-product-review-photo{
+        width:68px !important;
+        height:68px !important;
+
+        min-width:68px !important;
+        min-height:68px !important;
+
+        flex:0 0 68px !important;
+
+        overflow:hidden !important;
+
+        border:1px solid #E8DED3 !important;
+        border-radius:12px !important;
+    }
+
+    .kie-product-review-photo img{
+        display:block !important;
+
+        width:100% !important;
+        height:100% !important;
+
+        object-fit:cover !important;
+    }
+
+    .kie-product-review-photo:nth-child(n+3){
+        display:none !important;
+    }
+}
+
+
+/* =========================================================
+   SEMUA ULASAN
+   ========================================================= */
+
+.kie-all-product-reviews{
+    width:min(1400px,calc(100% - 64px)) !important;
+
+    margin:0 auto !important;
+
+    padding-top:42px !important;
+}
+
+.kie-all-product-review-head{
+    width:100% !important;
+
+    display:flex !important;
+    align-items:center !important;
+    justify-content:space-between !important;
+
+    gap:24px !important;
+
+    margin-bottom:26px !important;
+}
+
+.kie-all-product-review-title{
+    font-size:30px !important;
+}
+
+.kie-all-product-review-product{
+    margin-top:7px !important;
+
+    font-size:12px !important;
+}
+
+.kie-all-product-review-score{
+    min-width:105px !important;
+
+    padding:13px 15px !important;
+
+    border-radius:16px !important;
+}
+
+.kie-all-product-review-score strong{
+    font-size:22px !important;
+}
+
+
+/* SEMUA REVIEW DESKTOP 3 KOLOM */
+.kie-all-product-review-grid{
+    width:100% !important;
+
+    display:grid !important;
+
+    grid-template-columns:repeat(3,minmax(0,1fr)) !important;
+
+    gap:16px !important;
+
+    align-items:start !important;
+}
+
+.kie-all-product-review-card{
+    box-sizing:border-box !important;
+
+    position:relative !important;
+
+    width:100% !important;
+
+    height:auto !important;
+    min-height:0 !important;
+
+    padding:18px !important;
+
+    align-self:start !important;
+
+    border:1px solid #EDE3D8 !important;
+    border-radius:18px !important;
+
+    background:#FFF !important;
+
+    box-shadow:
+        0 8px 26px rgba(42,33,27,.055) !important;
+}
+
+
+/* HEADER SEMUA ULASAN */
+.kie-all-product-review-top{
+    display:flex !important;
+    flex-direction:column !important;
+
+    align-items:flex-start !important;
+}
+
+.kie-all-product-review-profile{
+    width:100% !important;
+
+    display:flex !important;
+    align-items:center !important;
+
+    gap:11px !important;
+}
+
+.kie-all-product-review-avatar{
+    width:42px !important;
+    height:42px !important;
+
+    flex:0 0 42px !important;
+
+    font-size:12px !important;
+}
+
+.kie-all-product-review-name{
+    margin:0 !important;
+
+    font-size:14px !important;
+
+    font-weight:700 !important;
+}
+
+.kie-all-product-review-stars{
+    margin-top:5px !important;
+
+    display:flex !important;
+
+    gap:2px !important;
+
+    font-size:11px !important;
+}
+
+
+/* TANGGAL SEMUA ULASAN */
+.kie-all-product-review-date{
+    position:static !important;
+
+    margin:5px 0 0 53px !important;
+
+    padding:0 !important;
+
+    font-size:9.5px !important;
+
+    color:#A0958A !important;
+
+    white-space:nowrap !important;
+}
+
+.kie-all-product-review-location{
+    margin-top:12px !important;
+
+    padding:5px 9px !important;
+
+    font-size:10px !important;
+}
+
+.kie-all-product-review-comment{
+    margin:12px 0 0 !important;
+
+    font-size:13px !important;
+    line-height:1.65 !important;
+}
+
+
+/* FOTO SEMUA REVIEW DI KANAN */
+@media (min-width:1200px){
+
+    .kie-all-product-review-card:has(.kie-all-product-review-photos){
+        display:grid !important;
+
+        grid-template-columns:minmax(0,1fr) auto !important;
+
+        column-gap:16px !important;
+    }
+
+    .kie-all-product-review-card:has(.kie-all-product-review-photos)
+    .kie-all-product-review-top,
+    .kie-all-product-review-card:has(.kie-all-product-review-photos)
+    .kie-all-product-review-location,
+    .kie-all-product-review-card:has(.kie-all-product-review-photos)
+    .kie-all-product-review-comment,
+    .kie-all-product-review-card:has(.kie-all-product-review-photos)
+    .kie-all-product-review-update{
+        grid-column:1 !important;
+    }
+
+    .kie-all-product-review-photos{
+        position:static !important;
+
+        grid-column:2 !important;
+        grid-row:1 / span 4 !important;
+
+        align-self:end !important;
+
+        width:auto !important;
+
+        margin:0 !important;
+
+        display:grid !important;
+
+        grid-template-columns:repeat(2,68px) !important;
+
+        gap:8px !important;
+    }
+
+    .kie-all-product-review-photo{
+        width:68px !important;
+        height:68px !important;
+
+        border-radius:12px !important;
+    }
+}
+
+
+/* =========================================================
+   TABLET / DEVICE SELAIN DESKTOP = 2
+   ========================================================= */
+
+@media (max-width:1199.98px){
+
+    .kie-product-review-grid,
+    .kie-all-product-review-grid{
+        grid-template-columns:repeat(2,minmax(0,1fr)) !important;
+
+        gap:12px !important;
+    }
+
+    .kie-product-review-more-desktop{
+        display:none !important;
+    }
+
+    .kie-product-review-more-mobile{
+        display:inline-flex !important;
+    }
+
+    .kie-product-review-photos,
+    .kie-all-product-review-photos{
+        position:static !important;
+
+        width:auto !important;
+
+        margin-top:10px !important;
+
+        display:flex !important;
+        flex-wrap:wrap !important;
+
+        gap:7px !important;
+    }
+}
+
+
+/* =========================================================
+   HP = TETAP 2
+   ========================================================= */
+
+@media (max-width:639.98px){
+
+    .kie-product-review-grid,
+    .kie-all-product-review-grid{
+        grid-template-columns:repeat(2,minmax(0,1fr)) !important;
+
+        gap:8px !important;
+    }
+
+    .kie-product-review-inner,
+    .kie-all-product-review-card{
+        padding:11px !important;
+    }
+
+    .kie-product-review-avatar,
+    .kie-all-product-review-avatar{
+        width:30px !important;
+        height:30px !important;
+
+        min-width:30px !important;
+        min-height:30px !important;
+
+        flex-basis:30px !important;
+
+        font-size:8px !important;
+    }
+
+    .kie-product-review-name,
+    .kie-all-product-review-name{
+        font-size:10px !important;
+    }
+
+    .kie-product-review-stars,
+    .kie-all-product-review-stars{
+        font-size:8px !important;
+    }
+
+    .kie-product-review-date,
+    .kie-all-product-review-date{
+        margin-left:41px !important;
+
+        font-size:7px !important;
+    }
+
+    .kie-product-review-location,
+    .kie-all-product-review-location{
+        margin-top:7px !important;
+
+        padding:3px 6px !important;
+
+        font-size:7.5px !important;
+    }
+
+    .kie-product-review-comment,
+    .kie-all-product-review-comment{
+        margin-top:7px !important;
+
+        font-size:9px !important;
+        line-height:1.45 !important;
+    }
+
+    .kie-product-review-photo,
+    .kie-all-product-review-photo{
+        width:44px !important;
+        height:44px !important;
+
+        min-width:44px !important;
+        min-height:44px !important;
+
+        flex-basis:44px !important;
+
+        border-radius:7px !important;
+    }
+}
+</style>
+
+<style>
+/* KIE-REVIEW-NATURAL-HEIGHT-V15 */
+
+/*
+ * Jangan samakan tinggi seluruh kartu.
+ * Setiap review mengikuti isi masing-masing.
+ */
+.kie-product-review-grid{
+    align-items:start !important;
+}
+
+.kie-product-review-card{
+    height:auto !important;
+    min-height:0 !important;
+    align-self:start !important;
+}
+
+.kie-product-review-inner{
+    height:auto !important;
+    min-height:0 !important;
+}
+
+/*
+ * Review berfoto tetap memakai layout kanan,
+ * tetapi tinggi kartunya ditentukan oleh isi/foto,
+ * bukan memaksa kartu lain ikut tinggi.
+ */
+@media (min-width:1200px){
+
+    .kie-product-review-card:has(.kie-product-review-photos){
+        height:auto !important;
+        min-height:0 !important;
+    }
+
+    .kie-product-review-card:has(.kie-product-review-photos)
+    .kie-product-review-inner{
+        min-height:108px !important;
+    }
+}
+
+/* Tablet / HP tetap 2 kolom */
+@media (max-width:1199.98px){
+
+    .kie-product-review-grid{
+        grid-template-columns:repeat(2,minmax(0,1fr)) !important;
+        align-items:start !important;
+    }
+
+    .kie-product-review-card,
+    .kie-product-review-inner{
+        height:auto !important;
+        min-height:0 !important;
+    }
+}
+
+@media (max-width:639.98px){
+
+    .kie-product-review-grid{
+        grid-template-columns:repeat(2,minmax(0,1fr)) !important;
+    }
+}
+</style>
+
+<style>
+/* KIE-REVIEW-MASONRY-FIX-V16 */
+
+/* Jangan paksa kartu dalam satu row memiliki tinggi sama */
+.kie-product-review-grid{
+    align-items:start !important;
+    grid-auto-rows:max-content !important;
+}
+
+.kie-product-review-card{
+    height:auto !important;
+    min-height:0 !important;
+    align-self:start !important;
+}
+
+.kie-product-review-inner{
+    height:auto !important;
+    min-height:0 !important;
+}
+
+/* Card tanpa foto benar-benar compact */
+.kie-product-review-card:not(:has(.kie-product-review-photos)){
+    height:auto !important;
+    min-height:0 !important;
+}
+
+.kie-product-review-card:not(:has(.kie-product-review-photos))
+.kie-product-review-inner{
+    height:auto !important;
+    min-height:0 !important;
+}
+
+/* Card dengan foto hanya setinggi kebutuhan foto + konten */
+@media (min-width:1200px){
+
+    .kie-product-review-card:has(.kie-product-review-photos){
+        height:auto !important;
+        min-height:0 !important;
+    }
+
+    .kie-product-review-card:has(.kie-product-review-photos)
+    .kie-product-review-inner{
+        height:auto !important;
+        min-height:106px !important;
+    }
+}
+
+/* Tablet / HP tetap 2 per baris */
+@media (max-width:1199.98px){
+
+    .kie-product-review-grid{
+        grid-template-columns:repeat(2,minmax(0,1fr)) !important;
+        align-items:start !important;
+        grid-auto-rows:max-content !important;
+    }
+
+    .kie-product-review-card,
+    .kie-product-review-inner{
+        height:auto !important;
+        min-height:0 !important;
+    }
+}
+
+@media (max-width:639.98px){
+
+    .kie-product-review-grid{
+        grid-template-columns:repeat(2,minmax(0,1fr)) !important;
+    }
+}
+</style>
+
+<style>
+/* KIE-MOBILE-TWO-REVIEWS-FIX-V17 */
+
+/* DESKTOP: tampilkan semua 3 preview */
+@media (min-width:1200px){
+
+    .kie-product-review-grid > .kie-product-review-card{
+        display:block !important;
+    }
+}
+
+
+/* TABLET + HP: 2 REVIEW PER BARIS */
+@media (max-width:1199.98px){
+
+    .kie-product-review-grid{
+        display:grid !important;
+        grid-template-columns:repeat(2,minmax(0,1fr)) !important;
+        gap:10px !important;
+    }
+
+    /*
+     * Batalkan rule lama yang menyembunyikan card ke-2.
+     */
+    .kie-product-review-grid > .kie-product-review-card{
+        display:block !important;
+        min-width:0 !important;
+    }
+
+    /*
+     * Preview halaman produk hanya 2 review.
+     * Review ke-3 dst dibuka lewat Lihat Selengkapnya.
+     */
+    .kie-product-review-grid > .kie-product-review-card:nth-child(n+3){
+        display:none !important;
+    }
+}
+
+
+/* HP tetap 2 kolom */
+@media (max-width:639.98px){
+
+    .kie-product-review-grid{
+        grid-template-columns:repeat(2,minmax(0,1fr)) !important;
+        gap:8px !important;
+    }
+
+    .kie-product-review-grid > .kie-product-review-card:nth-child(1),
+    .kie-product-review-grid > .kie-product-review-card:nth-child(2){
+        display:block !important;
+    }
+
+    .kie-product-review-grid > .kie-product-review-card:nth-child(n+3){
+        display:none !important;
+    }
+}
+</style>
+</body>
 </html>

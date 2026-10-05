@@ -43,7 +43,7 @@
         html[data-site='frontend'] iframe { max-width: 100%; }
 
         /* Ruang antar section dipadatkan di seluruh frontend non-desktop. */
-        html[data-site='frontend'] .frame-seam-strip { height: 12px !important; }
+        html[data-site='frontend'] .frame-seam-strip { height: 8px !important; }
         html[data-site='frontend'] section[class~='py-12'],
         html[data-site='frontend'] section[class~='py-14'],
         html[data-site='frontend'] section[class~='py-16'],
@@ -211,7 +211,7 @@
             padding-top: 2.15rem !important;
             padding-bottom: 2.15rem !important;
         }
-        html[data-site='frontend'] .frame-seam-strip { height: 8px !important; }
+        html[data-site='frontend'] .frame-seam-strip { height: 6px !important; }
 
         html[data-site='frontend'] section [class~='mt-16'],
         html[data-site='frontend'] section [class~='mt-14'],
@@ -265,14 +265,14 @@
             height: 2.35rem !important;
         }
         html[data-site='frontend'] [data-kie-navbar-mobile-menu] {
-            justify-content: flex-start !important;
-            gap: .15rem;
-            padding-left: .55rem !important;
-            padding-right: .55rem !important;
+            justify-content: center !important;
+            gap: .45rem;
+            padding-left: .35rem !important;
+            padding-right: .35rem !important;
         }
         html[data-site='frontend'] [data-kie-navbar-mobile-menu] > a {
-            padding-left: .7rem !important;
-            padding-right: .7rem !important;
+            padding-left: 0 !important;
+            padding-right: 0 !important;
         }
 
         /* Hero Beranda lebih pendek dan judul tidak mendominasi layar HP. */
@@ -373,6 +373,56 @@
         html[data-site='frontend'] [data-kie-home-categories-slider] > * { flex-basis: 60vw; }
         html[data-site='frontend'] [data-kie-testimonial-card] { flex-basis: 70vw !important; }
     }
+
+    /* KIE-MOBILE-NAV-BALANCE:START */
+    @media (max-width: 639.98px) {
+        html[data-site='frontend'] [data-kie-navbar-mobile-menu] {
+            display: grid !important;
+            grid-template-columns: repeat(5, max-content) !important;
+            justify-content: center !important;
+            align-items: center !important;
+            gap: .45rem !important;
+            width: 100% !important;
+            padding-left: .35rem !important;
+            padding-right: .35rem !important;
+            overflow-x: auto !important;
+        }
+
+        html[data-site='frontend'] [data-kie-navbar-mobile-menu] > a {
+            min-width: 0 !important;
+            padding-left: 0 !important;
+            padding-right: 0 !important;
+            justify-content: center !important;
+            text-align: center !important;
+            white-space: nowrap !important;
+        }
+
+        html[data-site='frontend'] [data-kie-navbar-search] {
+            width: clamp(7.5rem, 33vw, 9rem) !important;
+            min-width: 7.5rem !important;
+            max-width: 9rem !important;
+        }
+    }
+
+    @media (max-width: 374.98px) {
+        html[data-site='frontend'] [data-kie-navbar-mobile-menu] {
+            gap: .28rem !important;
+            padding-left: .2rem !important;
+            padding-right: .2rem !important;
+        }
+
+        html[data-site='frontend'] [data-kie-navbar-mobile-menu] > a {
+            font-size: 11px !important;
+        }
+
+        html[data-site='frontend'] [data-kie-navbar-search] {
+            width: clamp(6.6rem, 30vw, 7.5rem) !important;
+            min-width: 6.6rem !important;
+            max-width: 7.5rem !important;
+        }
+    }
+    /* KIE-MOBILE-NAV-BALANCE:END */
+
 </style>
 @endonce
 {{-- KIE-FRONTEND-RESPONSIVE:END --}}
@@ -414,7 +464,7 @@
             justify-content: flex-end !important;
 
             margin-left: auto !important;
-            gap: .22rem !important;
+            gap: 0 !important;
         }
 
         html[data-site='frontend'] [data-kie-navbar-search] {
@@ -424,9 +474,9 @@
             grid-row: auto !important;
 
             flex: 1 1 auto !important;
-            width: clamp(10rem, 43vw, 12rem) !important;
-            min-width: 9.5rem !important;
-            max-width: 12rem !important;
+            width: clamp(7.5rem, 33vw, 9rem) !important;
+            min-width: 7.5rem !important;
+            max-width: 9rem !important;
 
             height: 1.8rem !important;
             border-radius: .6rem !important;
@@ -437,7 +487,7 @@
             min-width: 0 !important;
             height: 100% !important;
 
-            padding-left: .55rem !important;
+            padding-left: .35rem !important;
             padding-right: .25rem !important;
 
             font-size: 12px !important;
@@ -491,15 +541,15 @@
 
     @media (max-width: 374.98px) {
         html[data-site='frontend'] [data-kie-navbar-main] {
-            gap: .22rem !important;
+            gap: 0 !important;
             padding-left: .45rem !important;
             padding-right: .45rem !important;
         }
 
         html[data-site='frontend'] [data-kie-navbar-search] {
-            width: clamp(8.5rem, 41vw, 9.6rem) !important;
-            min-width: 8.5rem !important;
-            max-width: 9.6rem !important;
+            width: clamp(6.6rem, 30vw, 7.5rem) !important;
+            min-width: 6.6rem !important;
+            max-width: 7.5rem !important;
         }
 
         html[data-site='frontend'] [data-kie-navbar-icons] > a,
@@ -511,6 +561,107 @@
     }
 </style>
 {{-- KIE-MOBILE-SEARCH-TOP:END --}}
+
+<style>
+/* KIE-MOBILE-NAV-FINAL:START */
+@media (max-width: 639.98px) {
+    html[data-site='frontend'] [data-kie-navbar-mobile-menu] {
+        display: flex !important;
+        justify-content: space-between !important;
+        align-items: center !important;
+        gap: .30rem !important;
+        width: 100% !important;
+        padding-left: .75rem !important;
+        padding-right: .75rem !important;
+        overflow-x: hidden !important;
+    }
+
+    html[data-site='frontend'] [data-kie-navbar-mobile-menu] > a {
+        flex: 0 0 auto !important;
+        min-width: 0 !important;
+        padding-left: 0 !important;
+        padding-right: 0 !important;
+        font-size: 11.5px !important;
+        text-align: center !important;
+        white-space: nowrap !important;
+    }
+
+    html[data-site='frontend'] [data-kie-navbar-main] > a:first-child {
+        gap: .45rem !important;
+        margin-right: 0 !important;
+    }
+
+    html[data-site='frontend'] [data-kie-navbar-main] > a:first-child span {
+        font-size: 15.5px !important;
+    }
+
+    html[data-site='frontend'] [data-kie-navbar-actions] {
+        gap: .12rem !important;
+    }
+
+    html[data-site='frontend'] [data-kie-navbar-search] {
+        flex: 0 0 clamp(8.6rem, 38vw, 9rem) !important;
+        width: clamp(8.6rem, 38vw, 9rem) !important;
+        min-width: 8.6rem !important;
+        max-width: 9rem !important;
+    }
+}
+
+@media (max-width: 374.98px) {
+    html[data-site='frontend'] [data-kie-navbar-mobile-menu] {
+        gap: .15rem !important;
+        padding-left: .45rem !important;
+        padding-right: .45rem !important;
+    }
+
+    html[data-site='frontend'] [data-kie-navbar-mobile-menu] > a {
+        font-size: 10.5px !important;
+    }
+
+    html[data-site='frontend'] [data-kie-navbar-main] > a:first-child span {
+        font-size: 14.5px !important;
+    }
+
+    html[data-site='frontend'] [data-kie-navbar-search] {
+        flex-basis: 7.8rem !important;
+        width: 7.8rem !important;
+        min-width: 7.8rem !important;
+        max-width: 7.8rem !important;
+    }
+}
+/* KIE-MOBILE-NAV-FINAL:END */
+</style>
+
+
+<style>
+/* KIE-MOBILE-MENU-SPACING-FINAL:START */
+@media (max-width: 639.98px) {
+    html[data-site='frontend'] [data-kie-navbar-mobile-menu] {
+        justify-content: space-evenly !important;
+        gap: 0 !important;
+        padding-left: .35rem !important;
+        padding-right: .35rem !important;
+    }
+
+    html[data-site='frontend'] [data-kie-navbar-mobile-menu] > a {
+        font-size: 11px !important;
+    }
+}
+
+@media (max-width: 374.98px) {
+    html[data-site='frontend'] [data-kie-navbar-mobile-menu] {
+        gap: 0 !important;
+        padding-left: .25rem !important;
+        padding-right: .25rem !important;
+    }
+
+    html[data-site='frontend'] [data-kie-navbar-mobile-menu] > a {
+        font-size: 10.5px !important;
+    }
+}
+/* KIE-MOBILE-MENU-SPACING-FINAL:END */
+</style>
+
 <header class="sticky top-0 z-100 border-b border-admin-border/80 bg-admin-surface/95 backdrop-blur-md">
 
     <div data-kie-navbar-main class="mx-auto flex h-17 max-w-360 items-center gap-4 px-5 sm:px-7 lg:gap-7 lg:px-10">
@@ -531,7 +682,7 @@
                 'icon' => 'fa-couch',
             ])
 
-            <span class="hidden font-display text-[17px] font-semibold tracking-[-0.02em] text-admin-ink transition-colors group-hover:text-admin-panel sm:block">
+            <span class="font-display text-[17px] font-semibold tracking-[-0.02em] text-admin-ink transition-colors group-hover:text-admin-panel">
                 {{ $navSetting->site_name }}
             </span>
         </a>

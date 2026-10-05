@@ -40,3 +40,7 @@ temp-*-patch/
 
 # Local pre-hosting backups
 /backups/
+.env.*
+!.env.example
+/error_log
+/storage/framework/views/*

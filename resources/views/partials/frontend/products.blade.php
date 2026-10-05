@@ -49,6 +49,10 @@
         ->when($activeCategory, fn ($query) => $query->where('category_id', $activeCategory->id))
         ->withCount(['testimonials as approved_testimonials_count' => fn ($query) => $query->approved()])
         ->withAvg(['testimonials as average_rating' => fn ($query) => $query->approved()], 'rating')
+        // KIE_FEATURED_HOME_PRODUCTS_V1
+        // Homepage normal hanya menampilkan maksimal 3 produk yang
+        // ditandai Featured oleh admin.
+        ->when(! $activeCategory, fn ($query) => $query->where('featured', true))
         ->latest()
         ->when(! $activeCategory, fn ($query) => $query->take(3))
         ->get();
@@ -120,8 +124,8 @@
         <div class="flex flex-wrap items-end justify-between gap-6">
             <div class="max-w-xl">
                 <span class="mb-3 block h-0.75 w-12 rounded-full bg-[#C97B5A]"></span>
-                <h2 class="font-display text-3xl sm:text-4xl" style="color: {{ $produkUnggulanColors['heading'] }};">Semua Produk</h2>
-                <p class="mt-2 text-sm" style="color: {{ $produkUnggulanColors['link'] }};">Karya terbaru yang paling banyak dilihat pelanggan kami.</p>
+                <h2 class="font-display text-3xl sm:text-4xl" style="color: {{ $produkUnggulanColors['heading'] }};">Produk Unggulan</h2>
+                <p class="mt-2 text-sm" style="color: {{ $produkUnggulanColors['link'] }};">Tiga produk pilihan yang ditampilkan khusus di beranda.</p>
             </div>
 
             <a

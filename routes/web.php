@@ -56,6 +56,42 @@ Route::get('/produk', function () {
 })->name('products.index');
 
 // Detail Produk (Algoritma Rekomendasi Frekuensi Buka)
+
+/* KIE_PRODUCT_ALL_REVIEWS_ROUTE */
+Route::get('/produk/{product:slug}/ulasan', function (\App\Models\Product $product) {
+    abort_unless($product->status === 'aktif', 404);
+
+    $reviews = $product->testimonials()
+        ->approved()
+        ->active()
+        ->topLevel()
+        ->with('approvedUpdateComment')
+        ->latest()
+        ->paginate(12);
+
+    $ratingCount = $product->testimonials()
+        ->approved()
+        ->active()
+        ->topLevel()
+        ->whereNotNull('rating')
+        ->count();
+
+    $averageRating = $ratingCount > 0
+        ? (float) $product->testimonials()
+            ->approved()
+            ->active()
+            ->topLevel()
+            ->whereNotNull('rating')
+            ->avg('rating')
+        : 0;
+
+    return view('pages.frontend.produk-reviews', compact(
+        'product',
+        'reviews',
+        'ratingCount',
+        'averageRating'
+    ));
+})->name('products.reviews');
 Route::get('/produk/{product:slug}', function (\App\Models\Product $product) {
     abort_unless($product->status === 'aktif', 404);
 
@@ -175,6 +211,33 @@ Route::get('/booking', function () {
 
     return view('pages.frontend.booking', compact('siteSetting', 'waNumber', 'products'));
 })->name('booking.index');
+Route::get('/dokumentasi/foto', function () {
+    $siteSetting = \App\Models\Setting::current();
+    $waNumber = $siteSetting->whatsappDigits();
+
+    $products = \App\Models\Product::query()
+        ->where('status', 'aktif')
+        ->with('category:id,name,slug')
+        ->latest()
+        ->take(8)
+        ->get();
+
+    return view('pages.frontend.dokumentasi-foto', compact('siteSetting', 'waNumber', 'products'));
+})->name('dokumentasi.foto');
+
+Route::get('/dokumentasi/video', function () {
+    $siteSetting = \App\Models\Setting::current();
+    $waNumber = $siteSetting->whatsappDigits();
+
+    $products = \App\Models\Product::query()
+        ->where('status', 'aktif')
+        ->with('category:id,name,slug')
+        ->latest()
+        ->take(8)
+        ->get();
+
+    return view('pages.frontend.dokumentasi-video', compact('siteSetting', 'waNumber', 'products'));
+})->name('dokumentasi.video');
 
 // Tracking Pesanan.
 // /lacak hanya menampilkan pesanan yang pernah dibuka pada browser/perangkat ini.

@@ -96,11 +96,70 @@ class HomeSection extends Model
             ];
         }
 
-        // TikTok.
+        // TikTok short link (vt.tiktok.com / vm.tiktok.com).
+        // Resolve hanya domain TikTok, lalu hasilnya diproses oleh parser TikTok normal.
+        if (preg_match('#^https?://(?:www\.)?(?:vt|vm)\.tiktok\.com/#i', $url)) {
+            $url = \Illuminate\Support\Facades\Cache::remember(
+                'kie_tiktok_url_'.sha1($url),
+                now()->addDay(),
+                static function () use ($url) {
+                    if (! function_exists('curl_init')) {
+                        return $url;
+                    }
+
+                    $ch = curl_init($url);
+                    curl_setopt_array($ch, [
+                        CURLOPT_RETURNTRANSFER => true,
+                        CURLOPT_FOLLOWLOCATION => true,
+                        CURLOPT_MAXREDIRS => 5,
+                        CURLOPT_CONNECTTIMEOUT => 4,
+                        CURLOPT_TIMEOUT => 8,
+                        CURLOPT_USERAGENT => 'Mozilla/5.0',
+                    ]);
+
+                    curl_exec($ch);
+                    $resolved = curl_getinfo($ch, CURLINFO_EFFECTIVE_URL);
+                    curl_close($ch);
+
+                    if (! is_string($resolved) || $resolved === '') {
+                        return $url;
+                    }
+
+                    $host = strtolower((string) parse_url($resolved, PHP_URL_HOST));
+
+                    return ($host === 'tiktok.com' || str_ends_with($host, '.tiktok.com'))
+                        ? $resolved
+                        : $url;
+                }
+            );
+        }
+
+        // TikTok URL panjang.
         if (preg_match('#tiktok\.com.*?/video/(\d+)#i', $url, $m)) {
+            $videoId = $m[1];
+
+            $thumbnail = \Illuminate\Support\Facades\Cache::remember(
+                'kie_tiktok_thumb_'.$videoId,
+                now()->addDay(),
+                static function () use ($url) {
+                    try {
+                        $response = \Illuminate\Support\Facades\Http::timeout(6)
+                            ->acceptJson()
+                            ->get('https://www.tiktok.com/oembed', ['url' => $url]);
+
+                        return $response->successful()
+                            ? ($response->json('thumbnail_url') ?: null)
+                            : null;
+                    } catch (\Throwable $e) {
+                        return null;
+                    }
+                }
+            );
+
             return [
                 'provider' => 'tiktok',
-                'embed_url' => 'https://www.tiktok.com/embed/v2/'.$m[1],
+                'embed_url' => 'https://www.tiktok.com/player/v1/'.$videoId,
+                'thumbnail_url' => $thumbnail,
             ];
         }
 

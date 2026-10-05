@@ -53,19 +53,22 @@ class TrackingController
         $deviceId = $this->readOrCreateDeviceId($request);
         $deviceHash = hash('sha256', $deviceId);
         $isTrustedDevice = false;
+        $isAdmin = auth()->check();
 
-        if ($transaction->tracking_device_hash === null) {
+        if (! $isAdmin && $transaction->tracking_device_hash === null) {
             $transaction->forceFill(['tracking_device_hash' => $deviceHash])->save();
             $isTrustedDevice = true;
-        } else {
+        } elseif (! $isAdmin) {
             $isTrustedDevice = hash_equals($transaction->tracking_device_hash, $deviceHash);
         }
+
+        $hasFullAccess = true;
 
         // Hanya perangkat pertama yang membuka link yang boleh menyimpan token
         // ke daftar pesanan perangkatnya. Perangkat lain tetap boleh membuka link,
         // tetapi hanya melihat informasi minimum.
         $tokens = $this->readTokens($request);
-        if ($isTrustedDevice) {
+        if ($hasFullAccess) {
             $tokens = array_values(array_unique(array_merge([$trackingToken], $tokens)));
             $tokens = array_slice($tokens, 0, self::MAX_TOKENS);
         }
@@ -86,6 +89,7 @@ class TrackingController
         $response = response()->view('pages.frontend.tracking', [
             'transaction' => $transaction,
             'isTrustedDevice' => $isTrustedDevice,
+            'hasFullAccess' => $hasFullAccess,
             'originalComment' => $originalComment,
             'updateComment' => $originalComment?->updateComment,
             'canSubmitUpdate' => $canSubmitUpdate,
@@ -105,7 +109,7 @@ class TrackingController
             'lax'
         );
 
-        if ($isTrustedDevice) {
+        if ($hasFullAccess) {
             $response->cookie(
                 self::COOKIE_NAME,
                 json_encode($tokens, JSON_THROW_ON_ERROR),
@@ -150,7 +154,9 @@ class TrackingController
             && $transaction->tracking_device_hash !== null
             && hash_equals($transaction->tracking_device_hash, hash('sha256', $deviceId));
 
-        abort_unless($isTrustedDevice, 403);
+        $isAdmin = auth()->check();
+
+        // Tracking token valid pada URL sudah menjadi kunci akses komentar.
 
         // Komentar (termasuk Update) hanya boleh dikirim setelah pesanan
         // berstatus Selesai. Kalau masih pending/diproses/dibatalkan, endpoint
@@ -162,8 +168,6 @@ class TrackingController
             'comment' => ['nullable', 'string', 'max:1000'],
             'rating' => ['nullable', 'integer', 'min:1', 'max:5'],
             'is_name_masked' => ['nullable', 'boolean'],
-            'provinsi' => ['nullable', 'string', 'max:255'],
-            'kabupaten' => ['nullable', 'string', 'max:255'],
             'photos' => ['nullable', 'array', 'max:'.self::MAX_PHOTOS],
             'photos.*' => ['image', 'mimes:jpg,jpeg,png,webp', 'max:2048'], // 2048 KB = 2 MB
         ]);
@@ -175,8 +179,8 @@ class TrackingController
         // hanya berlaku untuk komentar PERTAMA (lihat blok "if ($originalComment
         // === null)" di bawah), sesuai form yang juga menyembunyikannya untuk
         // Komentar Update di tracking.blade.php.
-        $provinsi = trim((string) ($validated['provinsi'] ?? ''));
-        $kabupaten = trim((string) ($validated['kabupaten'] ?? ''));
+        $provinsi = trim((string) ($transaction->provinsi ?? ''));
+        $kabupaten = trim((string) ($transaction->kota ?? ''));
         $photos = $this->storePhotos($request->file('photos') ?? []);
 
         if ($comment === '' && $rating === null && $photos === []) {

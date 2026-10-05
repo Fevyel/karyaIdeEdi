@@ -1,6 +1,7 @@
 ﻿<!DOCTYPE html>
 <html lang="id" data-site="frontend">
     <head>
+        @include('partials.favicon')
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <title>{{ config('app.name', 'Toko Mebel') }}</title>
@@ -96,7 +97,9 @@
         {{-- ================= FAQ ================= --}}
         @include('partials.frontend.faq')
 
-        @include('partials.frontend.frame-seam', ['from' => $seamFaq, 'to' => $seamLokasi])
+        {{-- KIE_LOCATION_NO_SEAM_V1
+             Lokasi memakai Google Maps full-bleed. Seam sengaja
+             tidak dipakai agar pergantian warna tidak membentuk pita. --}}
 
         {{-- ================= LOKASI / ALAMAT ================= --}}
         @include('partials.frontend.lokasi')

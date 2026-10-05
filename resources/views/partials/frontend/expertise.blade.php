@@ -25,6 +25,7 @@
 --}}
 @php
     $keahlianDefaults = [
+        'bg_color' => null,
         'badge_text' => 'Kenapa Pilih Kami',
         'title' => 'Kualitas yang Bisa Anda Percaya',
         'description' => 'Setiap furnitur kami dibuat dari material pilihan dan dikerjakan dengan tangan secara teliti, menghasilkan produk yang kokoh, nyaman, dan tahan lama untuk mengisi rumah Anda.',
@@ -70,9 +71,21 @@
     } elseif ($keahlianMediaType === 'video_url' && ($keahlianData['video_url'] ?? null)) {
         $keahlianVideo = \App\Models\HomeSection::classifyVideoUrl($keahlianData['video_url']);
     }
+
+    $keahlianBgColor = \App\Support\FrameBackground::hex($keahlianData['bg_color'] ?? null) ?: '#FFFFFF';
+    $keahlianHexTerang = function (string $hex): bool {
+        $hex = ltrim($hex, '#');
+        $r=hexdec(substr($hex,0,2))/255; $g=hexdec(substr($hex,2,2))/255; $b=hexdec(substr($hex,4,2))/255;
+        $lin=fn(float $c):float=>$c<=0.03928?$c/12.92:(($c+0.055)/1.055)**2.4;
+        return (0.2126*$lin($r)+0.7152*$lin($g)+0.0722*$lin($b))>0.5;
+    };
+    $keahlianLightBg = $keahlianHexTerang($keahlianBgColor);
+    $keahlianColors = $keahlianLightBg
+        ? ['ink'=>'#1A1A1A','soft'=>'#6B6E76','line'=>'rgba(26,26,26,.18)','hover'=>'rgba(26,26,26,.06)']
+        : ['ink'=>'#FFFFFF','soft'=>'rgba(255,255,255,.76)','line'=>'rgba(255,255,255,.24)','hover'=>'rgba(255,255,255,.10)'];
 @endphp
 
-<section class="bg-white">
+<section class="bg-white" style="background-color: {{ $keahlianBgColor }};">
     <div class="grid grid-cols-1 lg:grid-cols-2 lg:items-center">
 
         {{--
@@ -85,7 +98,7 @@
             beda dari yang admin pilih waktu nge-crop -- fix ini menyamakan
             keduanya supaya tidak ada risiko salah crop.
         --}}
-        <div class="relative aspect-10/9 w-full overflow-hidden bg-[#1A1A1A]">
+        <div class="order-2 relative aspect-10/9 w-full overflow-hidden bg-[#1A1A1A] lg:order-1">
             @if ($keahlianVideo && $keahlianVideo['provider'] === 'direct')
                 {{-- Video langsung (upload dari perangkat ATAU tautan file video) --
                      kontrol penuh: autoplay+suara begitu masuk viewport, suara
@@ -100,6 +113,7 @@
                         src="{{ $keahlianVideo['embed_url'] }}"
                         class="absolute inset-0 h-full w-full object-cover"
                         playsinline
+                        autoplay
                         muted
                         loop
                         preload="auto"
@@ -107,11 +121,11 @@
 
                     <button
                         type="button"
-                        x-on:click="toggleMute()"
+                        onclick="const v=this.parentElement.querySelector('video'); v.muted=!v.muted; const i=this.querySelector('i'); i.classList.toggle('fa-volume-xmark',v.muted); i.classList.toggle('fa-volume-high',!v.muted); this.setAttribute('aria-label',v.muted?'Aktifkan suara video':'Matikan suara video');"
                         class="absolute bottom-4 left-4 z-10 flex h-10 w-10 items-center justify-center rounded-full bg-black/50 text-white backdrop-blur transition hover:bg-black/70"
-                        :aria-label="muted ? 'Aktifkan suara video' : 'Matikan suara video'"
+                        aria-label="Aktifkan suara video"
                     >
-                        <i class="fa-solid" :class="muted ? 'fa-volume-xmark' : 'fa-volume-high'"></i>
+                        <i class="fa-solid fa-volume-xmark"></i>
                     </button>
                 </div>
             @elseif ($keahlianVideo && $keahlianVideo['provider'] === 'youtube')
@@ -134,11 +148,11 @@
 
                     <button
                         type="button"
-                        x-on:click="toggleMute()"
+                        onclick="const v=this.parentElement.querySelector('video'); v.muted=!v.muted; const i=this.querySelector('i'); i.classList.toggle('fa-volume-xmark',v.muted); i.classList.toggle('fa-volume-high',!v.muted); this.setAttribute('aria-label',v.muted?'Aktifkan suara video':'Matikan suara video');"
                         class="absolute bottom-4 left-4 z-10 flex h-10 w-10 items-center justify-center rounded-full bg-black/50 text-white backdrop-blur transition hover:bg-black/70"
-                        :aria-label="muted ? 'Aktifkan suara video' : 'Matikan suara video'"
+                        aria-label="Aktifkan suara video"
                     >
-                        <i class="fa-solid" :class="muted ? 'fa-volume-xmark' : 'fa-volume-high'"></i>
+                        <i class="fa-solid fa-volume-xmark"></i>
                     </button>
                 </div>
             @elseif ($keahlianVideo)
@@ -169,20 +183,20 @@
         </div>
 
         {{-- ============ KANAN: Eyebrow, heading, paragraf, checklist, ikon sosial ============ --}}
-        <div class="flex flex-col justify-center bg-white px-6 py-12 sm:px-8 lg:px-12 lg:py-16 xl:px-16">
+        <div class="order-1 flex flex-col justify-center px-6 py-12 sm:px-8 lg:order-2 lg:px-12 lg:py-16 xl:px-16" style="background-color: {{ $keahlianBgColor }};">
 
             {{-- Eyebrow --}}
-            <div class="flex items-center gap-3 text-[11px] font-semibold uppercase tracking-[0.2em] text-[#1A1A1A]">
-                <span class="h-px w-8 bg-[#1A1A1A]"></span>
+            <div class="flex items-center gap-3 text-[11px] font-semibold uppercase tracking-[0.2em]" style="color: {{ $keahlianColors['ink'] }};">
+                <span class="h-px w-8" style="background-color: {{ $keahlianColors['ink'] }};"></span>
                 {{ $keahlianData['badge_text'] }}
             </div>
 
             {{-- Heading --}}
-            <h2 class="mt-4 text-4xl font-extrabold uppercase leading-[1.05] text-[#1A1A1A] sm:text-5xl">
+            <h2 class="mt-4 text-4xl font-extrabold uppercase leading-[1.05] sm:text-5xl" style="color: {{ $keahlianColors['ink'] }};">
                 {{ $keahlianData['title'] }}
             </h2>
 
-            <p class="mt-5 max-w-md text-sm leading-relaxed text-[#6B6E76]">
+            <p class="mt-5 max-w-md text-sm leading-relaxed" style="color: {{ $keahlianColors['soft'] }};">
                 {{ $keahlianData['description'] }}
             </p>
 
@@ -190,28 +204,28 @@
             <div class="mt-6 space-y-4">
                 @foreach ($keahlianData['checklist'] as $point)
                     <div class="flex items-start gap-3">
-                        <span class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-[#1A1A1A]/25 text-[#1A1A1A]">
+                        <span class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border" style="border-color: {{ $keahlianColors['line'] }}; color: {{ $keahlianColors['ink'] }};">
                             <i class="fa-solid fa-check text-[11px]"></i>
                         </span>
-                        <p class="max-w-sm text-sm leading-relaxed text-[#1A1A1A]">{{ $point }}</p>
+                        <p class="max-w-sm text-sm leading-relaxed" style="color: {{ $keahlianColors['ink'] }};">{{ $point }}</p>
                     </div>
                 @endforeach
             </div>
 
             {{-- Ikon sosial — 4 sel persegi berdampingan dalam satu container bergaris. Instagram, TikTok & Facebook dari App\Models\Setting (Pengaturan admin), hanya tampil kalau link-nya diisi. --}}
-            <div class="mt-7 inline-flex w-fit overflow-hidden rounded-lg border border-[#1A1A1A]/15">
+            <div class="mt-7 inline-flex w-fit overflow-hidden rounded-lg border" style="border-color: {{ $keahlianColors['line'] }};">
                 @if ($keahlianSetting->instagram_url)
-                    <a href="{{ $keahlianSetting->instagram_url }}" target="_blank" rel="noopener" aria-label="Instagram" class="flex h-11 w-11 items-center justify-center border-r border-[#1A1A1A]/15 text-[#1A1A1A] transition-colors duration-300 hover:bg-[#F1F1F1]">
+                    <a href="{{ $keahlianSetting->instagram_url }}" target="_blank" rel="noopener" aria-label="Instagram" class="flex h-11 w-11 items-center justify-center border-r transition-colors duration-300" style="border-color: {{ $keahlianColors['line'] }}; color: {{ $keahlianColors['ink'] }};" onmouseenter="this.style.backgroundColor='{{ $keahlianColors['hover'] }}'" onmouseleave="this.style.backgroundColor='transparent'">
                         <i class="fa-brands fa-instagram text-sm"></i>
                     </a>
                 @endif
                 @if ($keahlianSetting->tiktok_url)
-                    <a href="{{ $keahlianSetting->tiktok_url }}" target="_blank" rel="noopener" aria-label="TikTok" class="flex h-11 w-11 items-center justify-center border-r border-[#1A1A1A]/15 text-[#1A1A1A] transition-colors duration-300 hover:bg-[#F1F1F1]">
+                    <a href="{{ $keahlianSetting->tiktok_url }}" target="_blank" rel="noopener" aria-label="TikTok" class="flex h-11 w-11 items-center justify-center border-r transition-colors duration-300" style="border-color: {{ $keahlianColors['line'] }}; color: {{ $keahlianColors['ink'] }};" onmouseenter="this.style.backgroundColor='{{ $keahlianColors['hover'] }}'" onmouseleave="this.style.backgroundColor='transparent'">
                         <i class="fa-brands fa-tiktok text-sm"></i>
                     </a>
                 @endif
                 @if ($keahlianSetting->facebook_url)
-                    <a href="{{ $keahlianSetting->facebook_url }}" target="_blank" rel="noopener" aria-label="Facebook" class="flex h-11 w-11 items-center justify-center border-r border-[#1A1A1A]/15 text-[#1A1A1A] transition-colors duration-300 hover:bg-[#F1F1F1]">
+                    <a href="{{ $keahlianSetting->facebook_url }}" target="_blank" rel="noopener" aria-label="Facebook" class="flex h-11 w-11 items-center justify-center border-r transition-colors duration-300" style="border-color: {{ $keahlianColors['line'] }}; color: {{ $keahlianColors['ink'] }};" onmouseenter="this.style.backgroundColor='{{ $keahlianColors['hover'] }}'" onmouseleave="this.style.backgroundColor='transparent'">
                         <i class="fa-brands fa-facebook-f text-sm"></i>
                     </a>
                 @endif
@@ -220,7 +234,7 @@
                     target="{{ $keahlianWhatsapp ? '_blank' : '_self' }}"
                     rel="noopener"
                     aria-label="WhatsApp"
-                    class="flex h-11 w-11 items-center justify-center text-[#1A1A1A] transition-colors duration-300 hover:bg-[#F1F1F1]"
+                    class="flex h-11 w-11 items-center justify-center transition-colors duration-300" style="color: {{ $keahlianColors['ink'] }};" onmouseenter="this.style.backgroundColor='{{ $keahlianColors['hover'] }}'" onmouseleave="this.style.backgroundColor='transparent'"
                 >
                     <i class="fa-brands fa-whatsapp text-sm"></i>
                 </a>

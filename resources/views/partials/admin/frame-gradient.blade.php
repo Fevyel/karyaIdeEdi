@@ -1,35 +1,95 @@
 {{--
-    Editor gradasi untuk "Warna Frame (Latar Section)" di Admin > Edit Web.
-
-    Dipakai lewat:
-        @include('partials.admin.frame-gradient', [
-            'key' => 'mission',
-            'gradient' => $missionGradient,
-        ])
-
-    $key = awalan property Livewire (mission, produkUnggulan, kategori,
-    testimoni, lokasi) -- state-nya ada di App\Support\HasFrameGradients
-    (property "{$key}Gradient") dan tampilan beranda membacanya lewat
-    App\Support\FrameBackground::resolve().
-
-    Bawaan frame = warna POLOS. Gradasi baru dipakai kalau tombol di bawah
-    dinyalakan; kalau dimatikan, frame kembali ke warna polos di atas.
+    Editor gradasi Admin > Edit Web.
+    Preview berjalan sepenuhnya di browser (Alpine),
+    sehingga slider / warna / preset tidak menunggu request Livewire.
 --}}
 @php
     $gradient = \App\Support\FrameBackground::normalize($gradient ?? null);
     $property = $key.'Gradient';
-    $frameGradientDirections = [0 => 'Atas', 45 => 'Kanan atas', 90 => 'Kanan', 135 => 'Kanan bawah', 180 => 'Bawah', 225 => 'Kiri bawah', 270 => 'Kiri', 315 => 'Kiri atas'];
+
+    $frameGradientDirections = [
+        0   => 'Atas',
+        45  => 'Kanan atas',
+        90  => 'Kanan',
+        135 => 'Kanan bawah',
+        180 => 'Bawah',
+        225 => 'Kiri bawah',
+        270 => 'Kiri',
+        315 => 'Kiri atas',
+    ];
 @endphp
 
-<div class="space-y-4 rounded-xl border border-admin-border p-4">
+<div
+    class="space-y-4 rounded-xl border border-admin-border p-4"
+    x-data="{
+        from: @js($gradient['from']),
+        to: @js($gradient['to']),
+        mid: @js($gradient['mid']),
+        useMid: @js((bool) $gradient['use_mid']),
+        angle: @js((int) $gradient['angle']),
+
+        previewCss() {
+            const stops = this.useMid
+                ? `${this.from} 0%, ${this.mid} 50%, ${this.to} 100%`
+                : `${this.from} 0%, ${this.to} 100%`;
+
+            return `linear-gradient(${this.angle}deg, ${stops})`;
+        },
+
+        sync() {
+            /*
+             * false = update state Livewire lokal tanpa request server.
+             * Jadi editor tidak lag.
+             * State terbaru tetap ikut saat tombol Simpan ditekan.
+             */
+            $wire.set(@js($property.'.from'), this.from, false);
+            $wire.set(@js($property.'.to'), this.to, false);
+            $wire.set(@js($property.'.mid'), this.mid, false);
+            $wire.set(@js($property.'.use_mid'), this.useMid, false);
+            $wire.set(@js($property.'.angle'), Number(this.angle), false);
+        },
+
+        setAngle(value) {
+            this.angle = Number(value);
+            this.sync();
+        },
+
+        swapColors() {
+            const oldFrom = this.from;
+            this.from = this.to;
+            this.to = oldFrom;
+            this.sync();
+        },
+
+        preset(from, mid, to, angle) {
+            this.from = from;
+            this.to = to;
+            this.useMid = mid !== null;
+
+            if (mid !== null) {
+                this.mid = mid;
+            }
+
+            this.angle = Number(angle);
+
+            this.sync();
+        }
+    }"
+>
     <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+
         <div>
-            <p class="text-xs font-semibold uppercase tracking-wide text-admin-ink-soft">Gradasi (Opsional)</p>
+            <p class="text-xs font-semibold uppercase tracking-wide text-admin-ink-soft">
+                Gradasi (Opsional)
+            </p>
+
             <p class="mt-1 text-xs text-admin-ink-soft">
                 @if ($gradient['enabled'])
-                    Gradasi menyala &mdash; frame memakai gradasi di bawah, warna polos di atas tidak dipakai.
+                    Gradasi menyala - frame memakai gradasi di bawah,
+                    warna polos di atas tidak dipakai.
                 @else
-                    Mati &mdash; frame memakai warna polos di atas. Nyalakan kalau ingin mencoba gradasi.
+                    Mati - frame memakai warna polos di atas.
+                    Nyalakan kalau ingin mencoba gradasi.
                 @endif
             </p>
         </div>
@@ -39,121 +99,253 @@
             role="switch"
             aria-checked="{{ $gradient['enabled'] ? 'true' : 'false' }}"
             wire:click="toggleFrameGradient('{{ $key }}')"
-            class="inline-flex shrink-0 items-center justify-center gap-2 rounded-full border px-4 py-2 text-sm font-semibold transition {{ $gradient['enabled'] ? 'border-admin-accent bg-admin-accent text-white' : 'border-admin-border bg-admin-surface text-admin-ink hover:border-admin-accent/60' }}"
+            wire:loading.attr="disabled"
+            wire:target="toggleFrameGradient"
+            class="inline-flex shrink-0 items-center justify-center gap-2 rounded-full border px-4 py-2 text-sm font-semibold transition
+                {{ $gradient['enabled']
+                    ? 'border-admin-accent bg-admin-accent text-white'
+                    : 'border-admin-border bg-admin-surface text-admin-ink hover:border-admin-accent/60'
+                }}"
         >
             <i class="fa-solid {{ $gradient['enabled'] ? 'fa-toggle-on' : 'fa-toggle-off' }}"></i>
-            {{ $gradient['enabled'] ? 'Gradasi Menyala' : 'Nyalakan Gradasi' }}
+
+            {{ $gradient['enabled']
+                ? 'Gradasi Menyala'
+                : 'Nyalakan Gradasi'
+            }}
         </button>
+
     </div>
 
     @if ($gradient['enabled'])
-        {{-- Pratinjau gradasi yang sedang diatur --}}
+
+        {{-- =====================================================
+             PREVIEW REAL-TIME
+        ====================================================== --}}
         <div
-            class="h-16 w-full rounded-xl border border-admin-border"
+            class="h-20 w-full rounded-xl border border-admin-border shadow-inner"
+            :style="{ background: previewCss() }"
             style="background: {{ \App\Support\FrameBackground::cssGradient($gradient) }};"
             role="img"
             aria-label="Pratinjau gradasi"
         ></div>
 
-        {{-- Gradasi rekomendasi: sekali klik langsung terisi, lalu tetap bisa diubah di bawahnya. --}}
+
+        {{-- =====================================================
+             PRESET
+        ====================================================== --}}
         <div>
-            <p class="mb-2 text-[11px] font-medium uppercase tracking-wide text-admin-ink-soft">Atau pilih dari rekomendasi</p>
+            <p class="mb-2 text-[11px] font-medium uppercase tracking-wide text-admin-ink-soft">
+                Atau pilih dari rekomendasi
+            </p>
+
             <div class="flex flex-wrap gap-3">
-                @foreach (\App\Support\FrameBackground::PRESETS as $index => $preset)
-                    @php $presetAktif = \App\Support\FrameBackground::matchesPreset($gradient, $preset); @endphp
+
+                @foreach (\App\Support\FrameBackground::PRESETS as $preset)
+
                     <button
                         type="button"
-                        wire:click="applyFrameGradientPreset('{{ $key }}', {{ $index }})"
+                        @click.prevent="
+                            preset(
+                                @js($preset['from']),
+                                @js($preset['mid']),
+                                @js($preset['to']),
+                                {{ (int) $preset['angle'] }}
+                            )
+                        "
                         title="{{ $preset['label'] }}"
                         class="group flex flex-col items-center gap-1"
                     >
                         <span
-                            class="block h-9 w-16 rounded-lg shadow-sm transition duration-200 group-hover:scale-105 group-hover:shadow-md {{ $presetAktif ? 'ring-2 ring-admin-accent ring-offset-2 ring-offset-admin-surface' : 'border border-admin-border' }}"
-                            style="background: {{ \App\Support\FrameBackground::cssGradient(['enabled' => true, 'from' => $preset['from'], 'use_mid' => $preset['mid'] !== null, 'mid' => $preset['mid'], 'to' => $preset['to'], 'angle' => $preset['angle']]) }};"
+                            class="block h-9 w-16 rounded-lg border border-admin-border shadow-sm transition duration-150 group-hover:scale-105 group-hover:border-admin-accent group-hover:shadow-md"
+                            style="background:
+                                {{ \App\Support\FrameBackground::cssGradient([
+                                    'enabled' => true,
+                                    'from' => $preset['from'],
+                                    'use_mid' => $preset['mid'] !== null,
+                                    'mid' => $preset['mid'],
+                                    'to' => $preset['to'],
+                                    'angle' => $preset['angle'],
+                                ]) }};
+                            "
                         ></span>
-                        <span class="max-w-16 truncate text-[10px] text-admin-ink-soft">{{ $preset['label'] }}</span>
+
+                        <span class="max-w-16 truncate text-[10px] text-admin-ink-soft">
+                            {{ $preset['label'] }}
+                        </span>
                     </button>
+
                 @endforeach
+
             </div>
         </div>
 
-        {{-- Warna gradasi: awal, akhir, dan (opsional) tengah. --}}
+
+        {{-- =====================================================
+             WARNA
+        ====================================================== --}}
         <div class="grid gap-4 sm:grid-cols-3">
+
             <label class="flex flex-col gap-1.5 text-xs font-medium text-admin-ink-soft">
                 Warna awal
+
                 <input
-                    type="color" wire:model.live.change="{{ $property }}.from"
+                    type="color"
+                    :value="from"
+                    @input="from = $event.target.value"
+                    @change="sync()"
                     class="h-10 w-full cursor-pointer rounded-lg border border-admin-border"
                 >
             </label>
+
 
             <label class="flex flex-col gap-1.5 text-xs font-medium text-admin-ink-soft">
                 Warna akhir
+
                 <input
-                    type="color" wire:model.live.change="{{ $property }}.to"
+                    type="color"
+                    :value="to"
+                    @input="to = $event.target.value"
+                    @change="sync()"
                     class="h-10 w-full cursor-pointer rounded-lg border border-admin-border"
                 >
             </label>
 
+
             <div class="flex flex-col gap-1.5 text-xs font-medium text-admin-ink-soft">
-                <label class="flex items-center gap-2">
+
+                <label class="flex cursor-pointer items-center gap-2">
                     <input
-                        type="checkbox" wire:model.live="{{ $property }}.use_mid"
+                        type="checkbox"
+                        :checked="useMid"
+                        @change="
+                            useMid = $event.target.checked;
+                            sync();
+                        "
                         class="h-4 w-4 rounded border-admin-border text-admin-accent focus:ring-admin-accent"
                     >
+
                     Tambah warna tengah
                 </label>
+
                 <input
-                    type="color" wire:model.live.change="{{ $property }}.mid"
-                    @disabled(! $gradient['use_mid'])
+                    type="color"
+                    :value="mid"
+                    :disabled="!useMid"
+                    @input="mid = $event.target.value"
+                    @change="sync()"
                     class="h-10 w-full cursor-pointer rounded-lg border border-admin-border disabled:cursor-not-allowed disabled:opacity-40"
                 >
+
             </div>
+
         </div>
 
+
+        {{-- =====================================================
+             TUKAR WARNA
+        ====================================================== --}}
         <div>
             <button
                 type="button"
-                wire:click="swapFrameGradientColors('{{ $key }}')"
-                class="inline-flex items-center gap-2 rounded-full border border-admin-border px-3 py-1.5 text-xs font-medium text-admin-ink transition hover:border-admin-accent/60"
+                @click.prevent="swapColors()"
+                class="inline-flex items-center gap-2 rounded-full border border-admin-border px-3 py-1.5 text-xs font-medium text-admin-ink transition active:scale-95 hover:border-admin-accent/60"
             >
                 <i class="fa-solid fa-right-left"></i>
-                Tukar warna awal &amp; akhir
+                Tukar warna awal & akhir
             </button>
         </div>
 
-        {{-- Arah gradasi: 8 tombol arah + slider sudut bebas (0-360 derajat). --}}
-        <div class="space-y-2">
-            <p class="text-[11px] font-medium uppercase tracking-wide text-admin-ink-soft">Arah gradasi</p>
 
+        {{-- =====================================================
+             ARAH GRADASI
+        ====================================================== --}}
+        <div class="space-y-3">
+
+            <p class="text-[11px] font-medium uppercase tracking-wide text-admin-ink-soft">
+                Arah gradasi
+            </p>
+
+
+            {{-- Tombol arah --}}
             <div class="flex flex-wrap gap-2">
+
                 @foreach ($frameGradientDirections as $derajat => $namaArah)
+
                     <button
                         type="button"
-                        wire:click="setFrameGradientAngle('{{ $key }}', {{ $derajat }})"
+                        @click.prevent="setAngle({{ $derajat }})"
                         title="{{ $namaArah }}"
                         aria-label="Arah {{ $namaArah }}"
-                        class="flex h-9 w-9 items-center justify-center rounded-lg border text-xs transition {{ $gradient['angle'] === $derajat ? 'border-admin-accent bg-admin-accent text-white' : 'border-admin-border text-admin-ink hover:border-admin-accent/60' }}"
+                        :class="
+                            Number(angle) === {{ $derajat }}
+                                ? 'border-admin-accent bg-admin-accent text-white'
+                                : 'border-admin-border text-admin-ink hover:border-admin-accent/60'
+                        "
+                        class="flex h-10 w-10 items-center justify-center rounded-lg border text-xs transition active:scale-90"
                     >
-                        <i class="fa-solid fa-arrow-up" style="transform: rotate({{ $derajat }}deg);"></i>
+                        <i
+                            class="fa-solid fa-arrow-up"
+                            style="transform: rotate({{ $derajat }}deg);"
+                        ></i>
                     </button>
+
                 @endforeach
+
             </div>
 
+
+            {{-- Slider --}}
             <div class="flex items-center gap-3">
+
                 <input
-                    type="range" min="0" max="360" step="1"
-                    wire:model.live.change="{{ $property }}.angle"
-                    class="h-2 w-full cursor-pointer"
+                    type="range"
+                    min="0"
+                    max="360"
+                    step="1"
+
+                    :value="angle"
+
+                    @input="
+                        angle = Number($event.target.value);
+                    "
+
+                    @change="
+                        angle = Number($event.target.value);
+                        sync();
+                    "
+
+                    class="h-2 w-full cursor-pointer accent-admin-accent"
+
+                    style="
+                        touch-action: none;
+                        pointer-events: auto;
+                    "
+
                     aria-label="Sudut gradasi"
                 >
-                <span class="w-12 shrink-0 text-right text-xs font-medium text-admin-ink">{{ $gradient['angle'] }}&deg;</span>
+
+                <span class="w-14 shrink-0 text-right text-xs font-semibold text-admin-ink">
+                    <span
+                        x-text="Math.round(angle)"
+                    >{{ $gradient['angle'] }}</span><span>&deg;</span>
+                </span>
+
             </div>
+
+
+            <p class="text-[10px] text-admin-ink-soft">
+                Geser slider - preview di atas berubah langsung tanpa menunggu server.
+            </p>
+
         </div>
 
-        <p class="text-xs text-admin-ink-soft">
-            Warna judul, teks, dan kartu di section ini otomatis menyesuaikan (terang/gelap) mengikuti
-            warna rata-rata gradasi, supaya tetap kebaca. Klik Simpan di bawah untuk menerapkan ke beranda.
+
+        <p class="text-xs leading-relaxed text-admin-ink-soft">
+            Warna judul, teks, dan kartu di section ini otomatis menyesuaikan
+            terang/gelap mengikuti warna rata-rata gradasi supaya tetap terbaca.
+            Klik <strong>Simpan</strong> untuk menerapkan hasilnya ke beranda.
         </p>
+
     @endif
 </div>

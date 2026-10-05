@@ -88,17 +88,20 @@
 --}}
 @once
     <style>
+        /* KIE_SOFT_FRAME_SEAM_V1
+           Transisi dibuat tipis agar perubahan warna antar-section
+           tetap halus tanpa terlihat sebagai pita/gradasi terpisah. */
         .frame-seam-strip {
-            height: 20px;
+            height: 6px;
         }
         @media (min-width: 640px) {
             .frame-seam-strip {
-                height: 32px;
+                height: 8px;
             }
         }
         @media (min-width: 1024px) {
             .frame-seam-strip {
-                height: 48px;
+                height: 10px;
             }
         }
     </style>
